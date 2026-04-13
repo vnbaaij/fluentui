@@ -20,6 +20,26 @@ const data: ChartProps = {
   chartData: points,
 };
 
+const sortedPoints: ChartDataPoint[] = [
+  {
+    legend: 'small',
+    data: 5000,
+  },
+  {
+    legend: 'large',
+    data: 39000,
+  },
+  {
+    legend: 'medium',
+    data: 15000,
+  },
+];
+
+const sortedData: ChartProps = {
+  chartTitle: 'Sorted donut chart example',
+  chartData: sortedPoints,
+};
+
 const storyTemplate = html<StoryArgs<FluentDonutChart>>`
   <fluent-donut-chart data="${JSON.stringify(data)}" value-inside-donut="39,000" inner-radius="55">
   </fluent-donut-chart>
@@ -37,3 +57,23 @@ export const RTL: Story<FluentDonutChart> = renderComponent(html<StoryArgs<Fluen
 `);
 
 export const Basic: Story<FluentDonutChart> = renderComponent(storyTemplate).bind({});
+
+export const HideLabels: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
+  <fluent-donut-chart data="${JSON.stringify(data)}" value-inside-donut="39,000" inner-radius="55" hide-labels>
+  </fluent-donut-chart>
+`);
+
+export const ShowLabelsInPercent: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
+  <fluent-donut-chart
+    data="${JSON.stringify(data)}"
+    value-inside-donut="39,000"
+    inner-radius="55"
+    show-labels-in-percent
+  >
+  </fluent-donut-chart>
+`);
+
+export const SortedOrder: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
+  <fluent-donut-chart data="${JSON.stringify(sortedData)}" value-inside-donut="Total" inner-radius="55" order="sorted">
+  </fluent-donut-chart>
+`);

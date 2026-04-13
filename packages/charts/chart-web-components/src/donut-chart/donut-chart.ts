@@ -24,6 +24,15 @@ export class DonutChart extends FASTElement {
   @attr({ attribute: 'hide-tooltip', mode: 'boolean' })
   public hideTooltip: boolean = false;
 
+  @attr({ attribute: 'hide-labels', mode: 'boolean' })
+  public hideLabels: boolean = false;
+
+  @attr({ attribute: 'show-labels-in-percent', mode: 'boolean' })
+  public showLabelsInPercent: boolean = false;
+
+  @attr
+  public order: 'default' | 'sorted' = 'default';
+
   @attr({ converter: jsonConverter })
   public data!: ChartProps;
 
@@ -116,9 +125,41 @@ export class DonutChart extends FASTElement {
   connectedCallback() {
     super.connectedCallback();
 
+    if (!this.data) {
+      return;
+    }
+
+    this._initializeAndRender();
+  }
+
+  protected dataChanged(_oldValue: ChartProps, newValue: ChartProps) {
+    if (this.$fastController.isConnected && newValue) {
+      this._clearChart();
+      this._initializeAndRender();
+    }
+  }
+
+  protected orderChanged() {
+    if (this.$fastController.isConnected && this.data) {
+      this._clearChart();
+      this._initializeAndRender();
+    }
+  }
+
+  protected hideLabelsChanged() {
+    if (this.$fastController.isConnected && this.data) {
+      this._clearChart();
+      this._initializeAndRender();
+    }
+  }
+
+  private _initializeAndRender() {
     validateChartProps(this.data, 'data');
 
-    this.data.chartData.forEach((dataPoint, index) => {
+    const chartData =
+      this.order === 'sorted' ? [...this.data.chartData].sort((a, b) => b.data - a.data) : this.data.chartData;
+
+    chartData.forEach((dataPoint, index) => {
       if (dataPoint.color) {
         dataPoint.color = getColorFromToken(dataPoint.color);
       } else {
@@ -126,15 +167,22 @@ export class DonutChart extends FASTElement {
       }
     });
 
-    this.legends = this._getLegends();
+    this.legends = this._getLegends(chartData);
     this._isRTL = getRTL(this);
-    this.elementInternals.ariaLabel =
-      this.data.chartTitle || `Donut chart with ${this.data.chartData.length} segments.`;
+    this.elementInternals.ariaLabel = this.data.chartTitle || `Donut chart with ${chartData.length} segments.`;
 
-    this._render();
+    this._render(chartData);
   }
 
-  private _render() {
+  private _clearChart() {
+    while (this.group.firstChild) {
+      this.group.removeChild(this.group.firstChild);
+    }
+    this._arcs = [];
+    this._textInsideDonut = undefined;
+  }
+
+  private _render(chartData: ChartDataPoint[]) {
     const pie = d3Pie<ChartDataPoint>()
       .value(d => d.data)
       .padAngle(0.02);
@@ -142,7 +190,7 @@ export class DonutChart extends FASTElement {
       .innerRadius(this.innerRadius)
       .outerRadius((Math.min(this.height, this.width) - 20) / 2);
 
-    pie(this.data.chartData).forEach(arcDatum => {
+    pie(chartData).forEach(arcDatum => {
       const arcGroup = document.createElementNS(SVG_NAMESPACE_URI, 'g');
       this.group.appendChild(arcGroup);
 
@@ -206,7 +254,7 @@ export class DonutChart extends FASTElement {
       this.tooltipProps = { isVisible: false, legend: '', yValue: '', color: '', xPos: 0, yPos: 0 };
     });
 
-    if (this.valueInsideDonut) {
+    if (!this.hideLabels && this.valueInsideDonut) {
       this._textInsideDonut = document.createElementNS(SVG_NAMESPACE_URI, 'text');
       this.group.appendChild(this._textInsideDonut);
       this._textInsideDonut.classList.add('text-inside-donut');
@@ -218,8 +266,8 @@ export class DonutChart extends FASTElement {
     }
   }
 
-  private _getLegends(): Legend[] {
-    return this.data.chartData.map((d, index) => ({
+  private _getLegends(chartData: ChartDataPoint[]): Legend[] {
+    return chartData.map((d, index) => ({
       title: d.legend,
       color: d.color!,
     }));
@@ -234,7 +282,13 @@ export class DonutChart extends FASTElement {
           dataPoint.legend === this.activeLegend ||
           (this.tooltipProps.isVisible && dataPoint.legend === this.tooltipProps.legend),
       );
-      textInsideDonut = highlightedDataPoint!.yAxisCalloutData ?? highlightedDataPoint!.data.toLocaleString();
+      if (this.showLabelsInPercent) {
+        const total = this.data.chartData.reduce((acc, point) => acc + point.data, 0);
+        const percentage = total > 0 ? Math.round(((highlightedDataPoint?.data ?? 0) / total) * 100) : 0;
+        textInsideDonut = `${percentage}%`;
+      } else {
+        textInsideDonut = highlightedDataPoint!.yAxisCalloutData ?? highlightedDataPoint!.data.toLocaleString();
+      }
     }
 
     return textInsideDonut;

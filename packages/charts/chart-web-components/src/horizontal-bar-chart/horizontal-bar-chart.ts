@@ -19,6 +19,12 @@ export class HorizontalBarChart extends FASTElement {
   @attr({ attribute: 'hide-ratio', mode: 'boolean' })
   public hideRatio: boolean = false;
 
+  @attr({ attribute: 'hide-labels', mode: 'boolean' })
+  public hideLabels: boolean = false;
+
+  @attr({ attribute: 'chart-data-mode' })
+  public chartDataMode: 'default' | 'fraction' | 'percentage' = 'default';
+
   @attr({ attribute: 'hide-legends', mode: 'boolean' })
   public hideLegends: boolean = false;
 
@@ -105,6 +111,30 @@ export class HorizontalBarChart extends FASTElement {
   connectedCallback() {
     super.connectedCallback();
 
+    if (!this.data) {
+      return;
+    }
+
+    this._initializeAll();
+  }
+
+  protected dataChanged(_oldValue: ChartProps[], newValue: ChartProps[]) {
+    if (this.$fastController.isConnected && newValue) {
+      this._clearChart();
+      this._initializeAll();
+    }
+  }
+
+  private _clearChart() {
+    if (this.chartContainer) {
+      while (this.chartContainer.firstChild) {
+        this.chartContainer.removeChild(this.chartContainer.firstChild);
+      }
+    }
+    this._bars = [];
+  }
+
+  private _initializeAll() {
     validateChartPropsArray(this.data, 'data');
 
     this._isRTL = getRTL(this);
@@ -335,23 +365,41 @@ export class HorizontalBarChart extends FASTElement {
       .text(data?.chartSeriesTitle ? data?.chartSeriesTitle : '');
 
     const showChartDataText = this.variant !== Variant.AbsoluteScale;
-    // chartData length is always 2 in single-bar variant
-    const showRatio = !this.hideRatio && data!.chartData!.length === 2;
-    const getChartData = () => data!.chartData![0].data ?? 0;
 
-    if (showChartDataText) {
+    if (!this.hideLabels && showChartDataText) {
+      const numData = data!.chartData![0].data ?? 0;
+      // Compute total: prefer explicit total field, fall back to sum of all bar data
+      const explicitTotal = data!.chartData![0].total;
+      const sumTotal = data!.chartData!.reduce((acc: number, p: ChartDataPoint) => acc + (p.data ?? 0), 0);
+      const barTotal = explicitTotal !== undefined ? explicitTotal : sumTotal;
+
       if (data.chartDataText) {
         const chartTitleRight = document.createElement('div');
         chartTitleDiv.node()!.appendChild(chartTitleRight);
         chartTitleRight.classList.add('chart-data-text');
         chartTitleRight.textContent = data.chartDataText;
-      } else if (showRatio) {
+      } else if (this.chartDataMode === 'fraction') {
         const ratioDiv = chartTitleDiv.append('div').attr('role', 'text');
-        const numData = data!.chartData![0].data;
-        const denomData = data!.chartData![1].data;
-        const total = numData! + denomData!;
-        ratioDiv.append('span').attr('class', 'ratio-numerator').text(numData!);
-        ratioDiv.append('span').attr('class', 'ratio-denominator').text(`/${total!}`);
+        ratioDiv.append('span').attr('class', 'ratio-numerator').text(numData);
+        ratioDiv.append('span').attr('class', 'ratio-denominator').text(`/${barTotal}`);
+      } else if (this.chartDataMode === 'percentage') {
+        const percentage = barTotal > 0 ? Math.round((numData / barTotal) * 100) : 0;
+        chartTitleDiv
+          .append('div')
+          .attr('role', 'text')
+          .append('span')
+          .attr('class', 'ratio-numerator')
+          .text(`${percentage}%`);
+      } else {
+        // 'default' mode: show ratio when there are exactly 2 data points and hideRatio is false
+        const showRatio = !this.hideRatio && data!.chartData!.length === 2;
+        if (showRatio) {
+          const ratioDiv = chartTitleDiv.append('div').attr('role', 'text');
+          const denomData = data!.chartData![1].data ?? 0;
+          const total = numData + denomData;
+          ratioDiv.append('span').attr('class', 'ratio-numerator').text(numData);
+          ratioDiv.append('span').attr('class', 'ratio-denominator').text(`/${total}`);
+        }
       }
     }
 
@@ -396,7 +444,7 @@ export class HorizontalBarChart extends FASTElement {
       });
 
     if (this.variant === Variant.AbsoluteScale) {
-      const showLabel = true;
+      const showLabel = !this.hideLabels;
       const barLabel = barTotalValue;
       if (showLabel) {
         if (Math.round((startingPoint[startingPoint.length - 1] || 0) + value + totalMarginPercent) === 100) {
