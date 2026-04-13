@@ -134,23 +134,24 @@ export class DonutChart extends FASTElement {
 
   protected dataChanged(_oldValue: ChartProps, newValue: ChartProps) {
     if (this.$fastController.isConnected && newValue) {
-      this._clearChart();
-      this._initializeAndRender();
+      this._rerender();
     }
   }
 
   protected orderChanged() {
-    if (this.$fastController.isConnected && this.data) {
-      this._clearChart();
-      this._initializeAndRender();
-    }
+    this._rerender();
   }
 
   protected hideLabelsChanged() {
-    if (this.$fastController.isConnected && this.data) {
-      this._clearChart();
-      this._initializeAndRender();
+    this._rerender();
+  }
+
+  private _rerender() {
+    if (!this.$fastController.isConnected || !this.data) {
+      return;
     }
+    this._clearChart();
+    this._initializeAndRender();
   }
 
   private _initializeAndRender() {
