@@ -137,3 +137,119 @@ test.describe('Donut-chart - Basic', () => {
     await expect(calloutContentY).toHaveText('39000');
   });
 });
+
+test.describe('Donut-chart - Reactive rerender', () => {
+  test('Should rerender when data attribute changes after initial render', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.arc')).toHaveCount(2);
+
+    const newData: ChartProps = {
+      chartTitle: 'Updated chart',
+      chartData: [
+        { legend: 'alpha', data: 10000 },
+        { legend: 'beta', data: 20000 },
+        { legend: 'gamma', data: 30000 },
+      ],
+    };
+
+    await element.evaluate((el, d) => el.setAttribute('data', JSON.stringify(d)), newData);
+
+    await expect(element.locator('.arc')).toHaveCount(3);
+    await expect(element.locator('.legend-text').nth(0).getByText('alpha')).toBeVisible();
+    await expect(element.locator('.legend-text').nth(1).getByText('beta')).toBeVisible();
+    await expect(element.locator('.legend-text').nth(2).getByText('gamma')).toBeVisible();
+  });
+});
+
+test.describe('Donut-chart - hide-labels', () => {
+  test('Should hide center text when hide-labels is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          value-inside-donut="39,000"
+          inner-radius="55"
+          hide-labels
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.text-inside-donut')).toHaveCount(0);
+    await expect(element.locator('.arc')).toHaveCount(2);
+  });
+
+  test('Should show center text when hide-labels is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          value-inside-donut="39,000"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.text-inside-donut')).toHaveCount(1);
+  });
+});
+
+test.describe('Donut-chart - order', () => {
+  const unorderedData: ChartProps = {
+    chartTitle: 'Sorted test',
+    chartData: [
+      { legend: 'small', data: 5000 },
+      { legend: 'large', data: 39000 },
+      { legend: 'medium', data: 15000 },
+    ],
+  };
+
+  test('Should render legends in default order when order is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart inner-radius="55" data='${JSON.stringify(unorderedData)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const legends = element.locator('.legend-text');
+    await expect(legends.nth(0).getByText('small')).toBeVisible();
+    await expect(legends.nth(1).getByText('large')).toBeVisible();
+    await expect(legends.nth(2).getByText('medium')).toBeVisible();
+  });
+
+  test('Should render legends in sorted (descending) order when order="sorted"', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart inner-radius="55" order="sorted" data='${JSON.stringify(unorderedData)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const legends = element.locator('.legend-text');
+    // Sorted descending: large (39000), medium (15000), small (5000)
+    await expect(legends.nth(0).getByText('large')).toBeVisible();
+    await expect(legends.nth(1).getByText('medium')).toBeVisible();
+    await expect(legends.nth(2).getByText('small')).toBeVisible();
+  });
+});

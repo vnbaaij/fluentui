@@ -728,3 +728,115 @@ test.describe('horizontalbarchart - Single Data Point', () => {
     await expect(tooltip).toHaveCount(0);
   });
 });
+
+test.describe('Horizontal-bar-chart - Reactive rerender', () => {
+  const initialData = [
+    {
+      chartSeriesTitle: 'series one',
+      chartData: [
+        { legend: 'alpha', data: 40, color: '#637cef' },
+        { legend: 'beta', data: 60, color: '#e3008c' },
+      ],
+    },
+  ];
+
+  test('Should rerender when data attribute changes after initial render', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart data='${JSON.stringify(initialData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.bar')).toHaveCount(2);
+
+    const newData = [
+      {
+        chartSeriesTitle: 'updated series',
+        chartData: [
+          { legend: 'one', data: 30, color: '#637cef' },
+          { legend: 'two', data: 30, color: '#e3008c' },
+          { legend: 'three', data: 40, color: '#2aa0a4' },
+        ],
+      },
+    ];
+
+    await element.evaluate((el, d) => el.setAttribute('data', JSON.stringify(d)), newData);
+
+    await expect(element.locator('.bar')).toHaveCount(3);
+    await expect(element.locator('.chart-title').first()).toHaveText('updated series');
+  });
+});
+
+test.describe('Horizontal-bar-chart - hide-labels', () => {
+  const singleBarData = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [{ legend: 'one', data: 1543, total: 15000, color: '#637cef' }],
+    },
+  ];
+
+  test('Should hide ratio text when hide-labels is set (single-bar variant)', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          variant="single-bar"
+          hide-labels
+          data='${JSON.stringify(singleBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.ratio-numerator')).toHaveCount(0);
+  });
+});
+
+test.describe('Horizontal-bar-chart - chart-data-mode', () => {
+  const singleBarData = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [{ legend: 'one', data: 1543, total: 15000, color: '#637cef' }],
+    },
+  ];
+
+  test('Should show fraction text when chart-data-mode="fraction"', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          variant="single-bar"
+          chart-data-mode="fraction"
+          data='${JSON.stringify(singleBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.ratio-numerator')).toHaveText('1543');
+    await expect(element.locator('.ratio-denominator')).toHaveText('/15000');
+  });
+
+  test('Should show percentage text when chart-data-mode="percentage"', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          variant="single-bar"
+          chart-data-mode="percentage"
+          data='${JSON.stringify(singleBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.ratio-numerator')).toHaveText('10%');
+  });
+});

@@ -387,3 +387,42 @@ export const singleBarHBC: Story<FluentHorizontalBarChart> = renderComponent(htm
 `);
 
 export const Basic: Story<FluentHorizontalBarChart> = renderComponent(storyTemplate).bind({});
+
+export const HideLabels: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+  <fluent-horizontal-bar-chart style="width: 100%" hide-labels data="${JSON.stringify(data)}">
+  </fluent-horizontal-bar-chart>
+`);
+
+export const ChartDataModeFraction: Story<FluentHorizontalBarChart> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChart>
+>`
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    variant="single-bar"
+    chart-data-mode="fraction"
+    data="${JSON.stringify(singleBarHBCData)}"
+  >
+  </fluent-horizontal-bar-chart>
+`);
+
+export const ChartDataModePercentage: Story<FluentHorizontalBarChart> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChart>
+>`
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    variant="single-bar"
+    chart-data-mode="percentage"
+    data="${JSON.stringify(singleBarHBCData)}"
+  >
+  </fluent-horizontal-bar-chart>
+`);
+
+export const HideRatio: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    variant="single-bar"
+    hide-ratio
+    data="${JSON.stringify(singleBarHBCData)}"
+  >
+  </fluent-horizontal-bar-chart>
+`);
