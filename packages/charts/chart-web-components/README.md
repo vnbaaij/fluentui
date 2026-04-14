@@ -6,6 +6,12 @@ Fluent charts is a set of modern, accessible, interactive and highly customizabl
 
 Examples and code snippets for the chart components to be added.
 
+The package ships multiple distribution formats:
+
+- `dist/esm/`: module entrypoints used by the package exports. These keep Fluent/FAST and D3 as imports.
+- `./standalone.js` and `./standalone.min.js`: self-contained bundles for direct browser usage.
+- `./peer.js` and `./peer.min.js`: slimmer bundles for apps that already provide `@fluentui/web-components` and FAST at runtime, while still bundling the chart-specific D3 dependencies.
+
 ## Contact
 
 The charting project is actively funded by a small feature team. The team responds within 1-2 business days for any queries or doubts.

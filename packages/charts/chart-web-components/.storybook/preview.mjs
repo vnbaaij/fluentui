@@ -42,7 +42,7 @@ export const parameters = {
     source: {
       // To get around the inability to change Prettier options in the source addon, this transform function
       // imports the standalone Prettier and uses it to format the source with the desired options.
-      transform(/** @type {string} */ src, /** @type {import('@storybook/html').StoryContext} */ storyContext) {
+      transform(/** @type {string} */ src, /** @type {import('@storybook/html-vite').StoryContext} */ storyContext) {
         if (!src) {
           const fragment = storyContext.originalStoryFn(storyContext.allArgs, storyContext);
           if (!(fragment instanceof DocumentFragment) && !(fragment instanceof HTMLElement)) {

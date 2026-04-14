@@ -13,6 +13,26 @@ const parserOptions = {
   sourceType: 'module',
 };
 
+const sharedPlugins = [
+  nodeResolve({ browser: true }),
+  commonJS(),
+  esbuild({
+    tsconfig: './tsconfig.lib.json',
+  }),
+  transformTaggedTemplate({
+    tagsToProcess: ['css'],
+    transformer: transformCSSFragment,
+    parserOptions,
+  }),
+  transformTaggedTemplate({
+    tagsToProcess: ['html'],
+    transformer: transformHTMLFragment,
+    parserOptions,
+  }),
+];
+
+const peerExternals = ['@fluentui/web-components', '@microsoft/fast-element', '@microsoft/fast-web-utilities', 'tslib'];
+
 export default [
   {
     input: 'src/index-rollup.ts',
@@ -27,22 +47,22 @@ export default [
         plugins: [minify()],
       },
     ],
-    plugins: [
-      nodeResolve({ browser: true }),
-      commonJS(),
-      esbuild({
-        tsconfig: './tsconfig.lib.json',
-      }),
-      transformTaggedTemplate({
-        tagsToProcess: ['css'],
-        transformer: transformCSSFragment,
-        parserOptions,
-      }),
-      transformTaggedTemplate({
-        tagsToProcess: ['html'],
-        transformer: transformHTMLFragment,
-        parserOptions,
-      }),
+    plugins: sharedPlugins,
+  },
+  {
+    input: 'src/index-rollup.ts',
+    output: [
+      {
+        file: 'dist/chart-web-components.peer.js',
+        format: 'esm',
+      },
+      {
+        file: 'dist/chart-web-components.peer.min.js',
+        format: 'esm',
+        plugins: [minify()],
+      },
     ],
+    external: peerExternals,
+    plugins: sharedPlugins,
   },
 ];

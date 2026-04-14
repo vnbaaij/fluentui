@@ -27,6 +27,8 @@ export class DonutChart extends FASTElement {
     // (undocumented)
     data: ChartProps_2;
     // (undocumented)
+    protected dataChanged(_oldValue: ChartProps_2, newValue: ChartProps_2): void;
+    // (undocumented)
     elementInternals: ElementInternals;
     // (undocumented)
     group: SVGGElement;
@@ -38,6 +40,10 @@ export class DonutChart extends FASTElement {
     handleLegendMouseoverAndFocus(legendTitle: string): void;
     // (undocumented)
     height: number;
+    // (undocumented)
+    hideLabels: boolean;
+    // (undocumented)
+    protected hideLabelsChanged(): void;
     // (undocumented)
     hideLegends: boolean;
     // (undocumented)
@@ -52,6 +58,12 @@ export class DonutChart extends FASTElement {
     //
     // (undocumented)
     legends: Legend[];
+    // (undocumented)
+    order: 'default' | 'sorted';
+    // (undocumented)
+    protected orderChanged(): void;
+    // (undocumented)
+    showLabelsInPercent: boolean;
     // (undocumented)
     tooltipProps: {
         isVisible: boolean;
@@ -90,6 +102,8 @@ export class HorizontalBarChart extends FASTElement {
     // (undocumented)
     chartContainer: HTMLDivElement;
     // (undocumented)
+    chartDataMode: 'default' | 'fraction' | 'percentage';
+    // (undocumented)
     chartTitle?: string;
     // (undocumented)
     connectedCallback(): void;
@@ -98,6 +112,8 @@ export class HorizontalBarChart extends FASTElement {
     // (undocumented)
     data: ChartProps[];
     // (undocumented)
+    protected dataChanged(_oldValue: ChartProps[], newValue: ChartProps[]): void;
+    // (undocumented)
     elementInternals: ElementInternals;
     // (undocumented)
     handleLegendClick: (legendTitle: string) => void;
@@ -105,6 +121,8 @@ export class HorizontalBarChart extends FASTElement {
     handleLegendMouseoutAndBlur: () => void;
     // (undocumented)
     handleLegendMouseoverAndFocus: (legendTitle: string) => void;
+    // (undocumented)
+    hideLabels: boolean;
     // (undocumented)
     hideLegends: boolean;
     // (undocumented)
