@@ -19,8 +19,10 @@ import {
   spacingVerticalS,
   strokeWidthThickest,
   strokeWidthThin,
+  typographyBody1StrongStyles,
   typographyBody1Styles,
   typographyCaption1Styles,
+  typographyCaption1StrongStyles,
   typographyTitle2Styles,
   typographyTitle3Styles,
 } from '@fluentui/web-components';
@@ -48,6 +50,12 @@ export const styles = css`
     display: block;
   }
 
+  .chart-title {
+    ${typographyBody1StrongStyles}
+    color: ${colorNeutralForeground1};
+    margin-bottom: ${spacingVerticalS};
+  }
+
   .arc.inactive {
     opacity: 0.1;
   }
@@ -70,6 +78,17 @@ export const styles = css`
   .text-inside-donut {
     ${typographyTitle3Styles}
     fill: ${colorNeutralForeground1};
+  }
+
+  .arc-label {
+    ${typographyCaption1StrongStyles}
+    fill: ${colorNeutralForeground1};
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .arc-label.inactive {
+    opacity: 0.1;
   }
 
   .legend-container {
@@ -142,6 +161,10 @@ export const styles = css`
 `.withBehaviors(
   forcedColorsStylesheetBehavior(css`
     .text-inside-donut {
+      fill: CanvasText;
+    }
+
+    .arc-label {
       fill: CanvasText;
     }
 

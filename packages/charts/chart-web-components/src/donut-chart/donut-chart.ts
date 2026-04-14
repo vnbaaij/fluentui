@@ -1,4 +1,5 @@
 import { attr, FASTElement, nullableNumberConverter, observable } from '@microsoft/fast-element';
+import { format as d3Format } from 'd3-format';
 import { arc as d3Arc, pie as d3Pie, PieArcDatum } from 'd3-shape';
 import {
   getColorFromToken,
@@ -12,6 +13,9 @@ import {
 import type { ChartDataPoint, ChartProps, Legend } from './donut-chart.options.js';
 
 export class DonutChart extends FASTElement {
+  @attr({ attribute: 'chart-title' })
+  public chartTitle?: string;
+
   @attr({ converter: nullableNumberConverter })
   public height: number = 200;
 
@@ -25,10 +29,13 @@ export class DonutChart extends FASTElement {
   public hideTooltip: boolean = false;
 
   @attr({ attribute: 'hide-labels', mode: 'boolean' })
-  public hideLabels: boolean = false;
+  public hideLabels: boolean = true;
 
   @attr({ attribute: 'show-labels-in-percent', mode: 'boolean' })
   public showLabelsInPercent: boolean = false;
+
+  @attr({ attribute: 'round-corners', mode: 'boolean' })
+  public roundCorners: boolean = false;
 
   @attr
   public order: 'default' | 'sorted' = 'default';
@@ -53,12 +60,20 @@ export class DonutChart extends FASTElement {
   protected activeLegendChanged(oldValue: string, newValue: string) {
     if (newValue === '') {
       this._arcs?.forEach(arc => arc.classList.remove('inactive'));
+      this._arcLabels?.forEach(label => label.classList.remove('inactive'));
     } else {
       this._arcs?.forEach(arc => {
         if (arc.getAttribute('data-id') === newValue) {
           arc.classList.remove('inactive');
         } else {
           arc.classList.add('inactive');
+        }
+      });
+      this._arcLabels?.forEach(label => {
+        if (label.getAttribute('data-id') === newValue) {
+          label.classList.remove('inactive');
+        } else {
+          label.classList.add('inactive');
         }
       });
     }
@@ -87,8 +102,12 @@ export class DonutChart extends FASTElement {
   public elementInternals: ElementInternals = this.attachInternals();
 
   private _arcs: SVGPathElement[] = [];
+  private _arcLabels: SVGTextElement[] = [];
   private _isRTL: boolean = false;
   private _textInsideDonut?: SVGTextElement;
+  private readonly _handleMouseLeave = () => {
+    this.tooltipProps = { isVisible: false, legend: '', yValue: '', color: '', xPos: 0, yPos: 0 };
+  };
 
   constructor() {
     super();
@@ -124,6 +143,7 @@ export class DonutChart extends FASTElement {
 
   connectedCallback() {
     super.connectedCallback();
+    this.addEventListener('mouseleave', this._handleMouseLeave);
 
     if (!this.data) {
       return;
@@ -142,7 +162,27 @@ export class DonutChart extends FASTElement {
     this._rerender();
   }
 
+  protected chartTitleChanged() {
+    this._rerender();
+  }
+
+  protected heightChanged() {
+    this._rerender();
+  }
+
+  protected widthChanged() {
+    this._rerender();
+  }
+
   protected hideLabelsChanged() {
+    this._rerender();
+  }
+
+  protected showLabelsInPercentChanged() {
+    this._rerender();
+  }
+
+  protected roundCornersChanged() {
     this._rerender();
   }
 
@@ -170,7 +210,7 @@ export class DonutChart extends FASTElement {
 
     this.legends = this._getLegends(chartData);
     this._isRTL = getRTL(this);
-    this.elementInternals.ariaLabel = this.data.chartTitle || `Donut chart with ${chartData.length} segments.`;
+    this.elementInternals.ariaLabel = this.chartTitle || `Donut chart with ${chartData.length} segments.`;
 
     this._render(chartData);
   }
@@ -180,16 +220,21 @@ export class DonutChart extends FASTElement {
       this.group.removeChild(this.group.firstChild);
     }
     this._arcs = [];
+    this._arcLabels = [];
     this._textInsideDonut = undefined;
   }
 
   private _render(chartData: ChartDataPoint[]) {
+    const totalValue = chartData.reduce((total, dataPoint) => total + dataPoint.data, 0);
+    const outerRadius = (Math.min(this.height, this.width) - 20) / 2;
+    const cornerRadius = this.roundCorners ? 3 : 0;
     const pie = d3Pie<ChartDataPoint>()
       .value(d => d.data)
       .padAngle(0.02);
     const arc = d3Arc<PieArcDatum<ChartDataPoint>>()
       .innerRadius(this.innerRadius)
-      .outerRadius((Math.min(this.height, this.width) - 20) / 2);
+      .outerRadius(outerRadius)
+      .cornerRadius(cornerRadius);
 
     pie(chartData).forEach(arcDatum => {
       const arcGroup = document.createElementNS(SVG_NAMESPACE_URI, 'g');
@@ -249,13 +294,15 @@ export class DonutChart extends FASTElement {
       path.addEventListener('blur', event => {
         this.tooltipProps = { isVisible: false, legend: '', yValue: '', color: '', xPos: 0, yPos: 0 };
       });
+
+      const label = this._createArcLabel(arc, arcDatum, totalValue, outerRadius);
+      if (label) {
+        arcGroup.appendChild(label);
+        this._arcLabels.push(label);
+      }
     });
 
-    this.addEventListener('mouseleave', () => {
-      this.tooltipProps = { isVisible: false, legend: '', yValue: '', color: '', xPos: 0, yPos: 0 };
-    });
-
-    if (!this.hideLabels && this.valueInsideDonut) {
+    if (this.valueInsideDonut) {
       this._textInsideDonut = document.createElementNS(SVG_NAMESPACE_URI, 'text');
       this.group.appendChild(this._textInsideDonut);
       this._textInsideDonut.classList.add('text-inside-donut');
@@ -269,9 +316,48 @@ export class DonutChart extends FASTElement {
 
   private _getLegends(chartData: ChartDataPoint[]): Legend[] {
     return chartData.map((d, index) => ({
-      title: d.legend,
+      legend: d.legend,
       color: d.color!,
     }));
+  }
+
+  private _createArcLabel(
+    arc: ReturnType<typeof d3Arc<PieArcDatum<ChartDataPoint>>>,
+    arcDatum: PieArcDatum<ChartDataPoint>,
+    totalValue: number,
+    outerRadius: number,
+  ) {
+    if (this.hideLabels || Math.abs(arcDatum.endAngle - arcDatum.startAngle) < Math.PI / 12) {
+      return undefined;
+    }
+
+    const [base, perp] = arc.centroid(arcDatum);
+    const hypotenuse = Math.sqrt(base * base + perp * perp);
+    const labelRadius = Math.max(this.innerRadius, outerRadius) + 2;
+    const angle = (arcDatum.startAngle + arcDatum.endAngle) / 2;
+    const label = document.createElementNS(SVG_NAMESPACE_URI, 'text');
+
+    label.classList.add('arc-label');
+    label.setAttribute('data-id', arcDatum.data.legend);
+    label.setAttribute('x', `${(hypotenuse === 0 ? 0 : base / hypotenuse) * labelRadius}`);
+    label.setAttribute('y', `${(hypotenuse === 0 ? 0 : perp / hypotenuse) * labelRadius}`);
+    label.setAttribute('text-anchor', angle > Math.PI !== this._isRTL ? 'end' : 'start');
+    label.setAttribute('dominant-baseline', angle > Math.PI / 2 && angle < (3 * Math.PI) / 2 ? 'hanging' : 'auto');
+    label.setAttribute('aria-hidden', 'true');
+    label.textContent = this.showLabelsInPercent
+      ? d3Format('.0%')(totalValue === 0 ? 0 : arcDatum.value / totalValue)
+      : this._formatArcLabelValue(arcDatum.value);
+
+    return label;
+  }
+
+  private _formatArcLabelValue(value: number) {
+    const formatted = new Intl.NumberFormat(this.culture || undefined, {
+      maximumFractionDigits: value >= 1000 ? 1 : 2,
+      notation: value >= 1000 ? 'compact' : 'standard',
+    }).format(value);
+
+    return formatted.endsWith('K') ? `${formatted.slice(0, -1)}k` : formatted;
   }
 
   private _getTextInsideDonut(valueInsideDonut: string) {
@@ -288,7 +374,7 @@ export class DonutChart extends FASTElement {
         const percentage = total > 0 ? Math.round(((highlightedDataPoint?.data ?? 0) / total) * 100) : 0;
         textInsideDonut = `${percentage}%`;
       } else {
-        textInsideDonut = highlightedDataPoint!.yAxisCalloutData ?? highlightedDataPoint!.data.toLocaleString();
+        textInsideDonut = highlightedDataPoint!.calloutData ?? highlightedDataPoint!.data.toLocaleString();
       }
     }
 

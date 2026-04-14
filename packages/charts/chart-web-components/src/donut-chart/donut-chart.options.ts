@@ -15,24 +15,13 @@ export interface ChartDataPoint {
   color?: string;
 
   /**
-   * Callout data for x axis
-   * This is an optional prop, If haven;t given legend will take
+   * Callout data shown in the tooltip and the center label when the segment is highlighted.
+   * If not provided, the numeric data value is used.
    */
-  xAxisCalloutData?: string;
-
-  /**
-   * Callout data for y axis
-   * This is an optional prop, If haven't given data will take
-   */
-  yAxisCalloutData?: string;
+  calloutData?: string;
 }
 
 export interface ChartProps {
-  /**
-   * chart title for the chart
-   */
-  chartTitle?: string;
-
   /**
    * data for the points in the chart
    */
@@ -40,6 +29,6 @@ export interface ChartProps {
 }
 
 export type Legend = {
-  title: string;
+  legend: string;
   color: string;
 };

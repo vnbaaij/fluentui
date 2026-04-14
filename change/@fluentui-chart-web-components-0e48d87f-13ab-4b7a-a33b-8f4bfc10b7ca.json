@@ -1,0 +1,7 @@
+{
+  "type": "patch",
+  "comment": "feat: add a horizontal bar chart with axis web component",
+  "packageName": "@fluentui/chart-web-components",
+  "email": "copilot@example.com",
+  "dependentChangeType": "patch"
+}

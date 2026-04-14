@@ -11,6 +11,12 @@ import { Variant } from './horizontal-bar-chart.options.js';
  */
 export class HorizontalBarChart extends FASTElement {
   @attr
+  public width?: number | string;
+
+  @attr
+  public height?: number | string;
+
+  @attr
   public variant?: Variant;
 
   @attr({ converter: jsonConverter })
@@ -125,6 +131,27 @@ export class HorizontalBarChart extends FASTElement {
     }
   }
 
+  protected chartTitleChanged() {
+    if (this.$fastController.isConnected && this.data) {
+      this._clearChart();
+      this._initializeAll();
+    }
+  }
+
+  protected widthChanged() {
+    if (this.$fastController.isConnected && this.data) {
+      this._clearChart();
+      this._initializeAll();
+    }
+  }
+
+  protected heightChanged() {
+    if (this.$fastController.isConnected && this.data) {
+      this._clearChart();
+      this._initializeAll();
+    }
+  }
+
   private _clearChart() {
     if (this.chartContainer) {
       while (this.chartContainer.firstChild) {
@@ -139,9 +166,28 @@ export class HorizontalBarChart extends FASTElement {
 
     this._isRTL = getRTL(this);
     this.elementInternals.ariaLabel = this.chartTitle || `Horizontal bar chart with ${this.data.length} categories.`;
+    this._applyHostDimensions();
 
     this._initializeData();
     this._renderChart();
+  }
+
+  private _applyHostDimensions() {
+    if (this.width === undefined || this.width === null || this.width === '') {
+      this.style.removeProperty('width');
+    } else {
+      this.style.width = this._toCssLength(this.width);
+    }
+
+    if (this.height === undefined || this.height === null || this.height === '') {
+      this.style.removeProperty('height');
+    } else {
+      this.style.height = this._toCssLength(this.height);
+    }
+  }
+
+  private _toCssLength(value: number | string) {
+    return typeof value === 'number' || /^\d+(\.\d+)?$/.test(value) ? `${value}px` : value;
   }
 
   private _initializeData() {

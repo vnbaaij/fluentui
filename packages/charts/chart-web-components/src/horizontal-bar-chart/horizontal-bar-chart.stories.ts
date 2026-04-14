@@ -1,9 +1,69 @@
 import { html } from '@microsoft/fast-element';
+import { FieldDefinition, FluentDesignSystem, LabelDefinition, SliderDefinition } from '@fluentui/web-components';
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
 import { renderComponent } from '../helpers.stories.js';
 import { HorizontalBarChart as FluentHorizontalBarChart } from './horizontal-bar-chart.js';
 import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
+
+type FluentSliderElement = HTMLElement & { value: string };
+
+const ensureDefinition = (tagName: string, define: () => void) => {
+  if (!customElements.get(tagName)) {
+    define();
+  }
+};
+
+ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
+
+const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
+const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
+
+const createSliderField = (
+  labelText: string,
+  id: string,
+  value: number,
+  min: number,
+  max: number,
+  onChange: (nextValue: number) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'above');
+  field.setAttribute('style', sliderFieldStyle);
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const slider = document.createElement('fluent-slider') as FluentSliderElement;
+  slider.slot = 'input';
+  slider.id = id;
+  slider.setAttribute('min', `${min}`);
+  slider.setAttribute('max', `${max}`);
+  slider.value = `${value}`;
+  slider.setAttribute('value', `${value}`);
+  field.appendChild(slider);
+
+  const message = document.createElement('fluent-label');
+  message.slot = 'message';
+  message.textContent = `${value}`;
+  field.appendChild(message);
+
+  slider.addEventListener('change', () => onChange(Number(slider.value)));
+
+  return {
+    element: field,
+    setValue: (nextValue: number) => {
+      slider.value = `${nextValue}`;
+      slider.setAttribute('value', `${nextValue}`);
+      message.textContent = `${nextValue}`;
+    },
+  };
+};
 
 const singleBarHBCData = [
   {
@@ -333,32 +393,85 @@ const benchmarkData: ChartProps[] = [
 ];
 
 const storyTemplate = html<StoryArgs<FluentHorizontalBarChart>>`
-  <fluent-horizontal-bar-chart style="width: 100%" data="${JSON.stringify(data)}"> </fluent-horizontal-bar-chart>
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    chart-title="Horizontal bar chart basic example"
+    data="${JSON.stringify(data)}"
+  >
+  </fluent-horizontal-bar-chart>
 `;
 
 export default {
   title: 'Components/HorizontalBarChart',
 } as Meta<FluentHorizontalBarChart>;
 
-export const RTL: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
-  <div dir="rtl">
-    <div>
-      <fluent-horizontal-bar-chart style="width: 100%" data="${JSON.stringify(data)}"> </fluent-horizontal-bar-chart>
-    </div>
-  </div>
-`);
+export const Basic: Story<FluentHorizontalBarChart> = renderComponent(storyTemplate).bind({});
+
+export const Sizing: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let width = 720;
+  let height = 320;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart sizing example');
+  chart.setAttribute('data', JSON.stringify(data));
+
+  const renderChart = () => {
+    chart.width = `${width}`;
+    chart.height = `${height}`;
+    chart.setAttribute('width', `${width}`);
+    chart.setAttribute('height', `${height}`);
+    chart.setAttribute('style', `width:${width}px;height:${height}px;margin-top:20px;`);
+
+    if (!chart.isConnected) {
+      container.appendChild(chart);
+    }
+  };
+
+  const widthControl = createSliderField('Width', 'horizontal-bar-width', width, 320, 1000, nextWidth => {
+    width = nextWidth;
+    widthControl.setValue(nextWidth);
+    renderChart();
+  });
+  controls.appendChild(widthControl.element);
+
+  const heightControl = createSliderField('Height', 'horizontal-bar-height', height, 220, 640, nextHeight => {
+    height = nextHeight;
+    heightControl.setValue(nextHeight);
+    renderChart();
+  });
+  controls.appendChild(heightControl.element);
+
+  renderChart();
+
+  return container;
+};
 
 export const singleDataPoint: Story<FluentHorizontalBarChart> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChart>
 >`
   <div>
-    <fluent-horizontal-bar-chart style="width: 100%" variant="single-bar" data="${JSON.stringify(singlePointData)}">
+    <fluent-horizontal-bar-chart
+      style="width: 100%"
+      chart-title="Horizontal bar chart single data point example"
+      variant="single-bar"
+      data="${JSON.stringify(singlePointData)}"
+    >
     </fluent-horizontal-bar-chart>
   </div>
 `);
 
 export const Benchmark: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
-  <fluent-horizontal-bar-chart style="width: 100%" variant="single-bar" data="${JSON.stringify(benchmarkData)}">
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    chart-title="Horizontal bar chart benchmark example"
+    variant="single-bar"
+    data="${JSON.stringify(benchmarkData)}"
+  >
   </fluent-horizontal-bar-chart>
 `);
 
@@ -368,6 +481,7 @@ export const singleBarNMVariant: Story<FluentHorizontalBarChart> = renderCompone
   <div>
     <fluent-horizontal-bar-chart
       style="width: 100%"
+      chart-title="Horizontal bar chart single bar variant example"
       variant="single-bar"
       data="${JSON.stringify(singleBarNMVariantData)}"
     >
@@ -379,6 +493,7 @@ export const singleBarHBC: Story<FluentHorizontalBarChart> = renderComponent(htm
   <div>
     <fluent-horizontal-bar-chart
       style="width: 100%"
+      chart-title="Horizontal bar chart absolute scale example"
       data="${JSON.stringify(singleBarHBCData)}"
       variant="${Variant.AbsoluteScale}"
     >
@@ -386,10 +501,13 @@ export const singleBarHBC: Story<FluentHorizontalBarChart> = renderComponent(htm
   </div>
 `);
 
-export const Basic: Story<FluentHorizontalBarChart> = renderComponent(storyTemplate).bind({});
-
 export const HideLabels: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
-  <fluent-horizontal-bar-chart style="width: 100%" hide-labels data="${JSON.stringify(data)}">
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    chart-title="Horizontal bar chart hide labels example"
+    hide-labels
+    data="${JSON.stringify(data)}"
+  >
   </fluent-horizontal-bar-chart>
 `);
 
@@ -398,6 +516,7 @@ export const ChartDataModeFraction: Story<FluentHorizontalBarChart> = renderComp
 >`
   <fluent-horizontal-bar-chart
     style="width: 100%"
+    chart-title="Horizontal bar chart fraction mode example"
     variant="single-bar"
     chart-data-mode="fraction"
     data="${JSON.stringify(singleBarHBCData)}"
@@ -410,6 +529,7 @@ export const ChartDataModePercentage: Story<FluentHorizontalBarChart> = renderCo
 >`
   <fluent-horizontal-bar-chart
     style="width: 100%"
+    chart-title="Horizontal bar chart percentage mode example"
     variant="single-bar"
     chart-data-mode="percentage"
     data="${JSON.stringify(singleBarHBCData)}"
@@ -420,9 +540,23 @@ export const ChartDataModePercentage: Story<FluentHorizontalBarChart> = renderCo
 export const HideRatio: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
   <fluent-horizontal-bar-chart
     style="width: 100%"
+    chart-title="Horizontal bar chart hide ratio example"
     variant="single-bar"
     hide-ratio
     data="${JSON.stringify(singleBarHBCData)}"
   >
   </fluent-horizontal-bar-chart>
+`);
+
+export const RTL: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+  <div dir="rtl">
+    <div>
+      <fluent-horizontal-bar-chart
+        style="width: 100%"
+        chart-title="Horizontal bar chart RTL example"
+        data="${JSON.stringify(data)}"
+      >
+      </fluent-horizontal-bar-chart>
+    </div>
+  </div>
 `);

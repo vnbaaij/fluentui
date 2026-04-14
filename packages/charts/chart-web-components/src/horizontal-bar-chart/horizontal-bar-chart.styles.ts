@@ -36,14 +36,7 @@ export const styles: ElementStyles = css`
 
   :host {
     position: relative;
-  }
-  .root {
-    background-color: ${colorNeutralBackground1};
-    width: 100vw;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
+    width: 100%;
   }
   .tooltip {
     ${typographyCaption1Styles}
@@ -89,16 +82,18 @@ export const styles: ElementStyles = css`
     display: block;
     overflow: visible;
   }
+  .chart-header-title {
+    ${typographyBody1StrongStyles}
+    color: ${colorNeutralForeground1};
+    margin-bottom: ${spacingVerticalS};
+  }
   .chart-title {
     ${typographyBody1Styles}
-    display: flex;
-    justify-content: space-between;
+    color: ${colorNeutralForeground1};
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
     display: block;
-    color: ${colorNeutralForeground1};
-    margin-bottom: ${spacingHorizontalSNudge};
   }
   .legendcontainer {
     display: flex;

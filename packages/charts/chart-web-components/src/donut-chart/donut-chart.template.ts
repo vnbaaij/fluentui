@@ -10,6 +10,7 @@ import type { Legend } from './donut-chart.options.js';
 export function donutChartTemplate<T extends DonutChart>(): ElementViewTemplate<T> {
   return html<T>`
     <template>
+      ${when(x => !!x.chartTitle, html<T>`<div class="chart-title">${x => x.chartTitle}</div>`)}
       <div ${ref('chartWrapper')}>
         <svg class="chart" width="${x => x.width}" height="${x => x.height}">
           <g ${ref('group')} transform="translate(${x => x.width / 2}, ${x => x.height / 2})"></g>
@@ -23,22 +24,22 @@ export function donutChartTemplate<T extends DonutChart>(): ElementViewTemplate<
               x => x.legends,
               html<Legend, T>` <button
                 class="legend${(x, c) =>
-                  c.parent.activeLegend === '' || c.parent.activeLegend === x.title ? '' : ' inactive'}"
+                  c.parent.activeLegend === '' || c.parent.activeLegend === x.legend ? '' : ' inactive'}"
                 role="option"
                 aria-setsize="${(x, c) => c.length}"
                 aria-posinset="${(x, c) => c.index + 1}"
-                aria-selected="${(x, c) => x.title === c.parent.activeLegend}"
-                @mouseover="${(x, c) => c.parent.handleLegendMouseoverAndFocus(x.title)}"
+                aria-selected="${(x, c) => x.legend === c.parent.activeLegend}"
+                @mouseover="${(x, c) => c.parent.handleLegendMouseoverAndFocus(x.legend)}"
                 @mouseout="${(x, c) => c.parent.handleLegendMouseoutAndBlur()}"
-                @focus="${(x, c) => c.parent.handleLegendMouseoverAndFocus(x.title)}"
+                @focus="${(x, c) => c.parent.handleLegendMouseoverAndFocus(x.legend)}"
                 @blur="${(x, c) => c.parent.handleLegendMouseoutAndBlur()}"
-                @click="${(x, c) => c.parent.handleLegendClick(x.title)}"
+                @click="${(x, c) => c.parent.handleLegendClick(x.legend)}"
               >
                 <div
                   class="legend-rect"
                   style="background-color: ${x => x.color}; border-color: ${x => x.color};"
                 ></div>
-                <div class="legend-text">${x => x.title}</div>
+                <div class="legend-text">${x => x.legend}</div>
               </button>`,
             )}
           </div>

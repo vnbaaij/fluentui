@@ -840,3 +840,25 @@ test.describe('Horizontal-bar-chart - chart-data-mode', () => {
     await expect(element.locator('.ratio-numerator')).toHaveText('10%');
   });
 });
+
+test.describe('Horizontal-bar-chart - sizing attrs', () => {
+  test('Should apply width and height attributes to the host', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          chart-title="Sizing test"
+          hide-legends
+          width="720"
+          height="320"
+          data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element).toHaveCSS('width', '720px');
+    await expect(element).toHaveCSS('height', '320px');
+  });
+});

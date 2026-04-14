@@ -10,6 +10,7 @@ import type { ChartDataPoint } from './horizontal-bar-chart.options.js';
 export function horizontalbarchartTemplate<T extends HorizontalBarChart>(): ElementViewTemplate<T> {
   return html<T>`
     <template>
+      ${when(x => !!x.chartTitle, html<T>`<div class="chart-header-title">${x => x.chartTitle}</div>`)}
       <div ${ref('chartContainer')}></div>
       ${when(
         x => !x.hideLegends,

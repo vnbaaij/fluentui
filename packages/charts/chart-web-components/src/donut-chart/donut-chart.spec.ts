@@ -2,6 +2,8 @@ import { test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
 import type { ChartDataPoint, ChartProps } from './donut-chart.options.js';
 
+const basicTitle = 'Donut chart basic example';
+
 const points: ChartDataPoint[] = [
   {
     legend: 'first',
@@ -14,7 +16,6 @@ const points: ChartDataPoint[] = [
 ];
 
 const data: ChartProps = {
-  chartTitle: 'Donut chart basic example',
   chartData: points,
 };
 
@@ -23,7 +24,9 @@ test.describe('Donut-chart - Basic', () => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
-        <fluent-donut-chart value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(data)}'>
+        <fluent-donut-chart chart-title="${basicTitle}" value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(
+      data,
+    )}'>
         </fluent-donut-chart>
       </div>
     `);
@@ -36,6 +39,7 @@ test.describe('Donut-chart - Basic', () => {
     await expect(legends.nth(0).getByText('first')).toBeVisible();
     await expect(legends.nth(1).getByText('second')).toBeVisible();
     await expect(element.getByText('39,000')).toBeVisible();
+    await expect(element.locator('.arc-label')).toHaveCount(0);
   });
 
   test('Should render path with proper attributes and css', async ({ page }) => {
@@ -143,7 +147,9 @@ test.describe('Donut-chart - Reactive rerender', () => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
-        <fluent-donut-chart value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(data)}'>
+        <fluent-donut-chart chart-title="${basicTitle}" value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(
+      data,
+    )}'>
         </fluent-donut-chart>
       </div>
     `);
@@ -153,7 +159,6 @@ test.describe('Donut-chart - Reactive rerender', () => {
     await expect(element.locator('.arc')).toHaveCount(2);
 
     const newData: ChartProps = {
-      chartTitle: 'Updated chart',
       chartData: [
         { legend: 'alpha', data: 10000 },
         { legend: 'beta', data: 20000 },
@@ -161,7 +166,10 @@ test.describe('Donut-chart - Reactive rerender', () => {
       ],
     };
 
-    await element.evaluate((el, d) => el.setAttribute('data', JSON.stringify(d)), newData);
+    await element.evaluate((el, d) => {
+      el.setAttribute('chart-title', 'Updated chart');
+      el.setAttribute('data', JSON.stringify(d));
+    }, newData);
 
     await expect(element.locator('.arc')).toHaveCount(3);
     await expect(element.locator('.legend-text').nth(0).getByText('alpha')).toBeVisible();
@@ -171,11 +179,12 @@ test.describe('Donut-chart - Reactive rerender', () => {
 });
 
 test.describe('Donut-chart - hide-labels', () => {
-  test('Should hide center text when hide-labels is set', async ({ page }) => {
+  test('Should keep center text visible and hide outside labels when hide-labels is set', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-donut-chart
+          chart-title="${basicTitle}"
           value-inside-donut="39,000"
           inner-radius="55"
           hide-labels
@@ -186,15 +195,17 @@ test.describe('Donut-chart - hide-labels', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
 
     const element = page.locator('fluent-donut-chart');
-    await expect(element.locator('.text-inside-donut')).toHaveCount(0);
+    await expect(element.locator('.text-inside-donut')).toHaveCount(1);
+    await expect(element.locator('.arc-label')).toHaveCount(0);
     await expect(element.locator('.arc')).toHaveCount(2);
   });
 
-  test('Should show center text when hide-labels is not set', async ({ page }) => {
+  test('Should show outside labels when hide-labels is false', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-donut-chart
+          chart-title="${basicTitle}"
           value-inside-donut="39,000"
           inner-radius="55"
           data='${JSON.stringify(data)}'>
@@ -204,13 +215,101 @@ test.describe('Donut-chart - hide-labels', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
 
     const element = page.locator('fluent-donut-chart');
+    await element.evaluate(el => {
+      el.hideLabels = false;
+    });
     await expect(element.locator('.text-inside-donut')).toHaveCount(1);
+    await expect(element.locator('.arc-label')).toHaveCount(2);
+  });
+});
+
+test.describe('Donut-chart - outside labels', () => {
+  test('Should render outside labels for visible segments', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="Outside labels"
+          width="320"
+          height="320"
+          style="width:320px;height:320px"
+          value-inside-donut="39,000"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await element.evaluate(el => {
+      el.hideLabels = false;
+    });
+    const labels = element.locator('.arc-label');
+
+    await expect(labels).toHaveCount(2);
+    await expect(labels.nth(0)).toContainText('20');
+    await expect(labels.nth(1)).toContainText('39');
+  });
+
+  test('Should render percent outside labels when show-labels-in-percent is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="Percent labels"
+          width="320"
+          height="320"
+          style="width:320px;height:320px"
+          value-inside-donut="39,000"
+          inner-radius="55"
+          show-labels-in-percent
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await element.evaluate(el => {
+      el.hideLabels = false;
+    });
+    const labels = element.locator('.arc-label');
+    await expect(labels).toHaveCount(2);
+    await expect(labels.nth(0)).toContainText('%');
+    await expect(labels.nth(1)).toContainText('%');
+  });
+});
+
+test.describe('Donut-chart - round-corners', () => {
+  test('Should change arc geometry when round-corners is enabled', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="Rounded corners"
+          value-inside-donut="39,000"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const firstArc = element.locator('.arc').first();
+    const defaultPath = await firstArc.getAttribute('d');
+
+    await element.evaluate(el => {
+      el.toggleAttribute('round-corners', true);
+    });
+
+    await expect(firstArc).not.toHaveAttribute('d', defaultPath ?? '');
   });
 });
 
 test.describe('Donut-chart - order', () => {
   const unorderedData: ChartProps = {
-    chartTitle: 'Sorted test',
     chartData: [
       { legend: 'small', data: 5000 },
       { legend: 'large', data: 39000 },
@@ -222,7 +321,7 @@ test.describe('Donut-chart - order', () => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
-        <fluent-donut-chart inner-radius="55" data='${JSON.stringify(unorderedData)}'>
+        <fluent-donut-chart chart-title="Sorted test" inner-radius="55" data='${JSON.stringify(unorderedData)}'>
         </fluent-donut-chart>
       </div>
     `);
@@ -239,7 +338,9 @@ test.describe('Donut-chart - order', () => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
-        <fluent-donut-chart inner-radius="55" order="sorted" data='${JSON.stringify(unorderedData)}'>
+        <fluent-donut-chart chart-title="Sorted test" inner-radius="55" order="sorted" data='${JSON.stringify(
+          unorderedData,
+        )}'>
         </fluent-donut-chart>
       </div>
     `);
@@ -251,5 +352,32 @@ test.describe('Donut-chart - order', () => {
     await expect(legends.nth(0).getByText('large')).toBeVisible();
     await expect(legends.nth(1).getByText('medium')).toBeVisible();
     await expect(legends.nth(2).getByText('small')).toBeVisible();
+  });
+
+  test('uses chart-title attr and calloutData for highlighted center text', async ({ page }) => {
+    const calloutData: ChartProps = {
+      chartData: [
+        { legend: 'first', data: 20000, calloutData: '20K highlighted' },
+        { legend: 'second', data: 39000 },
+      ],
+    };
+
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart chart-title="Callout contract" value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(
+          calloutData,
+        )}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.getByText('Callout contract')).toBeVisible();
+
+    const firstPath = element.getByLabel('first,');
+    await firstPath.dispatchEvent('mouseover');
+    await expect(element.locator('.text-inside-donut')).toContainText('20K highlighted');
   });
 });
