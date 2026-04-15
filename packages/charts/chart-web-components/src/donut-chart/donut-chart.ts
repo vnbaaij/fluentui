@@ -52,6 +52,9 @@ export class DonutChart extends FASTElement {
   @attr({ attribute: 'legend-list-label' })
   public legendListLabel?: string;
 
+  @attr
+  public culture?: string;
+
   @observable
   public legends: Legend[] = [];
 
@@ -179,6 +182,10 @@ export class DonutChart extends FASTElement {
   }
 
   protected showLabelsInPercentChanged() {
+    this._rerender();
+  }
+
+  protected cultureChanged() {
     this._rerender();
   }
 
@@ -374,7 +381,8 @@ export class DonutChart extends FASTElement {
         const percentage = total > 0 ? Math.round(((highlightedDataPoint?.data ?? 0) / total) * 100) : 0;
         textInsideDonut = `${percentage}%`;
       } else {
-        textInsideDonut = highlightedDataPoint!.calloutData ?? highlightedDataPoint!.data.toLocaleString();
+        textInsideDonut =
+          highlightedDataPoint!.calloutData ?? highlightedDataPoint!.data.toLocaleString(this.culture || undefined);
       }
     }
 

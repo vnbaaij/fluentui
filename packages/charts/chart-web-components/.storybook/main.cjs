@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const tsConfigPath = path.resolve(__dirname, '../../../../tsconfig.base.wc.json');
 
 module.exports =
-  /** @type {import('@storybook/html-vite').StorybookConfig} */
+  /** @type {import('@storybook/html-vite', { with: { 'resolution-mode': 'import' } }).StorybookConfig} */
   ({
     // helpers.stories.ts is a file that contains helper functions for stories,
     // and should not be treated as a story itself.
@@ -61,7 +61,7 @@ function createTypeScriptAliases(configPath) {
  * Creates a Vite plugin that resolves .ts files when imported with .js extension.
  * This matches webpack's extensionAlias behavior and is needed for imports like
  * '../src/index-rollup.js' to work in production builds.
- * @returns {object} Vite plugin object
+ * @returns {import('vite', { with: { 'resolution-mode': 'import' } }).Plugin} Vite plugin object
  */
 function createResolveTsAsJsPlugin() {
   return {

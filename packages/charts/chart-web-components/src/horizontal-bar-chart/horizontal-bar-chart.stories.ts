@@ -1,5 +1,11 @@
 import { html } from '@microsoft/fast-element';
-import { FieldDefinition, FluentDesignSystem, LabelDefinition, SliderDefinition } from '@fluentui/web-components';
+import {
+  FieldDefinition,
+  FluentDesignSystem,
+  LabelDefinition,
+  SliderDefinition,
+  SwitchDefinition,
+} from '@fluentui/web-components';
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
 import { renderComponent } from '../helpers.stories.js';
 import { HorizontalBarChart as FluentHorizontalBarChart } from './horizontal-bar-chart.js';
@@ -7,6 +13,7 @@ import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.
 import { Variant } from './horizontal-bar-chart.options.js';
 
 type FluentSliderElement = HTMLElement & { value: string };
+type FluentSwitchElement = HTMLElement & { checked: boolean };
 
 const ensureDefinition = (tagName: string, define: () => void) => {
   if (!customElements.get(tagName)) {
@@ -17,9 +24,11 @@ const ensureDefinition = (tagName: string, define: () => void) => {
 ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
 
 const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
 const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
+const toggleFieldStyle = 'min-width:220px;';
 
 const createSliderField = (
   labelText: string,
@@ -61,6 +70,39 @@ const createSliderField = (
       slider.value = `${nextValue}`;
       slider.setAttribute('value', `${nextValue}`);
       message.textContent = `${nextValue}`;
+    },
+  };
+};
+
+const createSwitchField = (
+  labelText: string,
+  id: string,
+  checked: boolean,
+  onChange: (nextChecked: boolean) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'after');
+  field.setAttribute('style', toggleFieldStyle);
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const control = document.createElement('fluent-switch') as FluentSwitchElement;
+  control.slot = 'input';
+  control.id = id;
+  control.checked = checked;
+  control.toggleAttribute('checked', checked);
+  control.addEventListener('change', () => onChange(control.checked));
+  field.appendChild(control);
+
+  return {
+    element: field,
+    setValue: (nextChecked: boolean) => {
+      control.checked = nextChecked;
+      control.toggleAttribute('checked', nextChecked);
     },
   };
 };
@@ -510,6 +552,46 @@ export const HideLabels: Story<FluentHorizontalBarChart> = renderComponent(html<
   >
   </fluent-horizontal-bar-chart>
 `);
+
+export const RoundedCorners: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let roundCorners = false;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart rounded corners example');
+  chart.setAttribute('variant', Variant.AbsoluteScale);
+  chart.setAttribute('data', JSON.stringify(singleBarHBCData));
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+
+  const renderChart = () => {
+    chart.roundCorners = roundCorners;
+    chart.toggleAttribute('round-corners', roundCorners);
+
+    if (!chart.isConnected) {
+      container.appendChild(chart);
+    }
+  };
+
+  const roundCornersControl = createSwitchField(
+    'Rounded corners',
+    'horizontal-bar-round-corners',
+    roundCorners,
+    nextChecked => {
+      roundCorners = nextChecked;
+      roundCornersControl.setValue(nextChecked);
+      renderChart();
+    },
+  );
+  controls.appendChild(roundCornersControl.element);
+
+  renderChart();
+
+  return container;
+};
 
 export const ChartDataModeFraction: Story<FluentHorizontalBarChart> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChart>

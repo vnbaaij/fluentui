@@ -797,6 +797,37 @@ test.describe('Horizontal-bar-chart - hide-labels', () => {
   });
 });
 
+test.describe('Horizontal-bar-chart - round-corners', () => {
+  const singleBarData = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [{ legend: 'one', data: 1543, total: 15000, color: '#637cef' }],
+    },
+  ];
+
+  test('Should update bar corner radius when round-corners changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--rounded-corners'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          variant="single-bar"
+          data='${JSON.stringify(singleBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+
+    await expect(firstBar).toHaveAttribute('rx', '0');
+
+    await element.evaluate(el => el.toggleAttribute('round-corners', true));
+
+    await expect(firstBar).toHaveAttribute('rx', '3');
+  });
+});
+
 test.describe('Horizontal-bar-chart - chart-data-mode', () => {
   const singleBarData = [
     {

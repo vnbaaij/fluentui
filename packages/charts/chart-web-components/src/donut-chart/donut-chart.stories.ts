@@ -164,7 +164,7 @@ export const OutsideLabels: Story<FluentDonutChart> = () => {
   chart.setAttribute('chart-title', 'Donut chart outside labels example');
   chart.setAttribute('data', JSON.stringify(data));
   chart.setAttribute('value-inside-donut', '39,000');
-  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('inner-radius', '85');
   chart.setAttribute('width', '320');
   chart.setAttribute('height', '320');
   chart.setAttribute('style', 'width:320px;height:320px');
@@ -241,7 +241,7 @@ export const RoundedCorners: Story<FluentDonutChart> = () => {
   container.appendChild(controls);
 
   let roundCorners = false;
-  let hideLabels = true;
+  let hideLabels = false;
 
   const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
   chart.setAttribute('chart-title', 'Donut chart rounded corners example');
@@ -274,43 +274,6 @@ export const RoundedCorners: Story<FluentDonutChart> = () => {
   controls.appendChild(roundedCornersControl.element);
 
   const hideLabelsControl = createSwitchField('Hide labels', 'donut-rounded-hide-labels', hideLabels, nextChecked => {
-    hideLabels = nextChecked;
-    hideLabelsControl.setValue(nextChecked);
-    renderChart();
-  });
-  controls.appendChild(hideLabelsControl.element);
-
-  renderChart();
-
-  return container;
-};
-
-export const HideLabels: Story<FluentDonutChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  let hideLabels = true;
-
-  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
-  chart.setAttribute('chart-title', 'Donut chart hide labels example');
-  chart.setAttribute('data', JSON.stringify(data));
-  chart.setAttribute('value-inside-donut', '39,000');
-  chart.setAttribute('inner-radius', '55');
-  chart.toggleAttribute('hide-labels', hideLabels);
-  chart.setAttribute('style', 'width:320px;height:320px;margin-top:20px;');
-
-  const renderChart = () => {
-    chart.hideLabels = hideLabels;
-    chart.toggleAttribute('hide-labels', hideLabels);
-
-    if (!chart.isConnected) {
-      container.appendChild(chart);
-    }
-  };
-
-  const hideLabelsControl = createSwitchField('Hide labels', 'donut-hide-labels', hideLabels, nextChecked => {
     hideLabels = nextChecked;
     hideLabelsControl.setValue(nextChecked);
     renderChart();

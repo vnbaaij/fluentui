@@ -28,6 +28,9 @@ export class HorizontalBarChart extends FASTElement {
   @attr({ attribute: 'hide-labels', mode: 'boolean' })
   public hideLabels: boolean = false;
 
+  @attr({ attribute: 'round-corners', mode: 'boolean' })
+  public roundCorners: boolean = false;
+
   @attr({ attribute: 'chart-data-mode' })
   public chartDataMode: 'default' | 'fraction' | 'percentage' = 'default';
 
@@ -146,6 +149,13 @@ export class HorizontalBarChart extends FASTElement {
   }
 
   protected heightChanged() {
+    if (this.$fastController.isConnected && this.data) {
+      this._clearChart();
+      this._initializeAll();
+    }
+  }
+
+  protected roundCornersChanged() {
     if (this.$fastController.isConnected && this.data) {
       this._clearChart();
       this._initializeAll();
@@ -386,6 +396,7 @@ export class HorizontalBarChart extends FASTElement {
         .attr('barinfo', `${point.legend}`)
         .attr('class', 'bar')
         .attr('style', point.gradient ? `fill:url(#${gradientId})` : `fill:${point.color!}`)
+        .attr('rx', `${this.roundCorners ? 3 : 0}`)
         .attr(
           'x',
           `${

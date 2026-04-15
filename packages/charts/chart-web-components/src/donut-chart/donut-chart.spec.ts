@@ -1,5 +1,6 @@
 import { test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
+import type { DonutChart as FluentDonutChart } from './donut-chart.js';
 import type { ChartDataPoint, ChartProps } from './donut-chart.options.js';
 
 const basicTitle = 'Donut chart basic example';
@@ -216,7 +217,7 @@ test.describe('Donut-chart - hide-labels', () => {
 
     const element = page.locator('fluent-donut-chart');
     await element.evaluate(el => {
-      el.hideLabels = false;
+      (el as FluentDonutChart).hideLabels = false;
     });
     await expect(element.locator('.text-inside-donut')).toHaveCount(1);
     await expect(element.locator('.arc-label')).toHaveCount(2);
@@ -243,7 +244,7 @@ test.describe('Donut-chart - outside labels', () => {
 
     const element = page.locator('fluent-donut-chart');
     await element.evaluate(el => {
-      el.hideLabels = false;
+      (el as FluentDonutChart).hideLabels = false;
     });
     const labels = element.locator('.arc-label');
 
@@ -272,7 +273,7 @@ test.describe('Donut-chart - outside labels', () => {
 
     const element = page.locator('fluent-donut-chart');
     await element.evaluate(el => {
-      el.hideLabels = false;
+      (el as FluentDonutChart).hideLabels = false;
     });
     const labels = element.locator('.arc-label');
     await expect(labels).toHaveCount(2);
