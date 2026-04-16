@@ -19,9 +19,17 @@ export class DonutChart extends FASTElement {
     // (undocumented)
     protected activeLegendChanged(oldValue: string, newValue: string): void;
     // (undocumented)
+    chartTitle?: string;
+    // (undocumented)
+    protected chartTitleChanged(): void;
+    // (undocumented)
     chartWrapper: HTMLDivElement;
     // (undocumented)
     connectedCallback(): void;
+    // (undocumented)
+    culture?: string;
+    // (undocumented)
+    protected cultureChanged(): void;
     // Warning: (ae-forgotten-export) The symbol "ChartProps_2" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -40,6 +48,8 @@ export class DonutChart extends FASTElement {
     handleLegendMouseoverAndFocus(legendTitle: string): void;
     // (undocumented)
     height: number;
+    // (undocumented)
+    protected heightChanged(): void;
     // (undocumented)
     hideLabels: boolean;
     // (undocumented)
@@ -63,7 +73,13 @@ export class DonutChart extends FASTElement {
     // (undocumented)
     protected orderChanged(): void;
     // (undocumented)
+    roundCorners: boolean;
+    // (undocumented)
+    protected roundCornersChanged(): void;
+    // (undocumented)
     showLabelsInPercent: boolean;
+    // (undocumented)
+    protected showLabelsInPercentChanged(): void;
     // (undocumented)
     tooltipProps: {
         isVisible: boolean;
@@ -79,6 +95,8 @@ export class DonutChart extends FASTElement {
     valueInsideDonut?: string;
     // (undocumented)
     width: number;
+    // (undocumented)
+    protected widthChanged(): void;
 }
 
 // @public (undocumented)
@@ -106,6 +124,8 @@ export class HorizontalBarChart extends FASTElement {
     // (undocumented)
     chartTitle?: string;
     // (undocumented)
+    protected chartTitleChanged(): void;
+    // (undocumented)
     connectedCallback(): void;
     // Warning: (ae-forgotten-export) The symbol "ChartProps" needs to be exported by the entry point index.d.ts
     //
@@ -122,6 +142,10 @@ export class HorizontalBarChart extends FASTElement {
     // (undocumented)
     handleLegendMouseoverAndFocus: (legendTitle: string) => void;
     // (undocumented)
+    height?: number | string;
+    // (undocumented)
+    protected heightChanged(): void;
+    // (undocumented)
     hideLabels: boolean;
     // (undocumented)
     hideLegends: boolean;
@@ -133,6 +157,10 @@ export class HorizontalBarChart extends FASTElement {
     isLegendSelected: boolean;
     // (undocumented)
     legendListLabel?: string;
+    // (undocumented)
+    roundCorners: boolean;
+    // (undocumented)
+    protected roundCornersChanged(): void;
     // (undocumented)
     tooltipProps: {
         isVisible: boolean;
@@ -150,6 +178,10 @@ export class HorizontalBarChart extends FASTElement {
     //
     // (undocumented)
     variant?: Variant;
+    // (undocumented)
+    width?: number | string;
+    // (undocumented)
+    protected widthChanged(): void;
 }
 
 // @public
@@ -162,6 +194,153 @@ export const HorizontalBarChartStyles: ElementStyles;
 //
 // @internal (undocumented)
 export const HorizontalBarChartTemplate: ElementViewTemplate<HorizontalBarChart>;
+
+// Warning: (ae-missing-release-tag) "HorizontalBarChartWithAxis" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export class HorizontalBarChartWithAxis extends FASTElement {
+    // (undocumented)
+    activeLegend: string;
+    // (undocumented)
+    protected activeLegendChanged(): void;
+    // (undocumented)
+    allowMultipleLegendSelection: boolean;
+    // (undocumented)
+    protected allowMultipleLegendSelectionChanged(): void;
+    // (undocumented)
+    barHeight?: number | string;
+    // (undocumented)
+    protected barHeightChanged(): void;
+    // (undocumented)
+    chartContainer: HTMLDivElement;
+    // (undocumented)
+    chartTitle?: string;
+    // (undocumented)
+    protected chartTitleChanged(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    culture?: string;
+    // Warning: (ae-forgotten-export) The symbol "HorizontalBarChartWithAxisDataPoint" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    data: HorizontalBarChartWithAxisDataPoint[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    disconnectedCallback(): void;
+    // (undocumented)
+    elementInternals: ElementInternals;
+    // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // (undocumented)
+    handleLegendClick: (legendTitle: string) => void;
+    // (undocumented)
+    handleLegendMouseoutAndBlur: () => void;
+    // (undocumented)
+    handleLegendMouseoverAndFocus: (legendTitle: string) => void;
+    // (undocumented)
+    height?: number | string;
+    // (undocumented)
+    hideLabels: boolean;
+    // (undocumented)
+    protected hideLabelsChanged(): void;
+    // (undocumented)
+    hideLegends: boolean;
+    // (undocumented)
+    hideTooltip: boolean;
+    // (undocumented)
+    isLegendDimmed(legendTitle: string): boolean;
+    // (undocumented)
+    isLegendSelected(legendTitle: string): boolean;
+    // (undocumented)
+    legendListLabel?: string;
+    // (undocumented)
+    roundCorners: boolean;
+    // (undocumented)
+    protected roundCornersChanged(): void;
+    // (undocumented)
+    selectedLegends: string[];
+    // (undocumented)
+    protected selectedLegendsChanged(): void;
+    // (undocumented)
+    showYAxisLabels: boolean;
+    // (undocumented)
+    protected showYAxisLabelsChanged(): void;
+    // (undocumented)
+    showYAxisLabelsTooltip: boolean;
+    // (undocumented)
+    protected showYAxisLabelsTooltipChanged(): void;
+    // (undocumented)
+    get tooltipInlineTransform(): "translateX(50%)" | "translateX(-50%)";
+    // Warning: (ae-forgotten-export) The symbol "TooltipProps" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    tooltipProps: TooltipProps;
+    // Warning: (ae-forgotten-export) The symbol "HorizontalBarChartWithAxisLegend" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    uniqueLegends: HorizontalBarChartWithAxisLegend[];
+    // (undocumented)
+    useSingleColor: boolean;
+    // (undocumented)
+    protected useSingleColorChanged(): void;
+    // (undocumented)
+    width?: number | string;
+    // (undocumented)
+    protected widthChanged(): void;
+    // (undocumented)
+    xAxisTickCount?: number | string;
+    // (undocumented)
+    protected xAxisTickCountChanged(): void;
+    // (undocumented)
+    xMaxValue?: number | string;
+    // (undocumented)
+    protected xMaxValueChanged(): void;
+    // (undocumented)
+    xMinValue?: number | string;
+    // (undocumented)
+    protected xMinValueChanged(): void;
+    // Warning: (ae-forgotten-export) The symbol "AxisCategoryOrder" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    yAxisCategoryOrder: AxisCategoryOrder;
+    // (undocumented)
+    protected yAxisCategoryOrderChanged(): void;
+    // (undocumented)
+    yAxisPadding?: number | string;
+    // (undocumented)
+    protected yAxisPaddingChanged(): void;
+    // (undocumented)
+    yAxisTickCount?: number | string;
+    // (undocumented)
+    protected yAxisTickCountChanged(): void;
+    // (undocumented)
+    yMaxValue?: number | string;
+    // (undocumented)
+    protected yMaxValueChanged(): void;
+    // (undocumented)
+    yMinValue?: number | string;
+    // (undocumented)
+    protected yMinValueChanged(): void;
+}
+
+// Warning: (ae-missing-release-tag) "definition" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const HorizontalBarChartWithAxisDefinition: FASTElementDefinition<typeof HorizontalBarChartWithAxis>;
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const HorizontalBarChartWithAxisStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const HorizontalBarChartWithAxisTemplate: ElementViewTemplate<HorizontalBarChartWithAxis>;
 
 // (No @packageDocumentation comment for this package)
 
