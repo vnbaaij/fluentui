@@ -35,19 +35,9 @@ export const styles: ElementStyles = css`
     width: 100%;
   }
 
-  .root {
-    position: relative;
-    width: 100%;
-    color: ${colorNeutralForeground1};
-  }
-
   .chart-title {
     ${typographyBody1StrongStyles}
     margin-bottom: ${spacingVerticalS};
-  }
-
-  .chart-host {
-    width: 100%;
   }
 
   .chart-svg {
@@ -97,7 +87,7 @@ export const styles: ElementStyles = css`
     unicode-bidi: isolate;
   }
 
-  .legendcontainer {
+  .legend-container {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;

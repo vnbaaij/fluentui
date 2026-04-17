@@ -4,11 +4,9 @@ import { styles } from './horizontal-bar-chart.styles.js';
 import { template } from './horizontal-bar-chart.template.js';
 
 /**
- * The Fluent Textarea Element definition.
- *
  * @public
  * @remarks
- * HTML Element: `<fluent-textarea>`
+ * HTML Element: `<fluent-horizontal-bar-chart>`
  */
 export const definition = HorizontalBarChart.compose({
   name: `${FluentDesignSystem.prefix}-horizontal-bar-chart`,

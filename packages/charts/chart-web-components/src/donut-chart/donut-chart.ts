@@ -100,7 +100,7 @@ export class DonutChart extends FASTElement {
     this._updateTextInsideDonut();
   }
 
-  public chartWrapper!: HTMLDivElement;
+  public chartContainer!: HTMLDivElement;
   public group!: SVGGElement;
   public elementInternals: ElementInternals = this.attachInternals();
 

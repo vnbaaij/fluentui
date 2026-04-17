@@ -95,7 +95,7 @@ export const styles: ElementStyles = css`
     white-space: nowrap;
     display: block;
   }
-  .legendcontainer {
+  .legend-container {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;

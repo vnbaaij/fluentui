@@ -15,7 +15,7 @@ export function horizontalbarchartTemplate<T extends HorizontalBarChart>(): Elem
       ${when(
         x => !x.hideLegends,
         html<T>`
-          <div class="legendcontainer" role="listbox" aria-label="${x => x.legendListLabel}">
+          <div class="legend-container" role="listbox" aria-label="${x => x.legendListLabel}">
             ${repeat(
               x => x.uniqueLegends,
               html<ChartDataPoint, T>` <button
