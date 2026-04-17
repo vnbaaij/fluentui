@@ -265,8 +265,11 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   private _isRTL: boolean = false;
 
   public connectedCallback() {
+    this._initializeFromAttributes();
+
     super.connectedCallback();
     this.elementInternals.role = 'region';
+
     this._isRTL = getRTL(this);
     this._resizeObserver = new ResizeObserver(() => this._renderChart());
     this._resizeObserver.observe(this);
@@ -583,6 +586,107 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     this.uniqueLegends = Array.from(legendColorMap.entries()).map(([legend, color]) => ({ legend, color }));
     this.chartContainer.appendChild(svg);
     this._applyLegendState();
+  }
+
+  private _initializeFromAttributes() {
+    if (!this.data) {
+      const data = this.getAttribute('data');
+      if (data) {
+        this.data = jsonConverter.fromView(data) as HorizontalBarChartWithAxisDataPoint[];
+      }
+    }
+
+    if (!this.chartTitle) {
+      this.chartTitle = this.getAttribute('chart-title') ?? undefined;
+    }
+
+    if (this.width === undefined) {
+      this.width = this.getAttribute('width') ?? undefined;
+    }
+
+    if (!this.legendListLabel) {
+      this.legendListLabel = this.getAttribute('legend-list-label') ?? undefined;
+    }
+
+    if (!this.hideLegends && this.hasAttribute('hide-legends')) {
+      this.hideLegends = true;
+    }
+
+    if (!this.hideTooltip && this.hasAttribute('hide-tooltip')) {
+      this.hideTooltip = true;
+    }
+
+    if (!this.hideLabels && this.hasAttribute('hide-labels')) {
+      this.hideLabels = true;
+    }
+
+    if (!this.showYAxisLabels && this.hasAttribute('show-y-axis-labels')) {
+      this.showYAxisLabels = true;
+    }
+
+    if (!this.showYAxisLabelsTooltip && this.hasAttribute('show-y-axis-labels-tooltip')) {
+      this.showYAxisLabelsTooltip = true;
+    }
+
+    if (!this.useSingleColor && this.hasAttribute('use-single-color')) {
+      this.useSingleColor = true;
+    }
+
+    if (!this.enableGradient && this.hasAttribute('enable-gradient')) {
+      this.enableGradient = true;
+    }
+
+    if (!this.roundCorners && this.hasAttribute('round-corners')) {
+      this.roundCorners = true;
+    }
+
+    if (!this.allowMultipleLegendSelection && this.hasAttribute('allow-multiple-legend-selection')) {
+      this.allowMultipleLegendSelection = true;
+    }
+
+    if (this.barHeight === undefined) {
+      this.barHeight = this.getAttribute('bar-height') ?? undefined;
+    }
+
+    if (this.height === undefined) {
+      this.height = this.getAttribute('height') ?? undefined;
+    }
+
+    if (this.xAxisTickCount === undefined) {
+      this.xAxisTickCount = this.getAttribute('x-axis-tick-count') ?? undefined;
+    }
+
+    if (this.yAxisTickCount === undefined) {
+      this.yAxisTickCount = this.getAttribute('y-axis-tick-count') ?? undefined;
+    }
+
+    if (this.yAxisPadding === undefined) {
+      this.yAxisPadding = this.getAttribute('y-axis-padding') ?? undefined;
+    }
+
+    if (this.xMinValue === undefined) {
+      this.xMinValue = this.getAttribute('x-min-value') ?? undefined;
+    }
+
+    if (this.xMaxValue === undefined) {
+      this.xMaxValue = this.getAttribute('x-max-value') ?? undefined;
+    }
+
+    if (this.yMinValue === undefined) {
+      this.yMinValue = this.getAttribute('y-min-value') ?? undefined;
+    }
+
+    if (this.yMaxValue === undefined) {
+      this.yMaxValue = this.getAttribute('y-max-value') ?? undefined;
+    }
+
+    if (this.yAxisCategoryOrder === 'default') {
+      this.yAxisCategoryOrder = (this.getAttribute('y-axis-category-order') as AxisCategoryOrder | null) ?? this.yAxisCategoryOrder;
+    }
+
+    if (!this.culture) {
+      this.culture = this.getAttribute('culture') ?? undefined;
+    }
   }
 
   private _clearChart() {

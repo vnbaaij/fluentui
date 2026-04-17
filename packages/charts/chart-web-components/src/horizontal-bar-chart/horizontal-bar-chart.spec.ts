@@ -407,7 +407,7 @@ test.describe('horizontalbarchart - Single Bar HBC', () => {
   test('Should render Single Bar HBC  properly', async ({ page }) => {
     const element = page.locator('fluent-horizontal-bar-chart');
     await expectOptionsToBeVisible(element, ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']);
-    const barsTitles = element.locator('.chart-title');
+    const barsTitles = element.locator('.bar-title');
     await expect(barsTitles).toHaveCount(8);
     await expect(barsTitles.nth(0)).toHaveText('one');
     await expect(barsTitles.nth(1)).toHaveText('two');
@@ -660,7 +660,7 @@ test.describe('horizontalbarchart - Single Data Point', () => {
   test('Should render Single Bar HBC  properly', async ({ page }) => {
     const element = page.locator('fluent-horizontal-bar-chart');
     await expect(element.getByRole('option', { name: 'one' })).toBeVisible();
-    const barsTitles = element.locator('.chart-title');
+    const barsTitles = element.locator('.bar-title');
     await expect(barsTitles).toHaveCount(1);
     await expect(barsTitles.nth(0)).toHaveText('one');
     await expect(barsTitles.nth(0)).toBeVisible();
@@ -767,7 +767,7 @@ test.describe('Horizontal-bar-chart - Reactive rerender', () => {
     await element.evaluate((el, d) => el.setAttribute('data', JSON.stringify(d)), newData);
 
     await expect(element.locator('.bar')).toHaveCount(3);
-    await expect(element.locator('.chart-title').first()).toHaveText('updated series');
+    await expect(element.locator('.bar-title').first()).toHaveText('updated series');
   });
 });
 

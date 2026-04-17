@@ -145,6 +145,8 @@ export class DonutChart extends FASTElement {
   }
 
   connectedCallback() {
+    this._initializeFromAttributes();
+
     super.connectedCallback();
     this.addEventListener('mouseleave', this._handleMouseLeave);
 
@@ -221,6 +223,56 @@ export class DonutChart extends FASTElement {
 
     this._render(chartData);
   }
+
+  private _initializeFromAttributes() {
+  if (!this.data) {
+    const data = this.getAttribute('data');
+    if (data) {
+      this.data = jsonConverter.fromView(data) as ChartProps;
+    }
+  }
+
+  if (!this.chartTitle) {
+    this.chartTitle = this.getAttribute('chart-title') ?? undefined;
+  }
+
+  if (!this.valueInsideDonut) {
+    this.valueInsideDonut = this.getAttribute('value-inside-donut') ?? undefined;
+  }
+
+  if (!this.legendListLabel) {
+    this.legendListLabel = this.getAttribute('legend-list-label') ?? undefined;
+  }
+
+  if (!this.culture) {
+    this.culture = this.getAttribute('culture') ?? undefined;
+  }
+
+  if (this.order === 'default') {
+    this.order = (this.getAttribute('order') as 'default' | 'sorted' | null) ?? this.order;
+  }
+
+  if (this.innerRadius === 1) {
+    const innerRadius = this.getAttribute('inner-radius');
+    if (innerRadius) {
+      this.innerRadius = Number(innerRadius);
+    }
+  }
+
+  if (this.height === 200) {
+    const height = this.getAttribute('height');
+    if (height) {
+      this.height = Number(height);
+    }
+  }
+
+  if (this.width === 200) {
+    const width = this.getAttribute('width');
+    if (width) {
+      this.width = Number(width);
+    }
+  }
+}
 
   private _clearChart() {
     while (this.group.firstChild) {

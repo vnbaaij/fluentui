@@ -118,6 +118,8 @@ export class HorizontalBarChart extends FASTElement {
   };
 
   connectedCallback() {
+    this._initializeFromAttributes();
+
     super.connectedCallback();
 
     if (!this.data) {
@@ -159,6 +161,60 @@ export class HorizontalBarChart extends FASTElement {
     if (this.$fastController.isConnected && this.data) {
       this._clearChart();
       this._initializeAll();
+    }
+  }
+
+  private _initializeFromAttributes() {
+    if (!this.data) {
+      const data = this.getAttribute('data');
+      if (data) {
+        this.data = jsonConverter.fromView(data) as ChartProps[];
+      }
+    }
+
+    if (this.width === undefined) {
+      this.width = this.getAttribute('width') ?? undefined;
+    }
+
+    if (this.height === undefined) {
+      this.height = this.getAttribute('height') ?? undefined;
+    }
+
+    if (!this.variant) {
+      this.variant = (this.getAttribute('variant') as Variant | null) ?? undefined;
+    }
+
+    if (!this.hideRatio && this.hasAttribute('hide-ratio')) {
+      this.hideRatio = true;
+    }
+
+    if (!this.hideLabels && this.hasAttribute('hide-labels')) {
+      this.hideLabels = true;
+    }
+
+    if (!this.roundCorners && this.hasAttribute('round-corners')) {
+      this.roundCorners = true;
+    }
+
+    if (this.chartDataMode === 'default') {
+      this.chartDataMode =
+        (this.getAttribute('chart-data-mode') as 'default' | 'fraction' | 'percentage' | null) ?? this.chartDataMode;
+    }
+
+    if (!this.hideLegends && this.hasAttribute('hide-legends')) {
+      this.hideLegends = true;
+    }
+
+    if (!this.hideTooltip && this.hasAttribute('hide-tooltip')) {
+      this.hideTooltip = true;
+    }
+
+    if (!this.legendListLabel) {
+      this.legendListLabel = this.getAttribute('legend-list-label') ?? undefined;
+    }
+
+    if (!this.chartTitle) {
+      this.chartTitle = this.getAttribute('chart-title') ?? undefined;
     }
   }
 
@@ -412,13 +468,13 @@ export class HorizontalBarChart extends FASTElement {
       this._bars.push(rect.node()!);
     };
 
-    const containerDiv = d3Create('div').attr('style', 'position: relative');
+    const containerDiv = d3Create('div').attr('style', 'position: relative; margin-bottom: var(--spacingVerticalMNudge);');
 
-    const chartTitleDiv = containerDiv.append('div').attr('class', 'chart-title-div');
-    chartTitleDiv
+    const barTitleDiv = containerDiv.append('div').attr('class', 'bar-title-div');
+    barTitleDiv
       .append('div')
       .append('span')
-      .attr('class', 'chart-title')
+      .attr('class', 'bar-title')
       .text(data?.chartSeriesTitle ? data?.chartSeriesTitle : '');
 
     const showChartDataText = this.variant !== Variant.AbsoluteScale;
@@ -432,16 +488,16 @@ export class HorizontalBarChart extends FASTElement {
 
       if (data.chartDataText) {
         const chartTitleRight = document.createElement('div');
-        chartTitleDiv.node()!.appendChild(chartTitleRight);
+        barTitleDiv.node()!.appendChild(chartTitleRight);
         chartTitleRight.classList.add('chart-data-text');
         chartTitleRight.textContent = data.chartDataText;
       } else if (this.chartDataMode === 'fraction') {
-        const ratioDiv = chartTitleDiv.append('div').attr('role', 'text');
+        const ratioDiv = barTitleDiv.append('div').attr('role', 'text');
         ratioDiv.append('span').attr('class', 'ratio-numerator').text(numData);
         ratioDiv.append('span').attr('class', 'ratio-denominator').text(`/${barTotal}`);
       } else if (this.chartDataMode === 'percentage') {
         const percentage = barTotal > 0 ? Math.round((numData / barTotal) * 100) : 0;
-        chartTitleDiv
+        barTitleDiv
           .append('div')
           .attr('role', 'text')
           .append('span')
@@ -451,7 +507,7 @@ export class HorizontalBarChart extends FASTElement {
         // 'default' mode: show ratio when there are exactly 2 data points and hideRatio is false
         const showRatio = !this.hideRatio && data!.chartData!.length === 2;
         if (showRatio) {
-          const ratioDiv = chartTitleDiv.append('div').attr('role', 'text');
+          const ratioDiv = barTitleDiv.append('div').attr('role', 'text');
           ratioDiv.append('span').attr('class', 'ratio-numerator').text(numData);
           ratioDiv.append('span').attr('class', 'ratio-denominator').text(`/${barTotal}`);
         }

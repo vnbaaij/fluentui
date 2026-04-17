@@ -82,12 +82,12 @@ export const styles: ElementStyles = css`
     display: block;
     overflow: visible;
   }
-  .chart-header-title {
+  .chart-title {
     ${typographyBody1StrongStyles}
     color: ${colorNeutralForeground1};
     margin-bottom: ${spacingVerticalS};
   }
-  .chart-title {
+  .bar-title {
     ${typographyBody1Styles}
     color: ${colorNeutralForeground1};
     text-overflow: ellipsis;
@@ -133,7 +133,7 @@ export const styles: ElementStyles = css`
     ${typographyBody1StrongStyles}
     fill: ${colorNeutralForeground1};
   }
-  .chart-title-div {
+  .bar-title-div {
     width: 100%;
     display: flex;
     justify-content: space-between;
