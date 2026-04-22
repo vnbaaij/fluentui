@@ -307,17 +307,6 @@ export const ShowLabelsInPercent: Story<FluentDonutChart> = () => {
   return chart;
 };
 
-export const SortedOrder: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
-  <fluent-donut-chart
-    chart-title="${sortedTitle}"
-    data="${JSON.stringify(sortedData)}"
-    value-inside-donut="Total"
-    inner-radius="55"
-    order="sorted"
-  >
-  </fluent-donut-chart>
-`);
-
 export const RTL: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
   <div dir="rtl">
     <fluent-donut-chart

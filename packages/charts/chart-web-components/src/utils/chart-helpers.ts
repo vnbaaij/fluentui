@@ -6,9 +6,33 @@ export const jsonConverter: ValueConverter = {
   toView(value: any): string {
     return JSON.stringify(value);
   },
-  fromView(value: string): any {
+  fromView(value: unknown): any {
+    if (value === null || value === undefined) {
+      return value;
+    }
+
+    if (typeof value !== 'string') {
+      return value;
+    }
+
     return JSON.parse(value);
   },
+};
+
+export const booleanStringConverter = {
+  toView(value: boolean): string {
+    return value ? 'true' : 'false';
+  },
+  fromView(value: unknown): boolean {
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'boolean') return value;
+
+    const normalized = String(value).trim().toLowerCase();
+    if (normalized === 'false') return false;
+    if (normalized === 'true' || normalized === '') return true;
+
+    return true;
+  }
 };
 
 type Dict = { [key: string]: any };

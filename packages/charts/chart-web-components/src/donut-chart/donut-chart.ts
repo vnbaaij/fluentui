@@ -2,6 +2,7 @@ import { attr, FASTElement, nullableNumberConverter, observable } from '@microso
 import { format as d3Format } from 'd3-format';
 import { arc as d3Arc, pie as d3Pie, PieArcDatum } from 'd3-shape';
 import {
+  booleanStringConverter,
   getColorFromToken,
   getNextColor,
   getRTL,
@@ -37,9 +38,6 @@ export class DonutChart extends FASTElement {
   @attr({ attribute: 'round-corners', mode: 'boolean' })
   public roundCorners: boolean = false;
 
-  @attr
-  public order: 'default' | 'sorted' = 'default';
-
   @attr({ converter: jsonConverter })
   public data!: ChartProps;
 
@@ -53,6 +51,9 @@ export class DonutChart extends FASTElement {
   public legendListLabel?: string;
 
   @attr
+  public order: 'default' | 'sorted' = 'default';
+
+  @attr
   public culture?: string;
 
   @observable
@@ -61,25 +62,7 @@ export class DonutChart extends FASTElement {
   @observable
   public activeLegend: string = '';
   protected activeLegendChanged(oldValue: string, newValue: string) {
-    if (newValue === '') {
-      this._arcs?.forEach(arc => arc.classList.remove('inactive'));
-      this._arcLabels?.forEach(label => label.classList.remove('inactive'));
-    } else {
-      this._arcs?.forEach(arc => {
-        if (arc.getAttribute('data-id') === newValue) {
-          arc.classList.remove('inactive');
-        } else {
-          arc.classList.add('inactive');
-        }
-      });
-      this._arcLabels?.forEach(label => {
-        if (label.getAttribute('data-id') === newValue) {
-          label.classList.remove('inactive');
-        } else {
-          label.classList.add('inactive');
-        }
-      });
-    }
+    this._applyActiveLegendState();
 
     this._updateTextInsideDonut();
   }
@@ -148,6 +131,7 @@ export class DonutChart extends FASTElement {
     this._initializeFromAttributes();
 
     super.connectedCallback();
+
     this.addEventListener('mouseleave', this._handleMouseLeave);
 
     if (!this.data) {
@@ -157,135 +141,203 @@ export class DonutChart extends FASTElement {
     this._initializeAndRender();
   }
 
-  protected dataChanged(_oldValue: ChartProps, newValue: ChartProps) {
-    if (this.$fastController.isConnected && newValue) {
-      this._rerender();
+  public disconnectedCallback() {
+    this.removeEventListener('mouseleave', this._handleMouseLeave);
+    super.disconnectedCallback();
+  }
+
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
+    super.attributeChangedCallback(name, oldValue, newValue);
+
+    if (name === 'round-corners' && oldValue !== newValue) {
+      this.roundCorners = newValue !== null && newValue !== 'false';
     }
   }
 
-  protected orderChanged() {
-    this._rerender();
+  protected roundCornersChanged() {
+    this._scheduleRender();
+  }
+
+  protected dataChanged(_oldValue: ChartProps, newValue: ChartProps) {
+    if (newValue) {
+      this._scheduleRender();
+    }
   }
 
   protected chartTitleChanged() {
-    this._rerender();
-  }
-
-  protected heightChanged() {
-    this._rerender();
+    this._scheduleRender();
   }
 
   protected widthChanged() {
-    this._rerender();
+    this._scheduleRender();
+  }
+
+  protected heightChanged() {
+    this._scheduleRender();
+  }
+
+  protected innerRadiusChanged() {
+    this._scheduleRender();
+  }
+
+  protected valueInsideDonutChanged() {
+    this._scheduleRender();
   }
 
   protected hideLabelsChanged() {
-    this._rerender();
+    this._scheduleRender();
   }
 
   protected showLabelsInPercentChanged() {
-    this._rerender();
+    this._scheduleRender();
   }
 
   protected cultureChanged() {
-    this._rerender();
+    this._scheduleRender();
   }
 
-  protected roundCornersChanged() {
-    this._rerender();
+  protected orderChanged() {
+    this._scheduleRender();
+  }
+
+  private _renderPending = false;
+
+  /**
+   * Schedules a single re-render via microtask, batching multiple synchronous
+   * attribute changes (e.g. from a Blazor re-render) into one render pass.
+   * Interactive-state changes (activeLegend, tooltipProps) bypass this and
+   * update immediately.
+   */
+  private _scheduleRender(): void {
+    if (this._renderPending) {
+      return;
+    }
+    this._renderPending = true;
+    queueMicrotask(() => {
+      this._renderPending = false;
+      this._rerender();
+    });
   }
 
   private _rerender() {
     if (!this.$fastController.isConnected || !this.data) {
       return;
     }
+
     this._clearChart();
     this._initializeAndRender();
   }
 
-  private _initializeAndRender() {
-    validateChartProps(this.data, 'data');
-
-    const chartData =
-      this.order === 'sorted' ? [...this.data.chartData].sort((a, b) => b.data - a.data) : this.data.chartData;
-
-    chartData.forEach((dataPoint, index) => {
-      if (dataPoint.color) {
-        dataPoint.color = getColorFromToken(dataPoint.color);
-      } else {
-        dataPoint.color = getNextColor(index);
-      }
-    });
-
-    this.legends = this._getLegends(chartData);
-    this._isRTL = getRTL(this);
-    this.elementInternals.ariaLabel = this.chartTitle || `Donut chart with ${chartData.length} segments.`;
-
-    this._render(chartData);
-  }
-
-  private _initializeFromAttributes() {
-  if (!this.data) {
-    const data = this.getAttribute('data');
-    if (data) {
-      this.data = jsonConverter.fromView(data) as ChartProps;
-    }
-  }
-
-  if (!this.chartTitle) {
-    this.chartTitle = this.getAttribute('chart-title') ?? undefined;
-  }
-
-  if (!this.valueInsideDonut) {
-    this.valueInsideDonut = this.getAttribute('value-inside-donut') ?? undefined;
-  }
-
-  if (!this.legendListLabel) {
-    this.legendListLabel = this.getAttribute('legend-list-label') ?? undefined;
-  }
-
-  if (!this.culture) {
-    this.culture = this.getAttribute('culture') ?? undefined;
-  }
-
-  if (this.order === 'default') {
-    this.order = (this.getAttribute('order') as 'default' | 'sorted' | null) ?? this.order;
-  }
-
-  if (this.innerRadius === 1) {
-    const innerRadius = this.getAttribute('inner-radius');
-    if (innerRadius) {
-      this.innerRadius = Number(innerRadius);
-    }
-  }
-
-  if (this.height === 200) {
-    const height = this.getAttribute('height');
-    if (height) {
-      this.height = Number(height);
-    }
-  }
-
-  if (this.width === 200) {
-    const width = this.getAttribute('width');
-    if (width) {
-      this.width = Number(width);
-    }
-  }
-}
-
   private _clearChart() {
-    while (this.group.firstChild) {
-      this.group.removeChild(this.group.firstChild);
+    if (this.group) {
+      while (this.group.firstChild) {
+        this.group.removeChild(this.group.firstChild);
+      }
     }
+
     this._arcs = [];
     this._arcLabels = [];
     this._textInsideDonut = undefined;
   }
 
+  private _initializeFromAttributes() {
+    const setString = (name: string, assign: (value: string) => void) => {
+      const value = this.getAttribute(name);
+      if (value !== null) {
+        assign(value);
+      }
+    };
+
+    const setBoolean = (name: string, assign: (value: boolean) => void) => {
+      const value = this.getAttribute(name);
+      if (value !== null) {
+        assign(booleanStringConverter.fromView(value));
+      }
+    };
+
+    setString('chart-title', value => {
+      this.chartTitle = value;
+    });
+    setString('height', value => {
+      this.height = nullableNumberConverter.fromView(value) ?? this.height;
+    });
+    setString('width', value => {
+      this.width = nullableNumberConverter.fromView(value) ?? this.width;
+    });
+    setString('data', value => {
+      this.data = jsonConverter.fromView(value) as ChartProps;
+    });
+    setString('inner-radius', value => {
+      this.innerRadius = nullableNumberConverter.fromView(value) ?? this.innerRadius;
+    });
+    setString('value-inside-donut', value => {
+      this.valueInsideDonut = value;
+    });
+    setString('legend-list-label', value => {
+      this.legendListLabel = value;
+    });
+    setString('order', value => {
+      this.order = value as 'default' | 'sorted';
+    });
+    setString('culture', value => {
+      this.culture = value;
+    });
+
+    setBoolean('hide-legends', value => {
+      this.hideLegends = value;
+    });
+    setBoolean('hide-tooltip', value => {
+      this.hideTooltip = value;
+    });
+    setBoolean('hide-labels', value => {
+      this.hideLabels = value;
+    });
+    setBoolean('show-labels-in-percent', value => {
+      this.showLabelsInPercent = value;
+    });
+    setBoolean('round-corners', value => {
+      this.roundCorners = value;
+    });
+  }
+
+  private _initializeAndRender() {
+    validateChartProps(this.data, 'data');
+
+    const chartData = this._resolveChartData();
+
+    this.legends = this._getLegends(chartData);
+    this._isRTL = getRTL(this);
+    this.elementInternals.ariaLabel =
+      this.chartTitle || this.data.chartTitle || `Donut chart with ${chartData.length} segments.`;
+
+    this._render(chartData);
+  }
+
+  private _resolveChartData(): ChartDataPoint[] {
+    const sourceData =
+      this.order === 'sorted' ? [...this.data.chartData].sort((a, b) => b.data - a.data) : this.data.chartData;
+    const totalValue = sourceData.reduce((sum, point) => sum + (point.data ?? 0), 0);
+    const minimumValue = totalValue * 0.01;
+
+    return sourceData.map((dataPoint, index) => {
+      const color = dataPoint.color ? getColorFromToken(dataPoint.color) : getNextColor(index);
+      const resolvedData = minimumValue > dataPoint.data && dataPoint.data > 0 ? minimumValue : dataPoint.data;
+
+      return {
+        ...dataPoint,
+        color,
+        data: resolvedData,
+        yAxisCalloutData:
+          resolvedData !== dataPoint.data
+            ? dataPoint.yAxisCalloutData ?? dataPoint.data.toLocaleString(this.culture || undefined)
+            : dataPoint.yAxisCalloutData,
+      };
+    });
+  }
+
   private _render(chartData: ChartDataPoint[]) {
-    const totalValue = chartData.reduce((total, dataPoint) => total + dataPoint.data, 0);
-    const outerRadius = (Math.min(this.height, this.width) - 20) / 2;
+    const totalValue = chartData.reduce((sum, point) => sum + (point.data ?? 0), 0);
+    const outerRadius = Math.max(0, (Math.min(this.height, this.width) - 20) / 2);
     const cornerRadius = this.roundCorners ? 3 : 0;
     const pie = d3Pie<ChartDataPoint>()
       .value(d => d.data)
@@ -361,6 +413,8 @@ export class DonutChart extends FASTElement {
       }
     });
 
+    this._applyActiveLegendState();
+
     if (this.valueInsideDonut) {
       this._textInsideDonut = document.createElementNS(SVG_NAMESPACE_URI, 'text');
       this.group.appendChild(this._textInsideDonut);
@@ -374,10 +428,29 @@ export class DonutChart extends FASTElement {
   }
 
   private _getLegends(chartData: ChartDataPoint[]): Legend[] {
-    return chartData.map((d, index) => ({
-      legend: d.legend,
+    return chartData.map(d => ({
+      title: d.legend,
       color: d.color!,
     }));
+  }
+
+  private _applyActiveLegendState() {
+    if (!this._arcs || !this._arcLabels) {
+      return;
+    }
+
+    if (this.activeLegend === '') {
+      this._arcs.forEach(arc => arc.classList.remove('inactive'));
+      this._arcLabels.forEach(label => label.classList.remove('inactive'));
+      return;
+    }
+
+    this._arcs.forEach(arc => {
+      arc.classList.toggle('inactive', arc.getAttribute('data-id') !== this.activeLegend);
+    });
+    this._arcLabels.forEach(label => {
+      label.classList.toggle('inactive', label.getAttribute('data-id') !== this.activeLegend);
+    });
   }
 
   private _createArcLabel(
@@ -428,14 +501,10 @@ export class DonutChart extends FASTElement {
           dataPoint.legend === this.activeLegend ||
           (this.tooltipProps.isVisible && dataPoint.legend === this.tooltipProps.legend),
       );
-      if (this.showLabelsInPercent) {
-        const total = this.data.chartData.reduce((acc, point) => acc + point.data, 0);
-        const percentage = total > 0 ? Math.round(((highlightedDataPoint?.data ?? 0) / total) * 100) : 0;
-        textInsideDonut = `${percentage}%`;
-      } else {
-        textInsideDonut =
-          highlightedDataPoint!.calloutData ?? highlightedDataPoint!.data.toLocaleString(this.culture || undefined);
-      }
+      textInsideDonut =
+        highlightedDataPoint!.yAxisCalloutData ??
+        highlightedDataPoint!.calloutData ??
+        highlightedDataPoint!.data.toLocaleString(this.culture || undefined);
     }
 
     return textInsideDonut;

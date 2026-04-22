@@ -24,22 +24,22 @@ export function donutChartTemplate<T extends DonutChart>(): ElementViewTemplate<
               x => x.legends,
               html<Legend, T>` <button
                 class="legend${(x, c) =>
-                  c.parent.activeLegend === '' || c.parent.activeLegend === x.legend ? '' : ' inactive'}"
+                  c.parent.activeLegend === '' || c.parent.activeLegend === x.title ? '' : ' inactive'}"
                 role="option"
                 aria-setsize="${(x, c) => c.length}"
                 aria-posinset="${(x, c) => c.index + 1}"
-                aria-selected="${(x, c) => x.legend === c.parent.activeLegend}"
-                @mouseover="${(x, c) => c.parent.handleLegendMouseoverAndFocus(x.legend)}"
+                aria-selected="${(x, c) => x.title === c.parent.activeLegend}"
+                @mouseover="${(x, c) => c.parent.handleLegendMouseoverAndFocus(x.title)}"
                 @mouseout="${(x, c) => c.parent.handleLegendMouseoutAndBlur()}"
-                @focus="${(x, c) => c.parent.handleLegendMouseoverAndFocus(x.legend)}"
+                @focus="${(x, c) => c.parent.handleLegendMouseoverAndFocus(x.title)}"
                 @blur="${(x, c) => c.parent.handleLegendMouseoutAndBlur()}"
-                @click="${(x, c) => c.parent.handleLegendClick(x.legend)}"
+                @click="${(x, c) => c.parent.handleLegendClick(x.title)}"
               >
                 <div
                   class="legend-rect"
                   style="background-color: ${x => x.color}; border-color: ${x => x.color};"
                 ></div>
-                <div class="legend-text">${x => x.legend}</div>
+                <div class="legend-text">${x => x.title}</div>
               </button>`,
             )}
           </div>

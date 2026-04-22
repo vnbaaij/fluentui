@@ -19,11 +19,13 @@ export class DonutChart extends FASTElement {
     // (undocumented)
     protected activeLegendChanged(oldValue: string, newValue: string): void;
     // (undocumented)
+    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void;
+    // (undocumented)
+    chartContainer: HTMLDivElement;
+    // (undocumented)
     chartTitle?: string;
     // (undocumented)
     protected chartTitleChanged(): void;
-    // (undocumented)
-    chartWrapper: HTMLDivElement;
     // (undocumented)
     connectedCallback(): void;
     // (undocumented)
@@ -36,6 +38,8 @@ export class DonutChart extends FASTElement {
     data: ChartProps_2;
     // (undocumented)
     protected dataChanged(_oldValue: ChartProps_2, newValue: ChartProps_2): void;
+    // (undocumented)
+    disconnectedCallback(): void;
     // (undocumented)
     elementInternals: ElementInternals;
     // (undocumented)
@@ -60,6 +64,8 @@ export class DonutChart extends FASTElement {
     hideTooltip: boolean;
     // (undocumented)
     innerRadius: number;
+    // (undocumented)
+    protected innerRadiusChanged(): void;
     // (undocumented)
     isLegendSelected: boolean;
     // (undocumented)
@@ -94,6 +100,8 @@ export class DonutChart extends FASTElement {
     // (undocumented)
     valueInsideDonut?: string;
     // (undocumented)
+    protected valueInsideDonutChanged(): void;
+    // (undocumented)
     width: number;
     // (undocumented)
     protected widthChanged(): void;
@@ -117,6 +125,8 @@ export class HorizontalBarChart extends FASTElement {
     activeLegend: string;
     // (undocumented)
     protected activeLegendChanged: (oldValue: string, newValue: string) => void;
+    // (undocumented)
+    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void;
     // (undocumented)
     chartContainer: HTMLDivElement;
     // (undocumented)
@@ -184,7 +194,7 @@ export class HorizontalBarChart extends FASTElement {
     protected widthChanged(): void;
 }
 
-// @public
+// @public (undocumented)
 export const HorizontalBarChartDefinition: FASTElementDefinition<typeof HorizontalBarChart>;
 
 // @public
@@ -207,6 +217,8 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     allowMultipleLegendSelection: boolean;
     // (undocumented)
     protected allowMultipleLegendSelectionChanged(): void;
+    // (undocumented)
+    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void;
     // (undocumented)
     barHeight?: number | string;
     // (undocumented)
@@ -327,8 +339,6 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     protected yMinValueChanged(): void;
 }
 
-// Warning: (ae-missing-release-tag) "definition" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export const HorizontalBarChartWithAxisDefinition: FASTElementDefinition<typeof HorizontalBarChartWithAxis>;
 

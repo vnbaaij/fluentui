@@ -82,7 +82,9 @@ test.describe('horizontal-bar-chart-with-axis', () => {
   test('renders a categorical chart with axis labels and legends', async ({ page }) => {
     await page.setContent(/* html */ `
       <div style="width: 800px">
-        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(categoricalData)}'>
+        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(
+          categoricalData,
+        )}'>
         </fluent-horizontal-bar-chart-with-axis>
       </div>
     `);
@@ -97,7 +99,9 @@ test.describe('horizontal-bar-chart-with-axis', () => {
   test('renders a numeric y-axis chart', async ({ page }) => {
     await page.setContent(/* html */ `
       <div style="width: 800px">
-        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by value" data='${JSON.stringify(numericYAxisData)}'>
+        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by value" data='${JSON.stringify(
+          numericYAxisData,
+        )}'>
         </fluent-horizontal-bar-chart-with-axis>
       </div>
     `);
@@ -110,7 +114,9 @@ test.describe('horizontal-bar-chart-with-axis', () => {
   test('rerenders when data attribute changes after initial render', async ({ page }) => {
     await page.setContent(/* html */ `
       <div style="width: 800px">
-        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(categoricalData)}'>
+        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(
+          categoricalData,
+        )}'>
         </fluent-horizontal-bar-chart-with-axis>
       </div>
     `);
@@ -119,9 +125,23 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
 
     const newData: HorizontalBarChartWithAxisDataPoint[] = [
-      { x: 1200, y: 'Alpha', legend: 'Series A', color: '#637cef', xAxisCalloutData: '1.2K', yAxisCalloutData: 'Alpha' },
+      {
+        x: 1200,
+        y: 'Alpha',
+        legend: 'Series A',
+        color: '#637cef',
+        xAxisCalloutData: '1.2K',
+        yAxisCalloutData: 'Alpha',
+      },
       { x: 2400, y: 'Beta', legend: 'Series B', color: '#e3008c', xAxisCalloutData: '2.4K', yAxisCalloutData: 'Beta' },
-      { x: 3600, y: 'Gamma', legend: 'Series C', color: '#2aa0a4', xAxisCalloutData: '3.6K', yAxisCalloutData: 'Gamma' },
+      {
+        x: 3600,
+        y: 'Gamma',
+        legend: 'Series C',
+        color: '#2aa0a4',
+        xAxisCalloutData: '3.6K',
+        yAxisCalloutData: 'Gamma',
+      },
     ];
 
     await element.evaluate((el, d) => {
@@ -140,7 +160,9 @@ test.describe('horizontal-bar-chart-with-axis', () => {
   test('dims non-selected bars when hovering a legend', async ({ page }) => {
     await page.setContent(/* html */ `
       <div style="width: 800px">
-        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(categoricalData)}'>
+        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(
+          categoricalData,
+        )}'>
         </fluent-horizontal-bar-chart-with-axis>
       </div>
     `);
@@ -154,6 +176,38 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     await expect(bars.nth(1)).toHaveAttribute('opacity', '0.1');
     await expect(bars.nth(2)).toHaveAttribute('opacity', '0.1');
     await expect(bars.nth(3)).toHaveAttribute('opacity', '0.1');
+  });
+
+  test('shows all legends as active before hover and restores them after hover ends', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(
+          categoricalData,
+        )}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    const legends = element.locator('.legend');
+
+    await expect(legends).toHaveCount(4);
+    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(3)).toHaveAttribute('aria-selected', 'true');
+
+    await legends.nth(0).dispatchEvent('mouseover');
+    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(1)).toHaveAttribute('aria-selected', 'false');
+    await expect(legends.nth(2)).toHaveAttribute('aria-selected', 'false');
+    await expect(legends.nth(3)).toHaveAttribute('aria-selected', 'false');
+
+    await legends.nth(0).dispatchEvent('mouseout');
+    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(3)).toHaveAttribute('aria-selected', 'true');
   });
 
   test('supports multiple legend selection when enabled', async ({ page }) => {
@@ -245,13 +299,15 @@ test.describe('horizontal-bar-chart-with-axis', () => {
   test('shows tooltip data for a hovered bar', async ({ page }) => {
     await page.setContent(/* html */ `
       <div style="width: 800px">
-        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(categoricalData)}'>
+        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(
+          categoricalData,
+        )}'>
         </fluent-horizontal-bar-chart-with-axis>
       </div>
     `);
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
-  await element.locator('.bar').nth(0).hover();
+    await element.locator('.bar').nth(0).hover();
     const tooltip = element.locator('.tooltip');
     await expect(tooltip).toHaveCount(1);
     await expect(tooltip.locator('.tooltip-header')).toHaveText('String Four');

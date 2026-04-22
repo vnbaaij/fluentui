@@ -1,5 +1,12 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
-import { getColorFromToken, getNextColor, getRTL, jsonConverter, SVG_NAMESPACE_URI } from '../utils/chart-helpers.js';
+import {
+  getColorFromToken,
+  getNextColor,
+  getRTL,
+  jsonConverter,
+  booleanStringConverter,
+  SVG_NAMESPACE_URI,
+} from '../utils/chart-helpers.js';
 import type {
   AxisCategoryOrder,
   HorizontalBarChartWithAxisDataPoint,
@@ -175,25 +182,25 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   @attr({ attribute: 'legend-list-label' })
   public legendListLabel?: string;
 
-  @attr({ attribute: 'hide-legends', mode: 'boolean' })
+  @attr({ attribute: 'hide-legends', converter: booleanStringConverter })
   public hideLegends: boolean = false;
 
-  @attr({ attribute: 'hide-tooltip', mode: 'boolean' })
+  @attr({ attribute: 'hide-tooltip', converter: booleanStringConverter })
   public hideTooltip: boolean = false;
 
-  @attr({ attribute: 'hide-labels', mode: 'boolean' })
+  @attr({ attribute: 'hide-labels', converter: booleanStringConverter })
   public hideLabels: boolean = false;
 
-  @attr({ attribute: 'show-y-axis-labels', mode: 'boolean' })
+  @attr({ attribute: 'show-y-axis-labels', converter: booleanStringConverter })
   public showYAxisLabels: boolean = false;
 
-  @attr({ attribute: 'show-y-axis-labels-tooltip', mode: 'boolean' })
+  @attr({ attribute: 'show-y-axis-labels-tooltip', converter: booleanStringConverter })
   public showYAxisLabelsTooltip: boolean = false;
 
-  @attr({ attribute: 'use-single-color', mode: 'boolean' })
+  @attr({ attribute: 'use-single-color', converter: booleanStringConverter })
   public useSingleColor: boolean = false;
 
-  @attr({ attribute: 'enable-gradient', mode: 'boolean' })
+  @attr({ attribute: 'enable-gradient', converter: booleanStringConverter })
   public enableGradient: boolean = false;
 
   @attr({ attribute: 'round-corners', mode: 'boolean' })
@@ -275,6 +282,14 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     this._resizeObserver.observe(this);
     if (this.data) {
       this._renderChart();
+    }
+  }
+
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
+    super.attributeChangedCallback(name, oldValue, newValue);
+
+    if (name === 'round-corners' && oldValue !== newValue) {
+      this.roundCorners = newValue !== null && newValue !== 'false';
     }
   }
 
@@ -589,104 +604,93 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   }
 
   private _initializeFromAttributes() {
-    if (!this.data) {
-      const data = this.getAttribute('data');
-      if (data) {
-        this.data = jsonConverter.fromView(data) as HorizontalBarChartWithAxisDataPoint[];
+    const setString = (name: string, assign: (value: string) => void) => {
+      const value = this.getAttribute(name);
+      if (value !== null) {
+        assign(value);
       }
-    }
+    };
 
-    if (!this.chartTitle) {
-      this.chartTitle = this.getAttribute('chart-title') ?? undefined;
-    }
+    const setBoolean = (name: string, assign: (value: boolean) => void) => {
+      const value = this.getAttribute(name);
+      if (value !== null) {
+        assign(booleanStringConverter.fromView(value));
+      }
+    };
 
-    if (this.width === undefined) {
-      this.width = this.getAttribute('width') ?? undefined;
-    }
+    setString('data', value => {
+      this.data = jsonConverter.fromView(value) as HorizontalBarChartWithAxisDataPoint[];
+    });
+    setString('chart-title', value => {
+      this.chartTitle = value;
+    });
+    setString('width', value => {
+      this.width = value;
+    });
+    setString('legend-list-label', value => {
+      this.legendListLabel = value;
+    });
+    setString('bar-height', value => {
+      this.barHeight = value;
+    });
+    setString('height', value => {
+      this.height = value;
+    });
+    setString('x-axis-tick-count', value => {
+      this.xAxisTickCount = value;
+    });
+    setString('y-axis-tick-count', value => {
+      this.yAxisTickCount = value;
+    });
+    setString('y-axis-padding', value => {
+      this.yAxisPadding = value;
+    });
+    setString('x-min-value', value => {
+      this.xMinValue = value;
+    });
+    setString('x-max-value', value => {
+      this.xMaxValue = value;
+    });
+    setString('y-min-value', value => {
+      this.yMinValue = value;
+    });
+    setString('y-max-value', value => {
+      this.yMaxValue = value;
+    });
+    setString('y-axis-category-order', value => {
+      this.yAxisCategoryOrder = value as AxisCategoryOrder;
+    });
+    setString('culture', value => {
+      this.culture = value;
+    });
 
-    if (!this.legendListLabel) {
-      this.legendListLabel = this.getAttribute('legend-list-label') ?? undefined;
-    }
-
-    if (!this.hideLegends && this.hasAttribute('hide-legends')) {
-      this.hideLegends = true;
-    }
-
-    if (!this.hideTooltip && this.hasAttribute('hide-tooltip')) {
-      this.hideTooltip = true;
-    }
-
-    if (!this.hideLabels && this.hasAttribute('hide-labels')) {
-      this.hideLabels = true;
-    }
-
-    if (!this.showYAxisLabels && this.hasAttribute('show-y-axis-labels')) {
-      this.showYAxisLabels = true;
-    }
-
-    if (!this.showYAxisLabelsTooltip && this.hasAttribute('show-y-axis-labels-tooltip')) {
-      this.showYAxisLabelsTooltip = true;
-    }
-
-    if (!this.useSingleColor && this.hasAttribute('use-single-color')) {
-      this.useSingleColor = true;
-    }
-
-    if (!this.enableGradient && this.hasAttribute('enable-gradient')) {
-      this.enableGradient = true;
-    }
-
-    if (!this.roundCorners && this.hasAttribute('round-corners')) {
-      this.roundCorners = true;
-    }
-
-    if (!this.allowMultipleLegendSelection && this.hasAttribute('allow-multiple-legend-selection')) {
-      this.allowMultipleLegendSelection = true;
-    }
-
-    if (this.barHeight === undefined) {
-      this.barHeight = this.getAttribute('bar-height') ?? undefined;
-    }
-
-    if (this.height === undefined) {
-      this.height = this.getAttribute('height') ?? undefined;
-    }
-
-    if (this.xAxisTickCount === undefined) {
-      this.xAxisTickCount = this.getAttribute('x-axis-tick-count') ?? undefined;
-    }
-
-    if (this.yAxisTickCount === undefined) {
-      this.yAxisTickCount = this.getAttribute('y-axis-tick-count') ?? undefined;
-    }
-
-    if (this.yAxisPadding === undefined) {
-      this.yAxisPadding = this.getAttribute('y-axis-padding') ?? undefined;
-    }
-
-    if (this.xMinValue === undefined) {
-      this.xMinValue = this.getAttribute('x-min-value') ?? undefined;
-    }
-
-    if (this.xMaxValue === undefined) {
-      this.xMaxValue = this.getAttribute('x-max-value') ?? undefined;
-    }
-
-    if (this.yMinValue === undefined) {
-      this.yMinValue = this.getAttribute('y-min-value') ?? undefined;
-    }
-
-    if (this.yMaxValue === undefined) {
-      this.yMaxValue = this.getAttribute('y-max-value') ?? undefined;
-    }
-
-    if (this.yAxisCategoryOrder === 'default') {
-      this.yAxisCategoryOrder = (this.getAttribute('y-axis-category-order') as AxisCategoryOrder | null) ?? this.yAxisCategoryOrder;
-    }
-
-    if (!this.culture) {
-      this.culture = this.getAttribute('culture') ?? undefined;
-    }
+    setBoolean('hide-legends', value => {
+      this.hideLegends = value;
+    });
+    setBoolean('hide-tooltip', value => {
+      this.hideTooltip = value;
+    });
+    setBoolean('hide-labels', value => {
+      this.hideLabels = value;
+    });
+    setBoolean('show-y-axis-labels', value => {
+      this.showYAxisLabels = value;
+    });
+    setBoolean('show-y-axis-labels-tooltip', value => {
+      this.showYAxisLabelsTooltip = value;
+    });
+    setBoolean('use-single-color', value => {
+      this.useSingleColor = value;
+    });
+    setBoolean('enable-gradient', value => {
+      this.enableGradient = value;
+    });
+    setBoolean('round-corners', value => {
+      this.roundCorners = value;
+    });
+    setBoolean('allow-multiple-legend-selection', value => {
+      this.allowMultipleLegendSelection = value;
+    });
   }
 
   private _clearChart() {

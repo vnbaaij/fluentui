@@ -25,9 +25,7 @@ test.describe('Donut-chart - Basic', () => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
-        <fluent-donut-chart chart-title="${basicTitle}" value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(
-      data,
-    )}'>
+        <fluent-donut-chart chart-title="${basicTitle}" value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(data)}'>
         </fluent-donut-chart>
       </div>
     `);
@@ -216,11 +214,16 @@ test.describe('Donut-chart - hide-labels', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
 
     const element = page.locator('fluent-donut-chart');
+    const firstArc = element.locator('.arc').first();
+    const defaultPath = await firstArc.getAttribute('d');
+
     await element.evaluate(el => {
       (el as FluentDonutChart).hideLabels = false;
     });
+
     await expect(element.locator('.text-inside-donut')).toHaveCount(1);
     await expect(element.locator('.arc-label')).toHaveCount(2);
+    await expect(firstArc).toHaveAttribute('d', defaultPath ?? '');
   });
 });
 

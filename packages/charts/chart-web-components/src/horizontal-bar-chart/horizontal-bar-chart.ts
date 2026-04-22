@@ -1,6 +1,12 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
 import { create as d3Create, select as d3Select } from 'd3-selection';
-import { getRTL, jsonConverter, SVG_NAMESPACE_URI, validateChartPropsArray } from '../utils/chart-helpers.js';
+import {
+  getRTL,
+  jsonConverter,
+  booleanStringConverter,
+  SVG_NAMESPACE_URI,
+  validateChartPropsArray,
+} from '../utils/chart-helpers.js';
 import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
 
@@ -22,10 +28,10 @@ export class HorizontalBarChart extends FASTElement {
   @attr({ converter: jsonConverter })
   public data!: ChartProps[];
 
-  @attr({ attribute: 'hide-ratio', mode: 'boolean' })
+  @attr({ attribute: 'hide-ratio', converter: booleanStringConverter })
   public hideRatio: boolean = false;
 
-  @attr({ attribute: 'hide-labels', mode: 'boolean' })
+  @attr({ attribute: 'hide-labels', converter: booleanStringConverter })
   public hideLabels: boolean = false;
 
   @attr({ attribute: 'round-corners', mode: 'boolean' })
@@ -34,10 +40,10 @@ export class HorizontalBarChart extends FASTElement {
   @attr({ attribute: 'chart-data-mode' })
   public chartDataMode: 'default' | 'fraction' | 'percentage' = 'default';
 
-  @attr({ attribute: 'hide-legends', mode: 'boolean' })
+  @attr({ attribute: 'hide-legends', converter: booleanStringConverter })
   public hideLegends: boolean = false;
 
-  @attr({ attribute: 'hide-tooltip', mode: 'boolean' })
+  @attr({ attribute: 'hide-tooltip', converter: booleanStringConverter })
   public hideTooltip: boolean = false;
 
   @attr({ attribute: 'legend-list-label' })
@@ -129,6 +135,14 @@ export class HorizontalBarChart extends FASTElement {
     this._initializeAll();
   }
 
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
+    super.attributeChangedCallback(name, oldValue, newValue);
+
+    if (name === 'round-corners' && oldValue !== newValue) {
+      this.roundCorners = newValue !== null && newValue !== 'false';
+    }
+  }
+
   protected dataChanged(_oldValue: ChartProps[], newValue: ChartProps[]) {
     if (this.$fastController.isConnected && newValue) {
       this._clearChart();
@@ -165,57 +179,57 @@ export class HorizontalBarChart extends FASTElement {
   }
 
   private _initializeFromAttributes() {
-    if (!this.data) {
-      const data = this.getAttribute('data');
-      if (data) {
-        this.data = jsonConverter.fromView(data) as ChartProps[];
+    const setString = (name: string, assign: (value: string) => void) => {
+      const value = this.getAttribute(name);
+      if (value !== null) {
+        assign(value);
       }
-    }
+    };
 
-    if (this.width === undefined) {
-      this.width = this.getAttribute('width') ?? undefined;
-    }
+    const setBoolean = (name: string, assign: (value: boolean) => void) => {
+      const value = this.getAttribute(name);
+      if (value !== null) {
+        assign(booleanStringConverter.fromView(value));
+      }
+    };
 
-    if (this.height === undefined) {
-      this.height = this.getAttribute('height') ?? undefined;
-    }
+    setString('data', value => {
+      this.data = jsonConverter.fromView(value) as ChartProps[];
+    });
+    setString('width', value => {
+      this.width = value;
+    });
+    setString('height', value => {
+      this.height = value;
+    });
+    setString('variant', value => {
+      this.variant = value as Variant;
+    });
+    setString('chart-data-mode', value => {
+      this.chartDataMode = value as 'default' | 'fraction' | 'percentage';
+    });
+    setString('legend-list-label', value => {
+      this.legendListLabel = value;
+    });
+    setString('chart-title', value => {
+      this.chartTitle = value;
+    });
 
-    if (!this.variant) {
-      this.variant = (this.getAttribute('variant') as Variant | null) ?? undefined;
-    }
-
-    if (!this.hideRatio && this.hasAttribute('hide-ratio')) {
-      this.hideRatio = true;
-    }
-
-    if (!this.hideLabels && this.hasAttribute('hide-labels')) {
-      this.hideLabels = true;
-    }
-
-    if (!this.roundCorners && this.hasAttribute('round-corners')) {
-      this.roundCorners = true;
-    }
-
-    if (this.chartDataMode === 'default') {
-      this.chartDataMode =
-        (this.getAttribute('chart-data-mode') as 'default' | 'fraction' | 'percentage' | null) ?? this.chartDataMode;
-    }
-
-    if (!this.hideLegends && this.hasAttribute('hide-legends')) {
-      this.hideLegends = true;
-    }
-
-    if (!this.hideTooltip && this.hasAttribute('hide-tooltip')) {
-      this.hideTooltip = true;
-    }
-
-    if (!this.legendListLabel) {
-      this.legendListLabel = this.getAttribute('legend-list-label') ?? undefined;
-    }
-
-    if (!this.chartTitle) {
-      this.chartTitle = this.getAttribute('chart-title') ?? undefined;
-    }
+    setBoolean('hide-ratio', value => {
+      this.hideRatio = value;
+    });
+    setBoolean('hide-labels', value => {
+      this.hideLabels = value;
+    });
+    setBoolean('round-corners', value => {
+      this.roundCorners = value;
+    });
+    setBoolean('hide-legends', value => {
+      this.hideLegends = value;
+    });
+    setBoolean('hide-tooltip', value => {
+      this.hideTooltip = value;
+    });
   }
 
   private _clearChart() {
@@ -468,7 +482,10 @@ export class HorizontalBarChart extends FASTElement {
       this._bars.push(rect.node()!);
     };
 
-    const containerDiv = d3Create('div').attr('style', 'position: relative; margin-bottom: var(--spacingVerticalMNudge);');
+    const containerDiv = d3Create('div').attr(
+      'style',
+      'position: relative; margin-bottom: var(--spacingVerticalMNudge);',
+    );
 
     const barTitleDiv = containerDiv.append('div').attr('class', 'bar-title-div');
     barTitleDiv
