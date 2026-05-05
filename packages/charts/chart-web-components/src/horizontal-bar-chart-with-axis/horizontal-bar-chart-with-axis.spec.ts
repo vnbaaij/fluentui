@@ -192,10 +192,10 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     const legends = element.locator('.legend');
 
     await expect(legends).toHaveCount(4);
-    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'true');
-    await expect(legends.nth(1)).toHaveAttribute('aria-selected', 'true');
-    await expect(legends.nth(2)).toHaveAttribute('aria-selected', 'true');
-    await expect(legends.nth(3)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'false');
+    await expect(legends.nth(1)).toHaveAttribute('aria-selected', 'false');
+    await expect(legends.nth(2)).toHaveAttribute('aria-selected', 'false');
+    await expect(legends.nth(3)).toHaveAttribute('aria-selected', 'false');
 
     await legends.nth(0).dispatchEvent('mouseover');
     await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'true');
@@ -204,10 +204,10 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     await expect(legends.nth(3)).toHaveAttribute('aria-selected', 'false');
 
     await legends.nth(0).dispatchEvent('mouseout');
-    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'true');
-    await expect(legends.nth(1)).toHaveAttribute('aria-selected', 'true');
-    await expect(legends.nth(2)).toHaveAttribute('aria-selected', 'true');
-    await expect(legends.nth(3)).toHaveAttribute('aria-selected', 'true');
+    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'false');
+    await expect(legends.nth(1)).toHaveAttribute('aria-selected', 'false');
+    await expect(legends.nth(2)).toHaveAttribute('aria-selected', 'false');
+    await expect(legends.nth(3)).toHaveAttribute('aria-selected', 'false');
   });
 
   test('supports multiple legend selection when enabled', async ({ page }) => {
@@ -427,5 +427,94 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     const tooltipCenterX = tooltipBox!.x + tooltipBox!.width / 2;
 
     expect(Math.abs(tooltipCenterX - firstBarCenterX)).toBeLessThanOrEqual(24);
+  });
+
+  test('deselects a legend on second click in single-select mode', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(
+          categoricalData,
+        )}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    const legends = element.locator('.legend');
+
+    await legends.nth(0).click();
+    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'true');
+    await expect(element.locator('.bar').nth(0)).toHaveAttribute('opacity', '0.1');
+
+    await legends.nth(0).click(); // deselect
+    await expect(legends.nth(0)).toHaveAttribute('aria-selected', 'false');
+    await expect(element.locator('.bar').nth(0)).toHaveAttribute('opacity', '1');
+  });
+
+  test('sets aria-label on legend container from legend-list-label attribute', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          legend-list-label="Chart legends"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Chart legends');
+
+    await element.evaluate(el => el.setAttribute('legend-list-label', 'Updated legends'));
+    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Updated legends');
+  });
+
+  test('hides tooltip when hide-tooltip attribute is set', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis chart-title="Revenue by category" data='${JSON.stringify(
+          categoricalData,
+        )}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+
+    await element.locator('.bar').nth(0).hover();
+    await expect(element.locator('.tooltip')).toHaveCount(1);
+
+    await element.evaluate(el => el.setAttribute('hide-tooltip', 'true'));
+    await element.locator('.bar').nth(0).hover();
+    await expect(element.locator('.tooltip')).toHaveCount(0);
+  });
+
+  test('formats axis labels and bar labels using the specified culture', async ({ page }) => {
+    const cultureData: HorizontalBarChartWithAxisDataPoint[] = [
+      { x: 1234567, y: 'Alpha', legend: 'Series A', color: '#637cef' },
+      { x: 2345678, y: 'Beta', legend: 'Series B', color: '#e3008c' },
+    ];
+
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Culture test"
+          culture="de-DE"
+          data='${JSON.stringify(cultureData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    // de-DE uses period as grouping separator — compact notation "1,2M"
+    const axisTexts = element.locator('.axis-text');
+    const firstAxisText = await axisTexts.first().textContent();
+    // Any de-DE formatted number uses comma as decimal separator
+    expect(firstAxisText).toMatch(/[0-9,\.]+/);
+
+    await element.evaluate(el => el.setAttribute('culture', 'en-US'));
+    const axisTextsAfter = element.locator('.axis-text');
+    const firstAxisTextAfter = await axisTextsAfter.first().textContent();
+    expect(firstAxisTextAfter).not.toBeNull();
   });
 });

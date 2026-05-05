@@ -710,6 +710,11 @@ export class HorizontalBarChart extends FASTElement {
           return;
         }
 
+        const highlighted = this._getHighlightedLegends();
+        if (highlighted.length > 0 && d.legend && !highlighted.includes(d.legend)) {
+          return;
+        }
+
         const bounds = this.getBoundingClientRect();
         const centerX = window.innerWidth / 2;
         const xPos = Math.max(0, Math.min(centerX, window.innerWidth));

@@ -802,3 +802,89 @@ export const RTL: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html
     </fluent-horizontal-bar-chart-with-axis>
   </div>
 `);
+
+export const Culture: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 650px; height: 350px"
+    chart-title="Horizontal bar chart culture example (de-DE)"
+    culture="de-DE"
+    data="${JSON.stringify(categoricalData)}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+
+export const LegendListLabel: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 650px; height: 350px"
+    chart-title="Horizontal bar chart legend list label example"
+    legend-list-label="Chart series"
+    data="${JSON.stringify(categoricalData)}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+
+export const HideTooltip: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let hideTooltip = true;
+
+  const chart = document.createElement(
+    'fluent-horizontal-bar-chart-with-axis',
+  ) as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Horizontal bar chart hide tooltip example');
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('style', 'width:650px;height:350px;margin-top:20px;');
+  chart.toggleAttribute('hide-tooltip', hideTooltip);
+  container.appendChild(chart);
+
+  const hideTooltipControl = createSwitchField('Hide tooltip', 'hbcwa-hide-tooltip', hideTooltip, nextChecked => {
+    hideTooltip = nextChecked;
+    hideTooltipControl.setValue(nextChecked);
+    chart.hideTooltip = nextChecked;
+    chart.toggleAttribute('hide-tooltip', nextChecked);
+  });
+  controls.appendChild(hideTooltipControl.element);
+
+  return container;
+};
+
+export const MultipleLegendSelection: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let allowMultiple = true;
+
+  const chart = document.createElement(
+    'fluent-horizontal-bar-chart-with-axis',
+  ) as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Horizontal bar chart multiple legend selection example');
+  chart.setAttribute('data', JSON.stringify(stackedData));
+  chart.setAttribute('style', 'width:650px;height:350px;margin-top:20px;');
+  chart.allowMultipleLegendSelection = allowMultiple;
+  chart.toggleAttribute('allow-multiple-legend-selection', allowMultiple);
+  container.appendChild(chart);
+
+  const multipleControl = createSwitchField(
+    'Allow multiple legend selection',
+    'hbcwa-multiple-legend',
+    allowMultiple,
+    nextChecked => {
+      allowMultiple = nextChecked;
+      multipleControl.setValue(nextChecked);
+      chart.allowMultipleLegendSelection = nextChecked;
+      chart.toggleAttribute('allow-multiple-legend-selection', nextChecked);
+    },
+  );
+  controls.appendChild(multipleControl.element);
+
+  return container;
+};
