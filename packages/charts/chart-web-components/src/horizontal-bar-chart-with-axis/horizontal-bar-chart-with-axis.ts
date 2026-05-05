@@ -433,6 +433,10 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     this._scheduleRender();
   }
 
+  protected heightChanged() {
+    this._scheduleRender();
+  }
+
   protected hideLabelsChanged() {
     this._scheduleRender();
   }
