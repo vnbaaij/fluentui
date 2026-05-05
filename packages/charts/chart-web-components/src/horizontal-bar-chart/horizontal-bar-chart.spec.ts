@@ -893,3 +893,420 @@ test.describe('Horizontal-bar-chart - sizing attrs', () => {
     await expect(element).toHaveCSS('height', '320px');
   });
 });
+
+test.describe('Horizontal-bar-chart - hide-legends', () => {
+  test('Should hide legend container when hide-legends is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          hide-legends
+          data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.legend-container')).toHaveCount(0);
+  });
+
+  test('Should show legend container when hide-legends is false', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.legend-container')).toHaveCount(1);
+  });
+
+  test('Should react to hide-legends attribute change', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.legend-container')).toHaveCount(1);
+
+    await element.evaluate(el => el.setAttribute('hide-legends', 'true'));
+
+    await expect(element.locator('.legend-container')).toHaveCount(0);
+
+    await element.evaluate(el => el.removeAttribute('hide-legends'));
+
+    await expect(element.locator('.legend-container')).toHaveCount(1);
+  });
+});
+
+test.describe('Horizontal-bar-chart - hide-tooltip', () => {
+  test('Should not show tooltip when hide-tooltip is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          hide-tooltip
+          data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+    await firstBar.dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip')).toHaveCount(0);
+  });
+
+  test('Should react to hide-tooltip attribute change', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+    await firstBar.dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip')).toHaveCount(1);
+
+    await firstBar.dispatchEvent('mouseout');
+    await element.evaluate(el => el.setAttribute('hide-tooltip', 'true'));
+
+    await firstBar.dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip')).toHaveCount(0);
+  });
+});
+
+test.describe('Horizontal-bar-chart - legend-list-label', () => {
+  test('Should set aria-label on legend container', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          legend-list-label="Chart legend"
+          data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Chart legend');
+  });
+
+  test('Should update aria-label when legend-list-label attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          legend-list-label="Initial label"
+          data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Initial label');
+
+    await element.evaluate(el => el.setAttribute('legend-list-label', 'Updated label'));
+
+    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Updated label');
+  });
+});
+
+test.describe('Horizontal-bar-chart - hide-ratio', () => {
+  const twoPointData = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [
+        { legend: 'one', data: 1543, color: '#637cef' },
+        { legend: 'two', data: 13457, color: '#e3008c' },
+      ],
+    },
+  ];
+
+  test('Should hide ratio text when hide-ratio is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          hide-ratio
+          data='${JSON.stringify(twoPointData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.ratio-numerator')).toHaveCount(0);
+  });
+
+  test('Should show ratio text when hide-ratio is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          data='${JSON.stringify(twoPointData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.ratio-numerator')).toHaveCount(1);
+  });
+
+  test('Should react to hide-ratio attribute change', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          data='${JSON.stringify(twoPointData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.ratio-numerator')).toHaveCount(1);
+
+    await element.evaluate(el => el.setAttribute('hide-ratio', 'true'));
+    await page.waitForTimeout(50);
+
+    await expect(element.locator('.ratio-numerator')).toHaveCount(0);
+  });
+});
+
+test.describe('Horizontal-bar-chart - chart-data-mode reactivity', () => {
+  const singleBarData = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [{ legend: 'one', data: 1543, total: 15000, color: '#637cef' }],
+    },
+  ];
+
+  test('Should react to chart-data-mode attribute change', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          variant="single-bar"
+          chart-data-mode="fraction"
+          data='${JSON.stringify(singleBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    await expect(element.locator('.ratio-numerator')).toHaveText('1543');
+    await expect(element.locator('.ratio-denominator')).toHaveText('/15000');
+
+    await element.evaluate(el => el.setAttribute('chart-data-mode', 'percentage'));
+    await page.waitForTimeout(50);
+
+    await expect(element.locator('.ratio-denominator')).toHaveCount(0);
+    await expect(element.locator('.ratio-numerator')).toHaveText('10%');
+  });
+});
+
+test.describe('Horizontal-bar-chart - culture', () => {
+  const cultureData = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [
+        { legend: 'Alpha', data: 1234.5, color: '#637cef' },
+        { legend: 'Beta', data: 5678.9, color: '#e3008c' },
+      ],
+    },
+  ];
+
+  test('Should format tooltip value using the specified culture', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          chart-title="Culture test"
+          culture="de-DE"
+          data='${JSON.stringify(cultureData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+    await firstBar.dispatchEvent('mouseover');
+
+    // de-DE uses comma as decimal separator: 1.234,5
+    const tooltipDataY = element.locator('.tooltip-data-y');
+    await expect(tooltipDataY).toContainText(',');
+  });
+
+  test('Should rerender when culture attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          chart-title="Culture change test"
+          data='${JSON.stringify(cultureData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    // First hover without culture — expect en-US style (period decimal)
+    const firstBar = element.locator('.bar').first();
+    await firstBar.dispatchEvent('mouseover');
+    const tooltipDataY = element.locator('.tooltip-data-y');
+    const enValue = await tooltipDataY.textContent();
+
+    await firstBar.dispatchEvent('mouseout');
+    await element.evaluate(el => el.setAttribute('culture', 'de-DE'));
+    await page.waitForTimeout(50);
+
+    // Hover again after culture change
+    await firstBar.dispatchEvent('mouseover');
+    const deValue = await tooltipDataY.textContent();
+
+    // de-DE should differ from default (comma vs period decimal separator)
+    expect(enValue).not.toEqual(deValue);
+  });
+});
+
+test.describe('Horizontal-bar-chart - allow-multiple-legend-selection', () => {
+  const multiLegendData = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [
+        { legend: 'Alpha', data: 40, color: '#637cef' },
+        { legend: 'Beta', data: 30, color: '#e3008c' },
+        { legend: 'Gamma', data: 30, color: '#2aa0a4' },
+      ],
+    },
+  ];
+
+  test('Should allow multiple legends to be selected simultaneously', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          allow-multiple-legend-selection
+          data='${JSON.stringify(multiLegendData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const alphaLegend = element.getByRole('option', { name: 'Alpha' });
+    const betaLegend = element.getByRole('option', { name: 'Beta' });
+    const gammaLegend = element.getByRole('option', { name: 'Gamma' });
+
+    await alphaLegend.click();
+    await betaLegend.click();
+
+    await expect(alphaLegend).toHaveAttribute('aria-selected', 'true');
+    await expect(betaLegend).toHaveAttribute('aria-selected', 'true');
+    await expect(gammaLegend).toHaveAttribute('aria-selected', 'false');
+  });
+
+  test('Should dim bars for non-selected legends in multi-select mode', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          allow-multiple-legend-selection
+          data='${JSON.stringify(multiLegendData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const alphaLegend = element.getByRole('option', { name: 'Alpha' });
+
+    await alphaLegend.click();
+
+    const alphaBar = element.locator('[barinfo="Alpha"]');
+    const betaBar = element.locator('[barinfo="Beta"]');
+
+    await expect(alphaBar).not.toHaveClass(/inactive/);
+    await expect(betaBar).toHaveClass(/inactive/);
+  });
+
+  test('Should restore all bars when all selections are cleared', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          allow-multiple-legend-selection
+          data='${JSON.stringify(multiLegendData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const alphaLegend = element.getByRole('option', { name: 'Alpha' });
+    const alphaBar = element.locator('[barinfo="Alpha"]');
+    const betaBar = element.locator('[barinfo="Beta"]');
+
+    await alphaLegend.click();
+    await alphaLegend.click(); // deselect — all clear
+
+    await expect(alphaBar).not.toHaveClass(/inactive/);
+    await expect(betaBar).not.toHaveClass(/inactive/);
+  });
+
+  test('Should fall back to single-select when allow-multiple-legend-selection is removed', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart
+          allow-multiple-legend-selection
+          data='${JSON.stringify(multiLegendData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const alphaLegend = element.getByRole('option', { name: 'Alpha' });
+    const betaLegend = element.getByRole('option', { name: 'Beta' });
+    const alphaBar = element.locator('[barinfo="Alpha"]');
+    const betaBar = element.locator('[barinfo="Beta"]');
+
+    await alphaLegend.click();
+    await betaLegend.click();
+
+    // disable multi-select → selectedLegends should be cleared
+    await element.evaluate(el => el.removeAttribute('allow-multiple-legend-selection'));
+
+    await expect(alphaBar).not.toHaveClass(/inactive/);
+    await expect(betaBar).not.toHaveClass(/inactive/);
+
+    // now single-select should work
+    await alphaLegend.click();
+    await expect(alphaBar).not.toHaveClass(/inactive/);
+    await expect(betaBar).toHaveClass(/inactive/);
+  });
+});

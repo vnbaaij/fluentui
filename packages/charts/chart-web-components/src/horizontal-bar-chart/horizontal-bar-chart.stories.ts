@@ -642,3 +642,119 @@ export const RTL: Story<FluentHorizontalBarChart> = renderComponent(html<StoryAr
     </div>
   </div>
 `);
+
+export const HideLegends: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let hideLegends = true;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart hide legends example');
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.toggleAttribute('hide-legends', hideLegends);
+  container.appendChild(chart);
+
+  const hideLegendsControl = createSwitchField(
+    'Hide legends',
+    'horizontal-bar-hide-legends',
+    hideLegends,
+    nextChecked => {
+      hideLegends = nextChecked;
+      hideLegendsControl.setValue(nextChecked);
+      chart.hideLegends = nextChecked;
+      chart.toggleAttribute('hide-legends', nextChecked);
+    },
+  );
+  controls.appendChild(hideLegendsControl.element);
+
+  return container;
+};
+
+export const HideTooltip: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let hideTooltip = true;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart hide tooltip example');
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.toggleAttribute('hide-tooltip', hideTooltip);
+  container.appendChild(chart);
+
+  const hideTooltipControl = createSwitchField(
+    'Hide tooltip',
+    'horizontal-bar-hide-tooltip',
+    hideTooltip,
+    nextChecked => {
+      hideTooltip = nextChecked;
+      hideTooltipControl.setValue(nextChecked);
+      chart.hideTooltip = nextChecked;
+      chart.toggleAttribute('hide-tooltip', nextChecked);
+    },
+  );
+  controls.appendChild(hideTooltipControl.element);
+
+  return container;
+};
+
+export const LegendListLabel: Story<FluentHorizontalBarChart> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChart>
+>`
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    chart-title="Horizontal bar chart legend list label example"
+    legend-list-label="Chart legend"
+    data="${JSON.stringify(data)}"
+  >
+  </fluent-horizontal-bar-chart>
+`);
+
+export const Culture: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    chart-title="Horizontal bar chart culture example (de-DE)"
+    culture="de-DE"
+    data="${JSON.stringify(data)}"
+  >
+  </fluent-horizontal-bar-chart>
+`);
+
+export const MultipleLegendSelection: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let allowMultiple = true;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart multiple legend selection example');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+  chart.allowMultipleLegendSelection = allowMultiple;
+  chart.toggleAttribute('allow-multiple-legend-selection', allowMultiple);
+  container.appendChild(chart);
+
+  const multipleControl = createSwitchField(
+    'Allow multiple legend selection',
+    'horizontal-bar-multiple-legend',
+    allowMultiple,
+    nextChecked => {
+      allowMultiple = nextChecked;
+      multipleControl.setValue(nextChecked);
+      chart.allowMultipleLegendSelection = nextChecked;
+      chart.toggleAttribute('allow-multiple-legend-selection', nextChecked);
+    },
+  );
+  controls.appendChild(multipleControl.element);
+
+  return container;
+};
