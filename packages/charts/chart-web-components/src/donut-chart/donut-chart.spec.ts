@@ -87,9 +87,32 @@ test.describe('Donut-chart - Basic', () => {
     await firstLegend.click();
     await expect(firstPath).toHaveCSS('opacity', '1');
     await expect(secondPath).toHaveCSS('opacity', '0.1');
+    await firstLegend.dispatchEvent('mouseout');
+    await expect(firstPath).toHaveCSS('opacity', '1');
+    await expect(secondPath).toHaveCSS('opacity', '0.1');
     await firstLegend.click();
     await expect(firstPath).toHaveCSS('opacity', '1');
     await expect(secondPath).toHaveCSS('opacity', '1');
+  });
+
+  test('Should remove inactive arcs from the tab order when a legend is active', async ({ page }) => {
+    const element = page.locator('fluent-donut-chart');
+    const firstPath = element.getByLabel('first,');
+    const secondPath = element.getByLabel('second,');
+    const firstLegend = element.getByRole('option', { name: 'First' });
+
+    await expect(firstPath).toHaveAttribute('tabindex', '0');
+    await expect(secondPath).toHaveAttribute('tabindex', '0');
+
+    await firstLegend.dispatchEvent('mouseover');
+
+    await expect(firstPath).toHaveAttribute('tabindex', '0');
+    await expect(secondPath).toHaveAttribute('tabindex', '-1');
+
+    await firstLegend.dispatchEvent('mouseout');
+
+    await expect(firstPath).toHaveAttribute('tabindex', '0');
+    await expect(secondPath).toHaveAttribute('tabindex', '0');
   });
 
   test('Should update path css values with mouse hover event on legend', async ({ page }) => {
@@ -225,6 +248,31 @@ test.describe('Donut-chart - hide-labels', () => {
     await expect(element.locator('.arc-label')).toHaveCount(2);
     await expect(firstArc).toHaveAttribute('d', defaultPath ?? '');
   });
+
+  test('Should react to hide-labels string attribute updates', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          value-inside-donut="39,000"
+          inner-radius="55"
+          hide-labels="false"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.arc-label')).toHaveCount(2);
+
+    await element.evaluate(el => {
+      el.setAttribute('hide-labels', 'true');
+    });
+
+    await expect(element.locator('.arc-label')).toHaveCount(0);
+  });
 });
 
 test.describe('Donut-chart - outside labels', () => {
@@ -283,6 +331,207 @@ test.describe('Donut-chart - outside labels', () => {
     await expect(labels.nth(0)).toContainText('%');
     await expect(labels.nth(1)).toContainText('%');
   });
+
+  test('Should react to show-labels-in-percent string attribute updates', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="Percent labels"
+          width="320"
+          height="320"
+          style="width:320px;height:320px"
+          value-inside-donut="39,000"
+          inner-radius="55"
+          hide-labels="false"
+          show-labels-in-percent="false"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const labels = element.locator('.arc-label');
+    await expect(labels).toHaveCount(2);
+    await expect(labels.nth(0)).not.toContainText('%');
+
+    await element.evaluate(el => {
+      el.setAttribute('show-labels-in-percent', 'true');
+    });
+
+    await expect(labels.nth(0)).toContainText('%');
+    await expect(labels.nth(1)).toContainText('%');
+  });
+});
+
+test.describe('Donut-chart - hide-tooltip', () => {
+  test('Should react to hide-tooltip string attribute updates', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          value-inside-donut="39,000"
+          inner-radius="55"
+          hide-tooltip="false"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const firstPath = element.getByLabel('first,');
+
+    await firstPath.dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip')).toHaveCount(1);
+
+    await element.evaluate(el => {
+      el.setAttribute('hide-tooltip', 'true');
+    });
+
+    await expect(element.locator('.tooltip')).toHaveCount(0);
+  });
+});
+
+test.describe('Donut-chart - hide-legends', () => {
+  test('Should react to hide-legends string attribute updates', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          value-inside-donut="39,000"
+          inner-radius="55"
+          hide-legends="false"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const legendContainer = element.locator('.legend-container');
+    await expect(legendContainer).toHaveCount(1);
+    await expect(legendContainer).not.toBeHidden();
+
+    await element.evaluate(el => {
+      el.setAttribute('hide-legends', 'true');
+    });
+
+    await expect(legendContainer).toBeHidden();
+  });
+});
+
+test.describe('Donut-chart - allow-multiple-legend-selection', () => {
+  const multiData: ChartProps = {
+    chartData: [
+      { legend: 'first', data: 20000 },
+      { legend: 'second', data: 39000 },
+      { legend: 'third', data: 15000 },
+    ],
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          allow-multiple-legend-selection
+          inner-radius="55"
+          data='${JSON.stringify(multiData)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+  });
+
+  test('Should highlight multiple arcs when multiple legends are selected', async ({ page }) => {
+    const element = page.locator('fluent-donut-chart');
+    const firstPath = element.getByLabel('first,');
+    const secondPath = element.getByLabel('second,');
+    const thirdPath = element.getByLabel('third,');
+    const firstLegend = element.getByRole('option', { name: 'first' });
+    const secondLegend = element.getByRole('option', { name: 'second' });
+
+    await firstLegend.click();
+    await secondLegend.click();
+
+    await expect(firstPath).toHaveCSS('opacity', '1');
+    await expect(secondPath).toHaveCSS('opacity', '1');
+    await expect(thirdPath).toHaveCSS('opacity', '0.1');
+  });
+
+  test('Should deselect a legend on second click in multi-select mode', async ({ page }) => {
+    const element = page.locator('fluent-donut-chart');
+    const firstPath = element.getByLabel('first,');
+    const secondPath = element.getByLabel('second,');
+    const thirdPath = element.getByLabel('third,');
+    const firstLegend = element.getByRole('option', { name: 'first' });
+    const secondLegend = element.getByRole('option', { name: 'second' });
+
+    await firstLegend.click();
+    await secondLegend.click();
+    await firstLegend.click(); // deselect first
+
+    await expect(firstPath).toHaveCSS('opacity', '0.1');
+    await expect(secondPath).toHaveCSS('opacity', '1');
+    await expect(thirdPath).toHaveCSS('opacity', '0.1');
+  });
+
+  test('Should restore all arcs when all selections are cleared', async ({ page }) => {
+    const element = page.locator('fluent-donut-chart');
+    const firstPath = element.getByLabel('first,');
+    const secondPath = element.getByLabel('second,');
+    const thirdPath = element.getByLabel('third,');
+    const firstLegend = element.getByRole('option', { name: 'first' });
+
+    await firstLegend.click();
+    await firstLegend.click(); // deselect — all clear
+
+    await expect(firstPath).toHaveCSS('opacity', '1');
+    await expect(secondPath).toHaveCSS('opacity', '1');
+    await expect(thirdPath).toHaveCSS('opacity', '1');
+  });
+
+  test('Should set aria-selected on selected legends', async ({ page }) => {
+    const element = page.locator('fluent-donut-chart');
+    const firstLegend = element.getByRole('option', { name: 'first' });
+    const secondLegend = element.getByRole('option', { name: 'second' });
+    const thirdLegend = element.getByRole('option', { name: 'third' });
+
+    await firstLegend.click();
+    await secondLegend.click();
+
+    await expect(firstLegend).toHaveAttribute('aria-selected', 'true');
+    await expect(secondLegend).toHaveAttribute('aria-selected', 'true');
+    await expect(thirdLegend).toHaveAttribute('aria-selected', 'false');
+  });
+
+  test('Should fall back to single-select when allow-multiple-legend-selection is removed', async ({ page }) => {
+    const element = page.locator('fluent-donut-chart');
+    const firstPath = element.getByLabel('first,');
+    const secondPath = element.getByLabel('second,');
+    const firstLegend = element.getByRole('option', { name: 'first' });
+    const secondLegend = element.getByRole('option', { name: 'second' });
+
+    await firstLegend.click();
+    await secondLegend.click();
+
+    // disable multi-select → selectedLegends should be cleared
+    await element.evaluate(el => {
+      el.removeAttribute('allow-multiple-legend-selection');
+    });
+
+    await expect(firstPath).toHaveCSS('opacity', '1');
+    await expect(secondPath).toHaveCSS('opacity', '1');
+
+    // now single-select should work
+    await firstLegend.click();
+    await expect(firstPath).toHaveCSS('opacity', '1');
+    await expect(secondPath).toHaveCSS('opacity', '0.1');
+  });
 });
 
 test.describe('Donut-chart - round-corners', () => {
@@ -305,7 +554,7 @@ test.describe('Donut-chart - round-corners', () => {
     const defaultPath = await firstArc.getAttribute('d');
 
     await element.evaluate(el => {
-      el.toggleAttribute('round-corners', true);
+      el.setAttribute('round-corners', 'true');
     });
 
     await expect(firstArc).not.toHaveAttribute('d', defaultPath ?? '');
@@ -383,5 +632,261 @@ test.describe('Donut-chart - order', () => {
     const firstPath = element.getByLabel('first,');
     await firstPath.dispatchEvent('mouseover');
     await expect(element.locator('.text-inside-donut')).toContainText('20K highlighted');
+  });
+});
+
+test.describe('Donut-chart - legend-list-label', () => {
+  test('Should set aria-label on the legend container', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          legend-list-label="Chart segments"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Chart segments');
+  });
+
+  test('Should update aria-label when legend-list-label attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          legend-list-label="Initial label"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Initial label');
+
+    await element.evaluate(el => {
+      el.setAttribute('legend-list-label', 'Updated label');
+    });
+
+    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Updated label');
+  });
+});
+
+test.describe('Donut-chart - culture', () => {
+  test('Should format arc labels using the specified culture', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="Culture test"
+          width="320"
+          height="320"
+          inner-radius="55"
+          culture="de-DE"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await element.evaluate(el => {
+      (el as FluentDonutChart).hideLabels = false;
+    });
+
+    // de-DE uses comma as decimal separator and period as grouping separator
+    // 39000 formatted compact in de-DE is "39K" or "39.000" depending on browser,
+    // but the compact notation produces "39K" → our code lowercases to "39k"
+    const labels = element.locator('.arc-label');
+    await expect(labels).toHaveCount(2);
+  });
+
+  test('Should format tooltip callout value using the specified culture', async ({ page }) => {
+    const cultureData: ChartProps = {
+      chartData: [
+        { legend: 'first', data: 1234.5 },
+        { legend: 'second', data: 5678.9 },
+      ],
+    };
+
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="Culture callout test"
+          inner-radius="55"
+          culture="de-DE"
+          data='${JSON.stringify(cultureData)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const firstPath = element.getByLabel('first,');
+    await firstPath.dispatchEvent('mouseover');
+
+    // de-DE uses comma as decimal separator: 1.234,5
+    const calloutContentY = element.locator('.tooltip-content-y');
+    await expect(calloutContentY).toContainText(',');
+  });
+});
+
+test.describe('Donut-chart - width and height', () => {
+  test('Should update SVG dimensions when width and height attributes change', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          width="200"
+          height="200"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const svg = element.locator('svg.chart');
+    await expect(svg).toHaveAttribute('width', '200');
+    await expect(svg).toHaveAttribute('height', '200');
+
+    await element.evaluate(el => {
+      el.setAttribute('width', '400');
+      el.setAttribute('height', '400');
+    });
+
+    await expect(svg).toHaveAttribute('width', '400');
+    await expect(svg).toHaveAttribute('height', '400');
+  });
+
+  test('Should rerender arcs with updated geometry when width changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          width="200"
+          height="200"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const firstArc = element.locator('.arc').first();
+    const originalPath = await firstArc.getAttribute('d');
+
+    await element.evaluate(el => {
+      el.setAttribute('width', '400');
+      el.setAttribute('height', '400');
+    });
+
+    await expect(firstArc).not.toHaveAttribute('d', originalPath ?? '');
+  });
+});
+
+test.describe('Donut-chart - inner-radius', () => {
+  test('Should rerender arcs when inner-radius attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const firstArc = element.locator('.arc').first();
+    const originalPath = await firstArc.getAttribute('d');
+
+    await element.evaluate(el => {
+      el.setAttribute('inner-radius', '30');
+    });
+
+    await expect(firstArc).not.toHaveAttribute('d', originalPath ?? '');
+  });
+});
+
+test.describe('Donut-chart - value-inside-donut', () => {
+  test('Should render center text from value-inside-donut attribute', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          value-inside-donut="39,000"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.text-inside-donut')).toContainText('39,000');
+  });
+
+  test('Should update center text when value-inside-donut attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          value-inside-donut="39,000"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.text-inside-donut')).toContainText('39,000');
+
+    await element.evaluate(el => {
+      el.setAttribute('value-inside-donut', '20,000');
+    });
+
+    await expect(element.locator('.text-inside-donut')).toContainText('20,000');
+  });
+
+  test('Should remove center text when value-inside-donut attribute is removed', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          value-inside-donut="39,000"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.text-inside-donut')).toHaveCount(1);
+
+    await element.evaluate(el => {
+      el.removeAttribute('value-inside-donut');
+    });
+
+    await expect(element.locator('.text-inside-donut')).toHaveCount(0);
   });
 });

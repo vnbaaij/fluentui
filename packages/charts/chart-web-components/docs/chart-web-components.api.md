@@ -19,8 +19,6 @@ export class DonutChart extends FASTElement {
     // (undocumented)
     protected activeLegendChanged(oldValue: string, newValue: string): void;
     // (undocumented)
-    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void;
-    // (undocumented)
     chartContainer: HTMLDivElement;
     // (undocumented)
     chartTitle?: string;

@@ -318,3 +318,96 @@ export const RTL: Story<FluentDonutChart> = renderComponent(html<StoryArgs<Fluen
     </fluent-donut-chart>
   </div>
 `);
+
+export const Sorted: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
+  <fluent-donut-chart
+    chart-title="${sortedTitle}"
+    data="${JSON.stringify(sortedData)}"
+    inner-radius="55"
+    order="sorted"
+  >
+  </fluent-donut-chart>
+`);
+
+export const HideTooltip: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let hideTooltip = true;
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Donut chart hide tooltip example');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('value-inside-donut', '39,000');
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('style', 'margin-top:20px;');
+  chart.toggleAttribute('hide-tooltip', hideTooltip);
+  container.appendChild(chart);
+
+  const hideTooltipControl = createSwitchField('Hide tooltip', 'donut-hide-tooltip', hideTooltip, nextChecked => {
+    hideTooltip = nextChecked;
+    hideTooltipControl.setValue(nextChecked);
+    chart.hideTooltip = nextChecked;
+    chart.toggleAttribute('hide-tooltip', nextChecked);
+  });
+  controls.appendChild(hideTooltipControl.element);
+
+  return container;
+};
+
+export const LegendListLabel: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
+  <fluent-donut-chart
+    chart-title="Donut chart legend list label example"
+    data="${JSON.stringify(data)}"
+    value-inside-donut="39,000"
+    inner-radius="55"
+    legend-list-label="Chart segments"
+  >
+  </fluent-donut-chart>
+`);
+
+export const Culture: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
+  <fluent-donut-chart
+    chart-title="Donut chart culture example (de-DE)"
+    data="${JSON.stringify(data)}"
+    value-inside-donut="39.000"
+    inner-radius="55"
+    culture="de-DE"
+  >
+  </fluent-donut-chart>
+`);
+
+export const MultipleLegendSelection: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let allowMultiple = true;
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Donut chart multiple legend selection example');
+  chart.setAttribute('data', JSON.stringify(sortedData));
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('style', 'margin-top:20px;');
+  chart.allowMultipleLegendSelection = allowMultiple;
+  chart.toggleAttribute('allow-multiple-legend-selection', allowMultiple);
+  container.appendChild(chart);
+
+  const multipleControl = createSwitchField(
+    'Allow multiple legend selection',
+    'donut-multiple-legend',
+    allowMultiple,
+    nextChecked => {
+      allowMultiple = nextChecked;
+      multipleControl.setValue(nextChecked);
+      chart.allowMultipleLegendSelection = nextChecked;
+      chart.toggleAttribute('allow-multiple-legend-selection', nextChecked);
+    },
+  );
+  controls.appendChild(multipleControl.element);
+
+  return container;
+};
