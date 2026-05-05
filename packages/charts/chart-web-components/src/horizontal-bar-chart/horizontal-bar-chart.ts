@@ -1,6 +1,6 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
 import { create as d3Create, select as d3Select } from 'd3-selection';
-import { getRTL, jsonConverter, SVG_NAMESPACE_URI, validateChartPropsArray } from '../utils/chart-helpers.js';
+import { getRTL, jsonConverter, lightenColor, SVG_NAMESPACE_URI, validateChartPropsArray } from '../utils/chart-helpers.js';
 import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
 
@@ -51,6 +51,9 @@ export class HorizontalBarChart extends FASTElement {
 
   @attr({ attribute: 'allow-multiple-legend-selection', mode: 'boolean' })
   public allowMultipleLegendSelection: boolean = false;
+
+  @attr({ attribute: 'enable-gradient', mode: 'boolean' })
+  public enableGradient: boolean = false;
 
   @observable
   public legends: ChartDataPoint[] = [];
@@ -178,6 +181,7 @@ export class HorizontalBarChart extends FASTElement {
       'chartTitle',
       'culture',
       'allowMultipleLegendSelection',
+      'enableGradient',
     ] as const;
     const observableFields = [
       'legends',
@@ -282,6 +286,10 @@ export class HorizontalBarChart extends FASTElement {
   }
 
   protected roundCornersChanged() {
+    this._scheduleRender();
+  }
+
+  protected enableGradientChanged() {
     this._scheduleRender();
   }
 
@@ -595,7 +603,7 @@ export class HorizontalBarChart extends FASTElement {
         .attr('aria-label', pointData);
 
       let gradientId = '';
-      if (point.gradient) {
+      if (this.enableGradient || point.gradient) {
         const defs = document.createElementNS(SVG_NAMESPACE_URI, 'defs');
         gEle.node()!.appendChild(defs);
 
@@ -603,16 +611,20 @@ export class HorizontalBarChart extends FASTElement {
         defs.appendChild(linearGradient);
         gradientId = `gradient-${barNo}-${index}`;
         linearGradient.setAttribute('id', gradientId);
+        linearGradient.setAttribute('x1', _isRTL ? '100%' : '0%');
+        linearGradient.setAttribute('x2', _isRTL ? '0%' : '100%');
+        linearGradient.setAttribute('y1', '0%');
+        linearGradient.setAttribute('y2', '0%');
 
         const stop1 = document.createElementNS(SVG_NAMESPACE_URI, 'stop');
         linearGradient.appendChild(stop1);
         stop1.setAttribute('offset', '0%');
-        stop1.setAttribute('stop-color', point.gradient[0]);
+        stop1.setAttribute('stop-color', (point.gradient ?? [lightenColor(point.color!, 0.35), point.color!])[0]);
 
         const stop2 = document.createElementNS(SVG_NAMESPACE_URI, 'stop');
         linearGradient.appendChild(stop2);
         stop2.setAttribute('offset', '100%');
-        stop2.setAttribute('stop-color', point.gradient[1]);
+        stop2.setAttribute('stop-color', (point.gradient ?? [lightenColor(point.color!, 0.35), point.color!])[1]);
       }
 
       const rect = gEle
@@ -621,7 +633,7 @@ export class HorizontalBarChart extends FASTElement {
         .attr('id', `${barNo}-${index}`)
         .attr('barinfo', `${point.legend}`)
         .attr('class', 'bar')
-        .attr('style', point.gradient ? `fill:url(#${gradientId})` : `fill:${point.color!}`)
+        .attr('style', (this.enableGradient || point.gradient) ? `fill:url(#${gradientId})` : `fill:${point.color!}`)
         .attr('rx', `${this.roundCorners ? 3 : 0}`)
         .attr(
           'x',

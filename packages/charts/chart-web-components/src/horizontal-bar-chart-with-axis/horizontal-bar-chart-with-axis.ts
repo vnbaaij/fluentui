@@ -4,7 +4,7 @@ import {
   getNextColor,
   getRTL,
   jsonConverter,
-  booleanStringConverter,
+  lightenColor,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
 import type {
@@ -95,17 +95,7 @@ const getMedian = (values: number[]) => {
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 };
 
-const lightenColor = (color: string, ratio: number) => {
-  const normalized = color.replace('#', '');
-  if (normalized.length !== 6) {
-    return color;
-  }
-  const red = parseInt(normalized.slice(0, 2), 16);
-  const green = parseInt(normalized.slice(2, 4), 16);
-  const blue = parseInt(normalized.slice(4, 6), 16);
-  const mix = (channel: number) => Math.round(channel + (255 - channel) * ratio);
-  return `rgb(${mix(red)}, ${mix(green)}, ${mix(blue)})`;
-};
+
 
 const truncateText = (text: string, maxLength: number) => {
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
@@ -182,25 +172,25 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   @attr({ attribute: 'legend-list-label' })
   public legendListLabel?: string;
 
-  @attr({ attribute: 'hide-legends', converter: booleanStringConverter })
+  @attr({ attribute: 'hide-legends', mode: 'boolean' })
   public hideLegends: boolean = false;
 
-  @attr({ attribute: 'hide-tooltip', converter: booleanStringConverter })
+  @attr({ attribute: 'hide-tooltip', mode: 'boolean' })
   public hideTooltip: boolean = false;
 
-  @attr({ attribute: 'hide-labels', converter: booleanStringConverter })
+  @attr({ attribute: 'hide-labels', mode: 'boolean' })
   public hideLabels: boolean = false;
 
-  @attr({ attribute: 'show-y-axis-labels', converter: booleanStringConverter })
+  @attr({ attribute: 'show-y-axis-labels', mode: 'boolean' })
   public showYAxisLabels: boolean = false;
 
-  @attr({ attribute: 'show-y-axis-labels-tooltip', converter: booleanStringConverter })
+  @attr({ attribute: 'show-y-axis-labels-tooltip', mode: 'boolean' })
   public showYAxisLabelsTooltip: boolean = false;
 
-  @attr({ attribute: 'use-single-color', converter: booleanStringConverter })
+  @attr({ attribute: 'use-single-color', mode: 'boolean' })
   public useSingleColor: boolean = false;
 
-  @attr({ attribute: 'enable-gradient', converter: booleanStringConverter })
+  @attr({ attribute: 'enable-gradient', mode: 'boolean' })
   public enableGradient: boolean = false;
 
   @attr({ attribute: 'round-corners', mode: 'boolean' })

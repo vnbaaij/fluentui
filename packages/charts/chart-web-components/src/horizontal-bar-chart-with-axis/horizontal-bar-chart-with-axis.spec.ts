@@ -484,7 +484,7 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     await element.locator('.bar').nth(0).hover();
     await expect(element.locator('.tooltip')).toHaveCount(1);
 
-    await element.evaluate(el => el.setAttribute('hide-tooltip', 'true'));
+    await element.evaluate(el => el.toggleAttribute('hide-tooltip', true));
     await element.locator('.bar').nth(0).hover();
     await expect(element.locator('.tooltip')).toHaveCount(0);
   });

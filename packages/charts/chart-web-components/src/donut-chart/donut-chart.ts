@@ -2,7 +2,6 @@ import { attr, FASTElement, nullableNumberConverter, observable } from '@microso
 import { format as d3Format } from 'd3-format';
 import { arc as d3Arc, pie as d3Pie, PieArcDatum } from 'd3-shape';
 import {
-  booleanStringConverter,
   getColorFromToken,
   getNextColor,
   getRTL,

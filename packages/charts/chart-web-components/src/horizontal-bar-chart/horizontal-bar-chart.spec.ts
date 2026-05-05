@@ -1310,3 +1310,90 @@ test.describe('Horizontal-bar-chart - allow-multiple-legend-selection', () => {
     await expect(betaBar).toHaveClass(/inactive/);
   });
 });
+
+test.describe('Horizontal-bar-chart - enable-gradient', () => {
+  const gradientData = [
+    {
+      chartSeriesTitle: 'Alpha',
+      chartData: [
+        { legend: 'Alpha', data: 4000, total: 10000, color: '#637cef' },
+        { legend: 'empty', data: 6000, total: 10000, color: '#e0e0e0' },
+      ],
+    },
+  ];
+
+  test('Should apply gradient fill to bars when enable-gradient is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          enable-gradient
+          data='${JSON.stringify(gradientData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+    const fillValue = await firstBar.getAttribute('style');
+    expect(fillValue).toMatch(/fill:url\(#gradient-/);
+  });
+
+  test('Should remove gradient fill when enable-gradient is removed', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          enable-gradient
+          data='${JSON.stringify(gradientData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+
+    let fillValue = await firstBar.getAttribute('style');
+    expect(fillValue).toMatch(/fill:url\(#gradient-/);
+
+    await element.evaluate(el => el.removeAttribute('enable-gradient'));
+
+    fillValue = await firstBar.getAttribute('style');
+    expect(fillValue).toMatch(/fill:#637cef/);
+  });
+
+  test('Should respect per-point gradient colors when enable-gradient is set', async ({ page }) => {
+    const perPointData = [
+      {
+        chartSeriesTitle: 'series',
+        chartData: [
+          {
+            legend: 'series',
+            data: 5000,
+            total: 10000,
+            color: '#000000',
+            gradient: ['#637cef', '#e3008c'] as [string, string],
+          },
+          { legend: 'empty', data: 5000, total: 10000, color: '#e0e0e0' },
+        ],
+      },
+    ];
+
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          enable-gradient
+          data='${JSON.stringify(perPointData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const gradientStop = element.locator('linearGradient stop').first();
+    await expect(gradientStop).toHaveAttribute('stop-color', '#637cef');
+  });
+});

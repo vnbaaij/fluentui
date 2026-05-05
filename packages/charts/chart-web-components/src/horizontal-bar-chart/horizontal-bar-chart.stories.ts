@@ -758,3 +758,35 @@ export const MultipleLegendSelection: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+
+export const Gradient: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let enableGradient = true;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart gradient example');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+  chart.enableGradient = enableGradient;
+  chart.toggleAttribute('enable-gradient', enableGradient);
+  container.appendChild(chart);
+
+  const gradientControl = createSwitchField(
+    'Enable gradient',
+    'horizontal-bar-enable-gradient',
+    enableGradient,
+    nextChecked => {
+      enableGradient = nextChecked;
+      gradientControl.setValue(nextChecked);
+      chart.enableGradient = nextChecked;
+      chart.toggleAttribute('enable-gradient', nextChecked);
+    },
+  );
+  controls.appendChild(gradientControl.element);
+
+  return container;
+};
