@@ -411,3 +411,46 @@ export const MultipleLegendSelection: Story<FluentDonutChart> = () => {
 
   return container;
 };
+
+export const ValueInsideDonut: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Donut chart value inside donut example');
+  chart.setAttribute('data', JSON.stringify(sortedData));
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('value-inside-donut', '39,000');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const inputFieldStyle = 'min-width:220px;flex:1 1 220px;display:flex;flex-direction:column;gap:4px;';
+
+  const fieldWrapper = document.createElement('div');
+  fieldWrapper.setAttribute('style', inputFieldStyle);
+
+  const label = document.createElement('label');
+  label.textContent = 'Value inside donut';
+  label.setAttribute('style', 'font-size:14px;');
+  fieldWrapper.appendChild(label);
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = '39,000';
+  input.setAttribute('style', 'padding:4px 8px;font-size:14px;width:180px;');
+  input.addEventListener('input', () => {
+    if (input.value) {
+      chart.valueInsideDonut = input.value;
+      chart.setAttribute('value-inside-donut', input.value);
+    } else {
+      chart.valueInsideDonut = undefined;
+      chart.removeAttribute('value-inside-donut');
+    }
+  });
+  fieldWrapper.appendChild(input);
+  controls.appendChild(fieldWrapper);
+
+  return container;
+};

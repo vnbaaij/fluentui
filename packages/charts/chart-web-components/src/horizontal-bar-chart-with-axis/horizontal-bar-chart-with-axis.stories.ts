@@ -835,9 +835,7 @@ export const HideTooltip: Story<FluentHorizontalBarChartWithAxis> = () => {
 
   let hideTooltip = true;
 
-  const chart = document.createElement(
-    'fluent-horizontal-bar-chart-with-axis',
-  ) as FluentHorizontalBarChartWithAxis;
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
   chart.setAttribute('chart-title', 'Horizontal bar chart hide tooltip example');
   chart.setAttribute('data', JSON.stringify(categoricalData));
   chart.setAttribute('style', 'width:650px;height:350px;margin-top:20px;');
@@ -863,9 +861,7 @@ export const MultipleLegendSelection: Story<FluentHorizontalBarChartWithAxis> = 
 
   let allowMultiple = true;
 
-  const chart = document.createElement(
-    'fluent-horizontal-bar-chart-with-axis',
-  ) as FluentHorizontalBarChartWithAxis;
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
   chart.setAttribute('chart-title', 'Horizontal bar chart multiple legend selection example');
   chart.setAttribute('data', JSON.stringify(stackedData));
   chart.setAttribute('style', 'width:650px;height:350px;margin-top:20px;');
@@ -886,5 +882,168 @@ export const MultipleLegendSelection: Story<FluentHorizontalBarChartWithAxis> = 
   );
   controls.appendChild(multipleControl.element);
 
+  return container;
+};
+
+export const HideLabels: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 800px"
+    chart-title="Revenue by category (labels hidden)"
+    hide-labels
+    data="${JSON.stringify(categoricalData)}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+
+export const BarHeight: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let barHeight = 32;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Bar height control');
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('style', 'width:800px;height:500px;margin-top:20px;');
+  chart.setAttribute('height', '500');
+  chart.setAttribute('bar-height', `${barHeight}`);
+  container.appendChild(chart);
+
+  const barHeightControl = createSliderField('Bar height (px)', 'bh-bar-height', barHeight, 4, 64, nextValue => {
+    barHeight = nextValue;
+    barHeightControl.setValue(nextValue);
+    chart.barHeight = nextValue;
+    chart.setAttribute('bar-height', `${nextValue}`);
+  });
+  controls.appendChild(barHeightControl.element);
+
+  return container;
+};
+
+export const AxisTickCounts: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let xTickCount = 6;
+  let yTickCount = 4;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Axis tick count control');
+  chart.setAttribute('data', JSON.stringify(numericYAxisData));
+  chart.setAttribute('style', 'width:800px;height:400px;margin-top:20px;');
+  chart.setAttribute('x-axis-tick-count', `${xTickCount}`);
+  chart.setAttribute('y-axis-tick-count', `${yTickCount}`);
+  container.appendChild(chart);
+
+  const xTickControl = createSliderField('X-axis tick count', 'atc-x-ticks', xTickCount, 2, 12, nextValue => {
+    xTickCount = nextValue;
+    xTickControl.setValue(nextValue);
+    chart.xAxisTickCount = nextValue;
+    chart.setAttribute('x-axis-tick-count', `${nextValue}`);
+  });
+  controls.appendChild(xTickControl.element);
+
+  const yTickControl = createSliderField('Y-axis tick count', 'atc-y-ticks', yTickCount, 2, 12, nextValue => {
+    yTickCount = nextValue;
+    yTickControl.setValue(nextValue);
+    chart.yAxisTickCount = nextValue;
+    chart.setAttribute('y-axis-tick-count', `${nextValue}`);
+  });
+  controls.appendChild(yTickControl.element);
+
+  return container;
+};
+
+export const YAxisPadding: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  // Slider is 0-9, representing y-axis-padding values 0.0–0.9 (divided by 10)
+  let paddingTenths = 5;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Y-axis padding control');
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('style', 'width:800px;height:400px;margin-top:20px;');
+  chart.setAttribute('y-axis-padding', `${paddingTenths / 10}`);
+  container.appendChild(chart);
+
+  const paddingControl = createSliderField('Y-axis padding (/10)', 'yap-padding', paddingTenths, 0, 9, nextValue => {
+    paddingTenths = nextValue;
+    paddingControl.setValue(nextValue);
+    chart.yAxisPadding = nextValue / 10;
+    chart.setAttribute('y-axis-padding', `${nextValue / 10}`);
+  });
+  controls.appendChild(paddingControl.element);
+
+  return container;
+};
+
+export const DomainOverride: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  // numericYAxisData: x in [10K, 40K], y in [5K, 50K]
+  let xMinValue = 0;
+  let xMaxValue = 40000;
+  let yMinValue = 0;
+  let yMaxValue = 50000;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Domain override (x-min/max-value, y-min/max-value)');
+  chart.setAttribute('data', JSON.stringify(numericYAxisData));
+  chart.setAttribute('style', 'width:800px;height:400px;margin-top:20px;');
+  container.appendChild(chart);
+
+  const applyDomain = () => {
+    chart.xMinValue = xMinValue;
+    chart.xMaxValue = xMaxValue;
+    chart.yMinValue = yMinValue;
+    chart.yMaxValue = yMaxValue;
+    chart.setAttribute('x-min-value', `${xMinValue}`);
+    chart.setAttribute('x-max-value', `${xMaxValue}`);
+    chart.setAttribute('y-min-value', `${yMinValue}`);
+    chart.setAttribute('y-max-value', `${yMaxValue}`);
+  };
+
+  const xMinControl = createSliderField('x-min-value', 'dom-x-min', xMinValue, -10000, 0, nextValue => {
+    xMinValue = nextValue;
+    xMinControl.setValue(nextValue);
+    applyDomain();
+  });
+  controls.appendChild(xMinControl.element);
+
+  const xMaxControl = createSliderField('x-max-value', 'dom-x-max', xMaxValue, 40000, 80000, nextValue => {
+    xMaxValue = nextValue;
+    xMaxControl.setValue(nextValue);
+    applyDomain();
+  });
+  controls.appendChild(xMaxControl.element);
+
+  const yMinControl = createSliderField('y-min-value', 'dom-y-min', yMinValue, -20000, 5000, nextValue => {
+    yMinValue = nextValue;
+    yMinControl.setValue(nextValue);
+    applyDomain();
+  });
+  controls.appendChild(yMinControl.element);
+
+  const yMaxControl = createSliderField('y-max-value', 'dom-y-max', yMaxValue, 50000, 100000, nextValue => {
+    yMaxValue = nextValue;
+    yMaxControl.setValue(nextValue);
+    applyDomain();
+  });
+  controls.appendChild(yMaxControl.element);
+
+  applyDomain();
   return container;
 };

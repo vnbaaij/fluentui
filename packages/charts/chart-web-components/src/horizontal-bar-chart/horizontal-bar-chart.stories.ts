@@ -790,3 +790,52 @@ export const Gradient: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+
+export const ChartDataModeInteractive: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let chartDataMode: 'default' | 'fraction' | 'percentage' = 'default';
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart data mode example');
+  chart.setAttribute('variant', 'single-bar');
+  chart.setAttribute('data', JSON.stringify(singleBarHBCData));
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+  chart.setAttribute('chart-data-mode', chartDataMode);
+  container.appendChild(chart);
+
+  const fieldWrapper = document.createElement('div');
+  fieldWrapper.setAttribute('style', 'min-width:220px;display:flex;flex-direction:column;gap:4px;');
+
+  const label = document.createElement('label');
+  label.textContent = 'Chart data mode';
+  label.htmlFor = 'horizontal-bar-data-mode';
+  label.setAttribute('style', 'font-size:14px;');
+  fieldWrapper.appendChild(label);
+
+  const select = document.createElement('select');
+  select.id = 'horizontal-bar-data-mode';
+  select.setAttribute('style', 'padding:4px 8px;font-size:14px;');
+
+  for (const mode of ['default', 'fraction', 'percentage'] as const) {
+    const option = document.createElement('option');
+    option.value = mode;
+    option.textContent = mode;
+    option.selected = mode === chartDataMode;
+    select.appendChild(option);
+  }
+
+  select.addEventListener('change', () => {
+    chartDataMode = select.value as 'default' | 'fraction' | 'percentage';
+    chart.chartDataMode = chartDataMode;
+    chart.setAttribute('chart-data-mode', chartDataMode);
+  });
+
+  fieldWrapper.appendChild(select);
+  controls.appendChild(fieldWrapper);
+
+  return container;
+};

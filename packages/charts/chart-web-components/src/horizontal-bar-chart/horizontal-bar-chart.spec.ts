@@ -1397,3 +1397,60 @@ test.describe('Horizontal-bar-chart - enable-gradient', () => {
     await expect(gradientStop).toHaveAttribute('stop-color', '#637cef');
   });
 });
+
+test.describe('Horizontal-bar-chart - variant reactivity', () => {
+  const variantReactivityData: ChartProps[] = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [{ legend: 'one', data: 4000, total: 10000, color: '#637cef' }],
+    },
+    {
+      chartSeriesTitle: 'two',
+      chartData: [{ legend: 'two', data: 6000, total: 10000, color: '#e3008c' }],
+    },
+  ];
+
+  test('Should increase bar count when variant changes to single-bar', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          data='${JSON.stringify(variantReactivityData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const defaultBarCount = await element.locator('.bar').count();
+
+    await element.evaluate(el => el.setAttribute('variant', 'single-bar'));
+    await page.waitForTimeout(50);
+
+    const singleBarCount = await element.locator('.bar').count();
+    // single-bar variant adds a placeholder bar per series for the remaining space
+    expect(singleBarCount).toBeGreaterThan(defaultBarCount);
+  });
+
+  test('Should decrease bar count when variant is removed', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          variant="single-bar"
+          data='${JSON.stringify(variantReactivityData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const singleBarCount = await element.locator('.bar').count();
+
+    await element.evaluate(el => el.removeAttribute('variant'));
+    await page.waitForTimeout(50);
+
+    const defaultBarCount = await element.locator('.bar').count();
+    expect(defaultBarCount).toBeLessThan(singleBarCount);
+  });
+});

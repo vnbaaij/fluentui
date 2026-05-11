@@ -25,7 +25,9 @@ test.describe('Donut-chart - Basic', () => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
-        <fluent-donut-chart chart-title="${basicTitle}" value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(data)}'>
+        <fluent-donut-chart chart-title="${basicTitle}" value-inside-donut="39,000" inner-radius="55" data='${JSON.stringify(
+      data,
+    )}'>
         </fluent-donut-chart>
       </div>
     `);
@@ -888,5 +890,74 @@ test.describe('Donut-chart - value-inside-donut', () => {
     });
 
     await expect(element.locator('.text-inside-donut')).toHaveCount(0);
+  });
+});
+
+test.describe('Donut-chart - order reactivity', () => {
+  const unorderedData: ChartProps = {
+    chartData: [
+      { legend: 'small', data: 5000 },
+      { legend: 'large', data: 39000 },
+      { legend: 'medium', data: 15000 },
+    ],
+  };
+
+  test('Should reorder legends when order changes from default to sorted', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="Order reactivity test"
+          inner-radius="55"
+          data='${JSON.stringify(unorderedData)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const legends = element.locator('.legend-text');
+
+    // Default insertion order: small, large, medium
+    await expect(legends.nth(0)).toHaveText('small');
+    await expect(legends.nth(1)).toHaveText('large');
+    await expect(legends.nth(2)).toHaveText('medium');
+
+    await element.evaluate(el => el.setAttribute('order', 'sorted'));
+
+    // Sorted descending by data: large (39000), medium (15000), small (5000)
+    await expect(legends.nth(0)).toHaveText('large');
+    await expect(legends.nth(1)).toHaveText('medium');
+    await expect(legends.nth(2)).toHaveText('small');
+  });
+
+  test('Should restore insertion order when order changes from sorted to default', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="Order reactivity test"
+          inner-radius="55"
+          order="sorted"
+          data='${JSON.stringify(unorderedData)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    const legends = element.locator('.legend-text');
+
+    // Initial sorted order: large, medium, small
+    await expect(legends.nth(0)).toHaveText('large');
+    await expect(legends.nth(1)).toHaveText('medium');
+    await expect(legends.nth(2)).toHaveText('small');
+
+    await element.evaluate(el => el.setAttribute('order', 'default'));
+
+    // Back to insertion order: small, large, medium
+    await expect(legends.nth(0)).toHaveText('small');
+    await expect(legends.nth(1)).toHaveText('large');
+    await expect(legends.nth(2)).toHaveText('medium');
   });
 });

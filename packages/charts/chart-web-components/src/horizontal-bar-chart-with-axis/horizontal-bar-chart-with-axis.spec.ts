@@ -517,4 +517,292 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     const firstAxisTextAfter = await axisTextsAfter.first().textContent();
     expect(firstAxisTextAfter).not.toBeNull();
   });
+
+  test('hides bar labels when hide-labels attribute is set', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('.bar-label')).not.toHaveCount(0);
+
+    await element.evaluate(el => el.setAttribute('hide-labels', ''));
+    await expect(element.locator('.bar-label')).toHaveCount(0);
+  });
+
+  test('applies custom bar-height to all rendered bars', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          bar-height="20"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const bars = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.bar');
+    await expect(bars).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
+      await expect(bars.nth(i)).toHaveAttribute('height', '20');
+    }
+  });
+
+  test('renders gradient fill on bars when enable-gradient is set', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          enable-gradient
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const bars = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.bar');
+    await expect(bars).toHaveCount(4);
+    const fill = await bars.first().getAttribute('fill');
+    expect(fill).toMatch(/^url\(#/);
+  });
+
+  test('reduces x-axis tick count when x-axis-tick-count is set to a small value', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    // Default x-axis-tick-count=6 produces 6 ticks for [0, 5000] domain
+    await expect(element.locator('.axis-text')).toHaveCount(6);
+
+    await element.evaluate(el => el.setAttribute('x-axis-tick-count', '2'));
+    // tick-count=2 produces 4 nice ticks: [0, 2000, 4000, 6000]
+    await expect(element.locator('.axis-text')).toHaveCount(4);
+  });
+
+  test('reduces y-axis tick count on numeric y-axis when y-axis-tick-count is set', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by value"
+          data='${JSON.stringify(numericYAxisData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    // Default y-axis-tick-count=4 produces 6 ticks for [0, 50000] domain
+    await expect(element.locator('.y-axis-text')).toHaveCount(6);
+
+    await element.evaluate(el => el.setAttribute('y-axis-tick-count', '2'));
+    // tick-count=2 produces 4 nice ticks: [0, 20000, 40000, 60000]
+    await expect(element.locator('.y-axis-text')).toHaveCount(4);
+  });
+
+  test('affects bar heights when y-axis-padding changes', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          y-axis-padding="0.1"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    // padding=0.1 → maxBarHeight ≈ 56 → capped at DEFAULT_BAR_HEIGHT=32
+    await expect(element.locator('.bar').first()).toHaveAttribute('height', '32');
+
+    await element.evaluate(el => el.setAttribute('y-axis-padding', '0.8'));
+    // padding=0.8 → maxBarHeight ≈ 12 → bars noticeably shorter
+    await expect(element.locator('.bar').first()).not.toHaveAttribute('height', '32');
+    const shortHeight = Number(await element.locator('.bar').first().getAttribute('height'));
+    expect(shortHeight).toBeLessThan(32);
+    expect(shortHeight).toBeGreaterThan(0);
+  });
+
+  test('extends x domain below zero and renders an origin line when x-min-value is negative', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          x-min-value="-2000"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('.bar')).toHaveCount(4);
+    // Domain crosses zero → origin line is rendered
+    await expect(element.locator('.origin-line')).toHaveCount(1);
+  });
+
+  test('extends x domain when x-max-value exceeds data maximum', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    // Default domain [0, 5000] → last tick is 5K
+    await expect(element.locator('.axis-text').last()).toHaveText('5K');
+
+    await element.evaluate(el => el.setAttribute('x-max-value', '20000'));
+    // Extended domain [0, 20000] → last tick becomes 20K
+    await expect(element.locator('.axis-text').last()).toHaveText('20K');
+  });
+
+  test('extends y domain when y-max-value exceeds data maximum on numeric y-axis', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by value"
+          y-max-value="100000"
+          data='${JSON.stringify(numericYAxisData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('.y-axis-text')).not.toHaveCount(0);
+    // Domain extends to 100000 → a tick at 100k is present
+    await expect(element.locator('.y-axis-text').last()).toHaveText('100k');
+  });
+
+  test('extends y domain when y-min-value is set below data minimum on numeric y-axis', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by value"
+          y-min-value="-20000"
+          data='${JSON.stringify(numericYAxisData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('.y-axis-text')).not.toHaveCount(0);
+    // Domain extends to -20000 → at least one y-axis tick is negative
+    const hasNegativeTick = await element.evaluate(el => {
+      const texts = el.shadowRoot!.querySelectorAll('.y-axis-text');
+      return Array.from(texts).some(t => (t.textContent ?? '').includes('-'));
+    });
+    expect(hasNegativeTick).toBe(true);
+  });
+
+  test('renders full y-axis label text when show-y-axis-labels is set', async ({ page }) => {
+    const longLabelData = categoricalData.map(point => ({
+      ...point,
+      y: `${point.y} with an extended label that exceeds truncation`,
+    }));
+
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Long labels"
+          data='${JSON.stringify(longLabelData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('.y-axis-text')).toHaveCount(4);
+    // Default: labels are truncated to 18 chars ending with …
+    await expect(element.locator('.y-axis-text').first()).toHaveText(/…$/);
+
+    await element.evaluate(el => el.setAttribute('show-y-axis-labels', ''));
+    // Full label is no longer truncated
+    await expect(element.locator('.y-axis-text').first()).not.toHaveText(/…$/);
+    const fullText = await element.locator('.y-axis-text').first().textContent();
+    expect(fullText?.length ?? 0).toBeGreaterThan(18);
+  });
+
+  test('adds SVG title elements to y-axis labels when show-y-axis-labels-tooltip is set', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Tooltip labels"
+          show-y-axis-labels-tooltip
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('.y-axis-text')).toHaveCount(4);
+
+    const allHaveTitles = await element.evaluate(el => {
+      const texts = el.shadowRoot!.querySelectorAll('.y-axis-text');
+      return Array.from(texts).every(t => t.querySelector('title') !== null);
+    });
+    expect(allHaveTitles).toBe(true);
+  });
+
+  test('reorders y-axis labels according to y-axis-category-order', async ({ page }) => {
+    const orderedData: HorizontalBarChartWithAxisDataPoint[] = [
+      { y: 'Zebra', x: 100, legend: 'S1', color: '#637cef' },
+      { y: 'Apple', x: 200, legend: 'S2', color: '#e3008c' },
+      { y: 'Mango', x: 150, legend: 'S3', color: '#2aa0a4' },
+    ];
+
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Category order"
+          y-axis-category-order="category ascending"
+          data='${JSON.stringify(orderedData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    // 'category ascending' → Apple, Mango, Zebra (first in DOM = top of chart = Apple)
+    await expect(element.locator('.y-axis-text').first()).toHaveText('Apple');
+
+    await element.evaluate(el => el.setAttribute('y-axis-category-order', 'category descending'));
+    // 'category descending' → Zebra, Mango, Apple (first = top = Zebra)
+    await expect(element.locator('.y-axis-text').first()).toHaveText('Zebra');
+  });
+
+  test('shows tooltip on bar focus in ltr layout', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Revenue by category"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    const firstBar = element.locator('.bar').first();
+    await firstBar.focus();
+
+    const tooltip = element.locator('.tooltip');
+    await expect(tooltip).toHaveCount(1);
+
+    const barBox = await firstBar.boundingBox();
+    const tooltipBox = await tooltip.boundingBox();
+    expect(barBox).not.toBeNull();
+    expect(tooltipBox).not.toBeNull();
+
+    const barCenterX = barBox!.x + barBox!.width / 2;
+    const tooltipCenterX = tooltipBox!.x + tooltipBox!.width / 2;
+    expect(Math.abs(tooltipCenterX - barCenterX)).toBeLessThanOrEqual(30);
+  });
 });
