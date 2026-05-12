@@ -95,8 +95,6 @@ const getMedian = (values: number[]) => {
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 };
 
-
-
 const truncateText = (text: string, maxLength: number) => {
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
 };
@@ -285,17 +283,40 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     // callbacks, and so that observable assignments notify template bindings.
     const self = this as Record<string, unknown>;
     const attrFields = [
-      'data', 'chartTitle', 'width', 'legendListLabel', 'hideLegends', 'hideTooltip',
-      'hideLabels', 'showYAxisLabels', 'showYAxisLabelsTooltip', 'useSingleColor',
-      'enableGradient', 'roundCorners', 'allowMultipleLegendSelection', 'barHeight',
-      'height', 'xAxisTickCount', 'yAxisTickCount', 'yAxisPadding', 'xMinValue',
-      'xMaxValue', 'yMinValue', 'yMaxValue', 'yAxisCategoryOrder', 'culture',
+      'data',
+      'chartTitle',
+      'width',
+      'legendListLabel',
+      'hideLegends',
+      'hideTooltip',
+      'hideLabels',
+      'showYAxisLabels',
+      'showYAxisLabelsTooltip',
+      'useSingleColor',
+      'enableGradient',
+      'roundCorners',
+      'allowMultipleLegendSelection',
+      'barHeight',
+      'height',
+      'xAxisTickCount',
+      'yAxisTickCount',
+      'yAxisPadding',
+      'xMinValue',
+      'xMaxValue',
+      'yMinValue',
+      'yMaxValue',
+      'yAxisCategoryOrder',
+      'culture',
     ] as const;
     const observableFields = [
-      'legends', 'activeLegend', 'isLegendSelected', 'selectedLegends', 'tooltipProps',
+      'legends',
+      'activeLegend',
+      'isLegendSelected',
+      'selectedLegends',
+      'tooltipProps',
     ] as const;
-    const saved: Partial<Record<typeof attrFields[number], unknown>> = {};
-    const savedObservables: Partial<Record<typeof observableFields[number], unknown>> = {};
+    const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
+    const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
     for (const field of attrFields) {
       saved[field] = self[field];
       delete self[field];
@@ -321,32 +342,6 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     this._resizeObserver.observe(this);
     if (this.data) {
       this._renderChart();
-    }
-  }
-
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
-    super.attributeChangedCallback(name, oldValue, newValue);
-
-    if (oldValue === newValue) {
-      return;
-    }
-
-    const booleanValue = newValue !== null && newValue !== 'false';
-
-    if (name === 'round-corners') {
-      this.roundCorners = booleanValue;
-    }
-    if (name === 'hide-labels') {
-      this.hideLabels = booleanValue;
-    }
-    if (name === 'hide-legends') {
-      this.hideLegends = booleanValue;
-    }
-    if (name === 'hide-tooltip') {
-      this.hideTooltip = booleanValue;
-    }
-    if (name === 'allow-multiple-legend-selection') {
-      this.allowMultipleLegendSelection = booleanValue;
     }
   }
 
@@ -684,7 +679,7 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     });
 
     this.legends = Array.from(legendColorMap.entries()).map(([legend, color]) => ({ legend, color }));
-    this.chartContainer.appendChild(svg);    
+    this.chartContainer.appendChild(svg);
     this._updateLegendInteractionState();
   }
 
@@ -953,7 +948,11 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     return map;
   }
 
-  private _getPointColor(point: HorizontalBarChartWithAxisDataPoint, index: number, legendColorMap?: Map<string, string>) {
+  private _getPointColor(
+    point: HorizontalBarChartWithAxisDataPoint,
+    index: number,
+    legendColorMap?: Map<string, string>,
+  ) {
     if (this.useSingleColor) {
       const singleColorPoint = this.data.find(
         candidate => typeof candidate.color === 'string' && candidate.color.length > 0,
