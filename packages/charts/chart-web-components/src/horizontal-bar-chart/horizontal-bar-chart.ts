@@ -92,6 +92,10 @@ export class HorizontalBarChart extends FASTElement {
   private _bars: SVGRectElement[] = [];
   private _isSettingActiveLegend: boolean = false;
 
+  private _renderPending = false;
+  private _renderDirty = false;
+  private _frameHandle: number | null = null;
+
   constructor() {
     super();
 
@@ -183,19 +187,15 @@ export class HorizontalBarChart extends FASTElement {
       'allowMultipleLegendSelection',
       'enableGradient',
     ] as const;
-    const observableFields = [
-      'legends',
-      'activeLegend',
-      'isLegendSelected',
-      'tooltipProps',
-      'selectedLegends',
-    ] as const;
+    const observableFields = ['legends', 'activeLegend', 'isLegendSelected', 'tooltipProps', 'selectedLegends'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
     const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
+
     for (const field of attrFields) {
       saved[field] = self[field];
       delete self[field];
     }
+
     for (const field of observableFields) {
       savedObservables[field] = self[field];
       delete self[field];
@@ -212,49 +212,17 @@ export class HorizontalBarChart extends FASTElement {
       }
     }
 
-    if (!this.data) {
-      return;
-    }
-
-    this._initializeAll();
+    this._requestRender();
   }
 
   public disconnectedCallback() {
+    this._cancelScheduledRender();
     super.disconnectedCallback();
-  }
-
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
-    super.attributeChangedCallback(name, oldValue, newValue);
-
-    if (oldValue === newValue) {
-      return;
-    }
-
-    const booleanValue = newValue !== null && newValue !== 'false';
-
-    if (name === 'round-corners') {
-      this.roundCorners = booleanValue;
-    }
-    if (name === 'hide-ratio') {
-      this.hideRatio = booleanValue;
-    }
-    if (name === 'hide-labels') {
-      this.hideLabels = booleanValue;
-    }
-    if (name === 'hide-legends') {
-      this.hideLegends = booleanValue;
-    }
-    if (name === 'hide-tooltip') {
-      this.hideTooltip = booleanValue;
-    }
-    if (name === 'allow-multiple-legend-selection') {
-      this.allowMultipleLegendSelection = booleanValue;
-    }
   }
 
   protected dataChanged(_oldValue: ChartProps[], newValue: ChartProps[]) {
     if (newValue) {
-      this._scheduleRender();
+      this._requestRender();
     }
   }
 
@@ -266,43 +234,43 @@ export class HorizontalBarChart extends FASTElement {
   }
 
   protected widthChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected heightChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected variantChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected hideRatioChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected hideLabelsChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected roundCornersChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected enableGradientChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected chartDataModeChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected legendListLabelChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected cultureChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected allowMultipleLegendSelectionChanged() {
@@ -320,21 +288,35 @@ export class HorizontalBarChart extends FASTElement {
     this._updateLegendInteractionState();
   }
 
-  private _renderPending = false;
+  private _requestRender(): void {
+    this._renderDirty = true;
 
-  /**
-   * Schedules a single re-render deferred to the next event-loop task,
-   * batching multiple simultaneous attribute changes into one render pass.
-   */
-  private _scheduleRender(): void {
     if (this._renderPending) {
       return;
     }
+
     this._renderPending = true;
-    setTimeout(() => {
+    this._frameHandle = requestAnimationFrame(() => {
       this._renderPending = false;
+      this._frameHandle = null;
+
+      if (!this._renderDirty) {
+        return;
+      }
+
+      this._renderDirty = false;
       this._rerender();
-    }, 0);
+    });
+  }
+
+  private _cancelScheduledRender(): void {
+    if (this._frameHandle !== null) {
+      cancelAnimationFrame(this._frameHandle);
+      this._frameHandle = null;
+    }
+
+    this._renderPending = false;
+    this._renderDirty = false;
   }
 
   private _rerender() {
@@ -456,7 +438,6 @@ export class HorizontalBarChart extends FASTElement {
   private _createSingleChartBars(singleChartData: ChartProps, index: number, nodes: any) {
     const singleChartBars = this._createBarsAndLegends(singleChartData!, index);
 
-    // create a div element. Loop through chart bars and add to the div as its children
     d3Select(nodes[index])
       .attr('key', index)
       .attr('id', `_MSBC_bar-${index}`)
@@ -465,16 +446,13 @@ export class HorizontalBarChart extends FASTElement {
   }
 
   private _hydrateLegends() {
-    // Create a map to store unique legends
     const uniqueLegendsMap = new Map();
 
-    // Iterate through all chart points and populate the map
     for (const dataSeries of this.data) {
       for (const point of dataSeries.chartData!) {
         if ((point as any).placeholder === true) {
           continue;
         }
-        // Check if the legend is already in the map
         if (!uniqueLegendsMap.has(point.legend)) {
           uniqueLegendsMap.set(point.legend, {
             legend: point.legend,
@@ -485,7 +463,6 @@ export class HorizontalBarChart extends FASTElement {
       }
     }
 
-    // Convert the map values back to an array
     this.legends = Array.from(uniqueLegendsMap.values());
   }
 
@@ -528,17 +505,15 @@ export class HorizontalBarChart extends FASTElement {
     };
     const longestBarTotalValue = _computeLongestBarTotalValue();
     const noOfBars =
-      data.chartData?.reduce((count: number, point: ChartDataPoint) => (count += (point.data || 0) > 0 ? 1 : 0), 0) ||
-      1;
+      data.chartData?.reduce((count: number, point: ChartDataPoint) => (count += (point.data || 0) > 0 ? 1 : 0), 0) || 1;
     const barSpacingInPercent = this._calculateBarSpacing();
     const totalMarginPercent = barSpacingInPercent * (noOfBars - 1);
-    // calculating starting point of each bar and it's range
     const startingPoint: number[] = [];
     const barTotalValue = data.chartData!.reduce((acc: number, point: ChartDataPoint) => acc + (point.data ?? 0), 0);
     const total = this.variant === Variant.AbsoluteScale ? longestBarTotalValue : barTotalValue;
 
     let sumOfPercent = 0;
-    data.chartData!.map((point: ChartDataPoint, index: number) => {
+    data.chartData!.map((point: ChartDataPoint) => {
       const pointData = point.data ?? 0;
       const currValue = (pointData / total) * 100;
       let value = currValue ?? 0;
@@ -553,9 +528,6 @@ export class HorizontalBarChart extends FASTElement {
       return sumOfPercent;
     });
 
-    // Include an imaginary placeholder bar with value equal to
-    // the difference between longestBarTotalValue and barTotalValue
-    // while calculating sumOfPercent to get correct scalingRatio for absolute-scale variant
     if (this.variant === Variant.AbsoluteScale) {
       let value = total === 0 ? 0 : ((total - barTotalValue) / total) * 100;
       if (value < 1 && value !== 0) {
@@ -565,15 +537,6 @@ export class HorizontalBarChart extends FASTElement {
       }
       sumOfPercent += value;
     }
-
-    /**
-     * The %age of the space occupied by the margin needs to subtracted
-     * while computing the scaling ratio, since the margins are not being
-     * scaled down, only the data is being scaled down from a higher percentage to lower percentage
-     * Eg: 95% of the space is taken by the bars, 5% by the margins
-     * Now if the sumOfPercent is 120% -> This needs to be scaled down to 95%, not 100%
-     * since that's only space available to the bars
-     */
 
     const scalingRatio = sumOfPercent !== 0 ? sumOfPercent / (100 - totalMarginPercent) : 1;
 
@@ -597,10 +560,7 @@ export class HorizontalBarChart extends FASTElement {
 
       startingPoint.push(prevPosition);
 
-      const gEle = d3Select(g) // 'this' refers to the current 'g' element
-        .attr('key', index)
-        .attr('role', 'img')
-        .attr('aria-label', pointData);
+      const gEle = d3Select(g).attr('key', index).attr('role', 'img').attr('aria-label', pointData);
 
       let gradientId = '';
       if (this.enableGradient || point.gradient) {
@@ -633,7 +593,7 @@ export class HorizontalBarChart extends FASTElement {
         .attr('id', `${barNo}-${index}`)
         .attr('barinfo', `${point.legend}`)
         .attr('class', 'bar')
-        .attr('style', (this.enableGradient || point.gradient) ? `fill:url(#${gradientId})` : `fill:${point.color!}`)
+        .attr('style', this.enableGradient || point.gradient ? `fill:url(#${gradientId})` : `fill:${point.color!}`)
         .attr('rx', `${this.roundCorners ? 3 : 0}`)
         .attr(
           'x',
@@ -650,10 +610,7 @@ export class HorizontalBarChart extends FASTElement {
       this._bars.push(rect.node()!);
     };
 
-    const containerDiv = d3Create('div').attr(
-      'style',
-      'position: relative; margin-bottom: var(--spacingVerticalMNudge);',
-    );
+    const containerDiv = d3Create('div').attr('style', 'position: relative; margin-bottom: var(--spacingVerticalMNudge);');
 
     const barTitleDiv = containerDiv.append('div').attr('class', 'bar-title-div');
     barTitleDiv
@@ -666,7 +623,6 @@ export class HorizontalBarChart extends FASTElement {
 
     if (!this.hideLabels && showChartDataText) {
       const numData = data!.chartData![0].data ?? 0;
-      // Compute total: prefer explicit total field, fall back to sum of all bar data
       const explicitTotal = data!.chartData![0].total;
       const sumTotal = data!.chartData!.reduce((acc: number, p: ChartDataPoint) => acc + (p.data ?? 0), 0);
       const barTotal = explicitTotal !== undefined ? explicitTotal : sumTotal;
@@ -682,14 +638,8 @@ export class HorizontalBarChart extends FASTElement {
         ratioDiv.append('span').attr('class', 'ratio-denominator').text(`/${barTotal}`);
       } else if (this.chartDataMode === 'percentage') {
         const percentage = barTotal > 0 ? Math.round((numData / barTotal) * 100) : 0;
-        barTitleDiv
-          .append('div')
-          .attr('role', 'text')
-          .append('span')
-          .attr('class', 'ratio-numerator')
-          .text(`${percentage}%`);
+        barTitleDiv.append('div').attr('role', 'text').append('span').attr('class', 'ratio-numerator').text(`${percentage}%`);
       } else {
-        // 'default' mode: show ratio when there are exactly 2 data points and hideRatio is false
         const showRatio = !this.hideRatio && data!.chartData!.length === 2;
         if (showRatio) {
           const ratioDiv = barTitleDiv.append('div').attr('role', 'text');

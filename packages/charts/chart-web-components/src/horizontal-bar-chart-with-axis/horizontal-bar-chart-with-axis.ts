@@ -95,8 +95,6 @@ const getMedian = (values: number[]) => {
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 };
 
-
-
 const truncateText = (text: string, maxLength: number) => {
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
 };
@@ -237,7 +235,7 @@ export class HorizontalBarChartWithAxis extends FASTElement {
 
   @observable
   public activeLegend: string = '';
-  protected activeLegendChanged(oldValue: string, newValue: string) {
+  protected activeLegendChanged(_oldValue: string, _newValue: string) {
     if (this._isSettingActiveLegend) {
       return;
     }
@@ -272,6 +270,8 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   private _isRTL: boolean = false;
   private _isSettingActiveLegend: boolean = false;
   private _renderPending = false;
+  private _renderDirty = false;
+  private _frameHandle: number | null = null;
 
   constructor() {
     super();
@@ -285,21 +285,40 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     // callbacks, and so that observable assignments notify template bindings.
     const self = this as Record<string, unknown>;
     const attrFields = [
-      'data', 'chartTitle', 'width', 'legendListLabel', 'hideLegends', 'hideTooltip',
-      'hideLabels', 'showYAxisLabels', 'showYAxisLabelsTooltip', 'useSingleColor',
-      'enableGradient', 'roundCorners', 'allowMultipleLegendSelection', 'barHeight',
-      'height', 'xAxisTickCount', 'yAxisTickCount', 'yAxisPadding', 'xMinValue',
-      'xMaxValue', 'yMinValue', 'yMaxValue', 'yAxisCategoryOrder', 'culture',
+      'data',
+      'chartTitle',
+      'width',
+      'legendListLabel',
+      'hideLegends',
+      'hideTooltip',
+      'hideLabels',
+      'showYAxisLabels',
+      'showYAxisLabelsTooltip',
+      'useSingleColor',
+      'enableGradient',
+      'roundCorners',
+      'allowMultipleLegendSelection',
+      'barHeight',
+      'height',
+      'xAxisTickCount',
+      'yAxisTickCount',
+      'yAxisPadding',
+      'xMinValue',
+      'xMaxValue',
+      'yMinValue',
+      'yMaxValue',
+      'yAxisCategoryOrder',
+      'culture',
     ] as const;
-    const observableFields = [
-      'legends', 'activeLegend', 'isLegendSelected', 'selectedLegends', 'tooltipProps',
-    ] as const;
-    const saved: Partial<Record<typeof attrFields[number], unknown>> = {};
-    const savedObservables: Partial<Record<typeof observableFields[number], unknown>> = {};
+    const observableFields = ['legends', 'activeLegend', 'isLegendSelected', 'selectedLegends', 'tooltipProps'] as const;
+    const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
+    const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
+
     for (const field of attrFields) {
       saved[field] = self[field];
       delete self[field];
     }
+
     for (const field of observableFields) {
       savedObservables[field] = self[field];
       delete self[field];
@@ -324,34 +343,9 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     }
   }
 
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
-    super.attributeChangedCallback(name, oldValue, newValue);
-
-    if (oldValue === newValue) {
-      return;
-    }
-
-    const booleanValue = newValue !== null && newValue !== 'false';
-
-    if (name === 'round-corners') {
-      this.roundCorners = booleanValue;
-    }
-    if (name === 'hide-labels') {
-      this.hideLabels = booleanValue;
-    }
-    if (name === 'hide-legends') {
-      this.hideLegends = booleanValue;
-    }
-    if (name === 'hide-tooltip') {
-      this.hideTooltip = booleanValue;
-    }
-    if (name === 'allow-multiple-legend-selection') {
-      this.allowMultipleLegendSelection = booleanValue;
-    }
-  }
-
   public disconnectedCallback() {
     this._resizeObserver?.disconnect();
+    this._cancelScheduledRender();
     super.disconnectedCallback();
   }
 
@@ -422,35 +416,35 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   }
 
   protected dataChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected chartTitleChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected widthChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected heightChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected hideLabelsChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected useSingleColorChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected enableGradientChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected roundCornersChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected allowMultipleLegendSelectionChanged() {
@@ -465,66 +459,86 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   }
 
   protected barHeightChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected xAxisTickCountChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected yAxisTickCountChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected yAxisPaddingChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected xMinValueChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected xMaxValueChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected yMinValueChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected yMaxValueChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected yAxisCategoryOrderChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected showYAxisLabelsChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected showYAxisLabelsTooltipChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   protected cultureChanged() {
-    this._scheduleRender();
+    this._requestRender();
   }
 
   public get tooltipInlineTransform() {
     return this._isRTL ? 'translateX(50%)' : 'translateX(-50%)';
   }
 
-  private _scheduleRender(): void {
+  private _requestRender(): void {
+    this._renderDirty = true;
+
     if (this._renderPending) {
       return;
     }
+
     this._renderPending = true;
-    setTimeout(() => {
+    this._frameHandle = requestAnimationFrame(() => {
       this._renderPending = false;
+      this._frameHandle = null;
+
+      if (!this._renderDirty) {
+        return;
+      }
+
+      this._renderDirty = false;
       this._renderChart();
-    }, 0);
+    });
+  }
+
+  private _cancelScheduledRender(): void {
+    if (this._frameHandle !== null) {
+      cancelAnimationFrame(this._frameHandle);
+      this._frameHandle = null;
+    }
+
+    this._renderPending = false;
+    this._renderDirty = false;
   }
 
   private _renderChart() {
@@ -684,7 +698,7 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     });
 
     this.legends = Array.from(legendColorMap.entries()).map(([legend, color]) => ({ legend, color }));
-    this.chartContainer.appendChild(svg);    
+    this.chartContainer.appendChild(svg);
     this._updateLegendInteractionState();
   }
 
@@ -717,9 +731,7 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   }
 
   private _getChartAriaLabel() {
-    return (
-      (this.chartTitle ? `${this.chartTitle}. ` : '') + `Horizontal bar chart with axis with ${this.data.length} bars.`
-    );
+    return (this.chartTitle ? `${this.chartTitle}. ` : '') + `Horizontal bar chart with axis with ${this.data.length} bars.`;
   }
 
   private _getGroupedSeries(): GroupedSeries[] {

@@ -251,7 +251,7 @@ test.describe('Donut-chart - hide-labels', () => {
     await expect(firstArc).toHaveAttribute('d', defaultPath ?? '');
   });
 
-  test('Should react to hide-labels string attribute updates', async ({ page }) => {
+  test('Should react to hide-labels boolean attribute updates', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
@@ -259,7 +259,6 @@ test.describe('Donut-chart - hide-labels', () => {
           chart-title="${basicTitle}"
           value-inside-donut="39,000"
           inner-radius="55"
-          hide-labels="false"
           data='${JSON.stringify(data)}'>
         </fluent-donut-chart>
       </div>
@@ -270,7 +269,7 @@ test.describe('Donut-chart - hide-labels', () => {
     await expect(element.locator('.arc-label')).toHaveCount(2);
 
     await element.evaluate(el => {
-      el.setAttribute('hide-labels', 'true');
+      el.setAttribute('hide-labels', '');
     });
 
     await expect(element.locator('.arc-label')).toHaveCount(0);
@@ -334,7 +333,7 @@ test.describe('Donut-chart - outside labels', () => {
     await expect(labels.nth(1)).toContainText('%');
   });
 
-  test('Should react to show-labels-in-percent string attribute updates', async ({ page }) => {
+  test('Should react to show-labels-in-percent boolean attribute updates', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
@@ -345,8 +344,6 @@ test.describe('Donut-chart - outside labels', () => {
           style="width:320px;height:320px"
           value-inside-donut="39,000"
           inner-radius="55"
-          hide-labels="false"
-          show-labels-in-percent="false"
           data='${JSON.stringify(data)}'>
         </fluent-donut-chart>
       </div>
@@ -359,7 +356,7 @@ test.describe('Donut-chart - outside labels', () => {
     await expect(labels.nth(0)).not.toContainText('%');
 
     await element.evaluate(el => {
-      el.setAttribute('show-labels-in-percent', 'true');
+      el.setAttribute('show-labels-in-percent', '');
     });
 
     await expect(labels.nth(0)).toContainText('%');
@@ -368,7 +365,7 @@ test.describe('Donut-chart - outside labels', () => {
 });
 
 test.describe('Donut-chart - hide-tooltip', () => {
-  test('Should react to hide-tooltip string attribute updates', async ({ page }) => {
+  test('Should react to hide-tooltip boolean attribute updates', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
@@ -376,7 +373,6 @@ test.describe('Donut-chart - hide-tooltip', () => {
           chart-title="${basicTitle}"
           value-inside-donut="39,000"
           inner-radius="55"
-          hide-tooltip="false"
           data='${JSON.stringify(data)}'>
         </fluent-donut-chart>
       </div>
@@ -390,7 +386,7 @@ test.describe('Donut-chart - hide-tooltip', () => {
     await expect(element.locator('.tooltip')).toHaveCount(1);
 
     await element.evaluate(el => {
-      el.setAttribute('hide-tooltip', 'true');
+      el.setAttribute('hide-tooltip', '');
     });
 
     await expect(element.locator('.tooltip')).toHaveCount(0);
@@ -398,7 +394,7 @@ test.describe('Donut-chart - hide-tooltip', () => {
 });
 
 test.describe('Donut-chart - hide-legends', () => {
-  test('Should react to hide-legends string attribute updates', async ({ page }) => {
+  test('Should react to hide-legends boolean attribute updates', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
@@ -406,7 +402,6 @@ test.describe('Donut-chart - hide-legends', () => {
           chart-title="${basicTitle}"
           value-inside-donut="39,000"
           inner-radius="55"
-          hide-legends="false"
           data='${JSON.stringify(data)}'>
         </fluent-donut-chart>
       </div>
@@ -419,7 +414,7 @@ test.describe('Donut-chart - hide-legends', () => {
     await expect(legendContainer).not.toBeHidden();
 
     await element.evaluate(el => {
-      el.setAttribute('hide-legends', 'true');
+      el.setAttribute('hide-legends', '');
     });
 
     await expect(legendContainer).toBeHidden();
