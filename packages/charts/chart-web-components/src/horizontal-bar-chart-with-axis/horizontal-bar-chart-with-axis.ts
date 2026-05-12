@@ -310,10 +310,15 @@ export class HorizontalBarChartWithAxis extends FASTElement {
       'yAxisCategoryOrder',
       'culture',
     ] as const;
-    const observableFields = ['legends', 'activeLegend', 'isLegendSelected', 'selectedLegends', 'tooltipProps'] as const;
+    const observableFields = [
+      'legends',
+      'activeLegend',
+      'isLegendSelected',
+      'selectedLegends',
+      'tooltipProps',
+    ] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
     const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
-
     for (const field of attrFields) {
       saved[field] = self[field];
       delete self[field];
@@ -965,7 +970,11 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     return map;
   }
 
-  private _getPointColor(point: HorizontalBarChartWithAxisDataPoint, index: number, legendColorMap?: Map<string, string>) {
+  private _getPointColor(
+    point: HorizontalBarChartWithAxisDataPoint,
+    index: number,
+    legendColorMap?: Map<string, string>,
+  ) {
     if (this.useSingleColor) {
       const singleColorPoint = this.data.find(
         candidate => typeof candidate.color === 'string' && candidate.color.length > 0,

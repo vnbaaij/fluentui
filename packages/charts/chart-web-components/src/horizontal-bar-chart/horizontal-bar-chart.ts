@@ -1,6 +1,12 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
 import { create as d3Create, select as d3Select } from 'd3-selection';
-import { getRTL, jsonConverter, lightenColor, SVG_NAMESPACE_URI, validateChartPropsArray } from '../utils/chart-helpers.js';
+import {
+  getRTL,
+  jsonConverter,
+  lightenColor,
+  SVG_NAMESPACE_URI,
+  validateChartPropsArray,
+} from '../utils/chart-helpers.js';
 import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
 
