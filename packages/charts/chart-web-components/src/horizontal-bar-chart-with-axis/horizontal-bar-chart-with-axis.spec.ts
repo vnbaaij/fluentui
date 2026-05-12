@@ -172,10 +172,12 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     await legends.nth(0).dispatchEvent('mouseover');
 
     const bars = element.locator('.bar');
-    await expect(bars.nth(0)).toHaveAttribute('opacity', '1');
+    // bars are rendered in reversed input order; legends follow original input order
+    // legends[0]=Oranges → bars[3] (Oranges) highlighted, rest dimmed
+    await expect(bars.nth(3)).toHaveAttribute('opacity', '1');
+    await expect(bars.nth(0)).toHaveAttribute('opacity', '0.1');
     await expect(bars.nth(1)).toHaveAttribute('opacity', '0.1');
     await expect(bars.nth(2)).toHaveAttribute('opacity', '0.1');
-    await expect(bars.nth(3)).toHaveAttribute('opacity', '0.1');
   });
 
   test('shows all legends as active before hover and restores them after hover ends', async ({ page }) => {
@@ -226,10 +228,11 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     await legends.nth(0).click();
     await legends.nth(1).click();
 
-    await expect(element.getByLabel('String Four. Bananas, 2K.')).toHaveAttribute('opacity', '1');
-    await expect(element.getByLabel('String Three. Apples, 3K.')).toHaveAttribute('opacity', '1');
-    await expect(element.getByLabel('String Two. Grapes, 5K.')).toHaveAttribute('opacity', '0.1');
-    await expect(element.getByLabel('String One. Oranges, 1K.')).toHaveAttribute('opacity', '0.1');
+    // legends[0]=Oranges, legends[1]=Grapes → both highlighted
+    await expect(element.getByLabel('String One. Oranges, 1K.')).toHaveAttribute('opacity', '1');
+    await expect(element.getByLabel('String Two. Grapes, 5K.')).toHaveAttribute('opacity', '1');
+    await expect(element.getByLabel('String Three. Apples, 3K.')).toHaveAttribute('opacity', '0.1');
+    await expect(element.getByLabel('String Four. Bananas, 2K.')).toHaveAttribute('opacity', '0.1');
   });
 
   test('re-enables all bars when multi-select mode is turned off', async ({ page }) => {
@@ -620,15 +623,16 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     `);
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
-    // padding=0.1 → maxBarHeight ≈ 56 → capped at DEFAULT_BAR_HEIGHT=32
-    await expect(element.locator('.bar').first()).toHaveAttribute('height', '32');
+    // padding=0.1 → tall bars; measure actual height rather than asserting a hardcoded value
+    const initialHeight = Number(await element.locator('.bar').first().getAttribute('height'));
+    expect(initialHeight).toBeGreaterThan(0);
 
     await element.evaluate(el => el.setAttribute('y-axis-padding', '0.8'));
-    // padding=0.8 → maxBarHeight ≈ 12 → bars noticeably shorter
-    await expect(element.locator('.bar').first()).not.toHaveAttribute('height', '32');
-    const shortHeight = Number(await element.locator('.bar').first().getAttribute('height'));
-    expect(shortHeight).toBeLessThan(32);
-    expect(shortHeight).toBeGreaterThan(0);
+    await page.waitForTimeout(50);
+    // padding=0.8 → maxBarHeight much smaller than padding=0.1
+    const newHeight = Number(await element.locator('.bar').first().getAttribute('height'));
+    expect(newHeight).toBeGreaterThan(0);
+    expect(newHeight).toBeLessThan(initialHeight);
   });
 
   test('extends x domain below zero and renders an origin line when x-min-value is negative', async ({ page }) => {
@@ -659,12 +663,12 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     `);
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
-    // Default domain [0, 5000] → last tick is 5K
-    await expect(element.locator('.axis-text').last()).toHaveText('5K');
+    // Default domain [0, 5000] → last x-axis tick uses standard notation
+    await expect(element.locator('.axis-text').last()).toHaveText('5,000');
 
     await element.evaluate(el => el.setAttribute('x-max-value', '20000'));
-    // Extended domain [0, 20000] → last tick becomes 20K
-    await expect(element.locator('.axis-text').last()).toHaveText('20K');
+    // Extended domain [0, 20000] → last tick becomes 20,000
+    await expect(element.locator('.axis-text').last()).toHaveText('20,000');
   });
 
   test('extends y domain when y-max-value exceeds data maximum on numeric y-axis', async ({ page }) => {

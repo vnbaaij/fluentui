@@ -40,7 +40,7 @@ test.describe('Donut-chart - Basic', () => {
     await expect(legends.nth(0).getByText('first')).toBeVisible();
     await expect(legends.nth(1).getByText('second')).toBeVisible();
     await expect(element.getByText('39,000')).toBeVisible();
-    await expect(element.locator('.arc-label')).toHaveCount(0);
+    await expect(element.locator('.arc-label')).toHaveCount(2);
   });
 
   test('Should render path with proper attributes and css', async ({ page }) => {
@@ -142,7 +142,7 @@ test.describe('Donut-chart - Basic', () => {
     const calloutLegendText = element.locator('.tooltip-legend-text');
     await expect(calloutLegendText).toHaveText('first');
     const calloutContentY = element.locator('.tooltip-content-y');
-    await expect(calloutContentY).toHaveText('20000');
+    await expect(calloutContentY).toHaveText('20,000');
     await firstPath.dispatchEvent('mouseout');
     await expect(calloutRoot).not.toHaveCSS('opacity', '0');
   });
@@ -157,12 +157,12 @@ test.describe('Donut-chart - Basic', () => {
     const calloutLegendText = element.locator('.tooltip-legend-text');
     await expect(calloutLegendText).toHaveText('first');
     const calloutContentY = element.locator('.tooltip-content-y');
-    await expect(calloutContentY).toHaveText('20000');
+    await expect(calloutContentY).toHaveText('20,000');
     const secondPath = element.getByLabel('second,');
     await secondPath.dispatchEvent('mouseover');
     await expect(calloutRoot).toHaveCSS('opacity', '1');
     await expect(calloutLegendText).toHaveText('second');
-    await expect(calloutContentY).toHaveText('39000');
+    await expect(calloutContentY).toHaveText('39,000');
   });
 });
 

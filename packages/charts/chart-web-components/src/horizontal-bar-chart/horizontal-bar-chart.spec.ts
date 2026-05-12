@@ -492,7 +492,7 @@ test.describe('horizontalbarchart - Single Bar HBC', () => {
     await bars.nth(0).dispatchEvent('mouseover');
     await expect(tooltip).toHaveCount(1);
     await expect(tooltip.nth(0)).toHaveCSS('opacity', '1');
-    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1543');
+    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1,543');
   });
 
   test('Should update callout data when mouse moved from one bar to another bar', async ({ page }) => {
@@ -503,7 +503,7 @@ test.describe('horizontalbarchart - Single Bar HBC', () => {
     await bars.nth(0).dispatchEvent('mouseover');
     await expect(tooltip).toHaveCount(1);
     await expect(tooltip.nth(0)).toHaveCSS('opacity', '1');
-    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1543');
+    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1,543');
     await bars.nth(0).dispatchEvent('mouseout');
     await bars.nth(1).dispatchEvent('mouseover');
     await expect(tooltip.nth(0)).toHaveCSS('opacity', '1');
@@ -626,7 +626,7 @@ test.describe('horizontalbarchart - Single Bar NM Variant', () => {
     await bars.nth(0).dispatchEvent('mouseover');
     await expect(tooltip).toHaveCount(1);
     await expect(tooltip.nth(0)).toHaveCSS('opacity', '1');
-    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1543');
+    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1,543');
   });
 
   test('Should update callout data when mouse moved from one bar to another bar', async ({ page }) => {
@@ -637,7 +637,7 @@ test.describe('horizontalbarchart - Single Bar NM Variant', () => {
     await bars.nth(0).dispatchEvent('mouseover');
     await expect(tooltip).toHaveCount(1);
     await expect(tooltip.nth(0)).toHaveCSS('opacity', '1');
-    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1543');
+    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1,543');
     await bars.nth(0).dispatchEvent('mouseout');
     await bars.nth(2).dispatchEvent('mouseover');
     await expect(tooltip.nth(0)).toHaveCSS('opacity', '1');
@@ -711,7 +711,7 @@ test.describe('horizontalbarchart - Single Data Point', () => {
     await bars.nth(0).dispatchEvent('mouseover');
     await expect(tooltip).toHaveCount(1);
     await expect(tooltip.nth(0)).toHaveCSS('opacity', '1');
-    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1543');
+    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1,543');
   });
 
   test('Should hide callout when mouve moved to bar offset', async ({ page }) => {
@@ -722,7 +722,7 @@ test.describe('horizontalbarchart - Single Data Point', () => {
     await bars.nth(0).dispatchEvent('mouseover');
     await expect(tooltip).toHaveCount(1);
     await expect(tooltip.nth(0)).toHaveCSS('opacity', '1');
-    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1543');
+    await expect(tooltip.nth(0).locator('div').first()).toHaveText('one 1,543');
     await bars.nth(0).dispatchEvent('mouseout');
     await bars.nth(1).dispatchEvent('mouseover');
     await expect(tooltip).toHaveCount(0);
@@ -1360,8 +1360,8 @@ test.describe('Horizontal-bar-chart - enable-gradient', () => {
 
     await element.evaluate(el => el.removeAttribute('enable-gradient'));
 
-    fillValue = await firstBar.getAttribute('style');
-    expect(fillValue).toMatch(/fill:#637cef/);
+    // Use expect with retry instead of direct getAttribute to handle async re-render
+    await expect(firstBar).toHaveAttribute('style', /fill:#637cef/);
   });
 
   test('Should respect per-point gradient colors when enable-gradient is set', async ({ page }) => {
@@ -1432,25 +1432,39 @@ test.describe('Horizontal-bar-chart - variant reactivity', () => {
     expect(singleBarCount).toBeGreaterThan(defaultBarCount);
   });
 
-  test('Should decrease bar count when variant is removed', async ({ page }) => {
+  test('Should toggle ratio text when variant changes to absolute-scale and back', async ({ page }) => {
+    const twoPointData: ChartProps[] = [
+      {
+        chartSeriesTitle: 'series',
+        chartData: [
+          { legend: 'one', data: 4000, color: '#637cef' },
+          { legend: 'two', data: 6000, color: '#e3008c' },
+        ],
+      },
+    ];
+
     await page.goto(fixtureURL('components-horizontalbarchart--basic'));
     await page.setContent(/* html */ `
       <div style="width: 400px">
         <fluent-horizontal-bar-chart
-          variant="single-bar"
-          data='${JSON.stringify(variantReactivityData)}'>
+          data='${JSON.stringify(twoPointData)}'>
         </fluent-horizontal-bar-chart>
       </div>
     `);
     await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
 
     const element = page.locator('fluent-horizontal-bar-chart');
-    const singleBarCount = await element.locator('.bar').count();
+    // Default (part-to-whole): 2-point series shows ratio text
+    await expect(element.locator('.ratio-numerator')).toHaveCount(1);
+
+    await element.evaluate(el => el.setAttribute('variant', 'absolute-scale'));
+    await page.waitForTimeout(50);
+    // absolute-scale: showChartDataText=false → no ratio text
+    await expect(element.locator('.ratio-numerator')).toHaveCount(0);
 
     await element.evaluate(el => el.removeAttribute('variant'));
     await page.waitForTimeout(50);
-
-    const defaultBarCount = await element.locator('.bar').count();
-    expect(defaultBarCount).toBeLessThan(singleBarCount);
+    // Restored to part-to-whole: ratio text reappears
+    await expect(element.locator('.ratio-numerator')).toHaveCount(1);
   });
 });
