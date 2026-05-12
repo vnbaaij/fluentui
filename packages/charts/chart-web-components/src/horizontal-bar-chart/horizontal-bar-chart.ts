@@ -1,6 +1,12 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
 import { create as d3Create, select as d3Select } from 'd3-selection';
-import { getRTL, jsonConverter, lightenColor, SVG_NAMESPACE_URI, validateChartPropsArray } from '../utils/chart-helpers.js';
+import {
+  getRTL,
+  jsonConverter,
+  lightenColor,
+  SVG_NAMESPACE_URI,
+  validateChartPropsArray,
+} from '../utils/chart-helpers.js';
 import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
 
@@ -221,35 +227,6 @@ export class HorizontalBarChart extends FASTElement {
 
   public disconnectedCallback() {
     super.disconnectedCallback();
-  }
-
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
-    super.attributeChangedCallback(name, oldValue, newValue);
-
-    if (oldValue === newValue) {
-      return;
-    }
-
-    const booleanValue = newValue !== null && newValue !== 'false';
-
-    if (name === 'round-corners') {
-      this.roundCorners = booleanValue;
-    }
-    if (name === 'hide-ratio') {
-      this.hideRatio = booleanValue;
-    }
-    if (name === 'hide-labels') {
-      this.hideLabels = booleanValue;
-    }
-    if (name === 'hide-legends') {
-      this.hideLegends = booleanValue;
-    }
-    if (name === 'hide-tooltip') {
-      this.hideTooltip = booleanValue;
-    }
-    if (name === 'allow-multiple-legend-selection') {
-      this.allowMultipleLegendSelection = booleanValue;
-    }
   }
 
   protected dataChanged(_oldValue: ChartProps[], newValue: ChartProps[]) {
@@ -633,7 +610,7 @@ export class HorizontalBarChart extends FASTElement {
         .attr('id', `${barNo}-${index}`)
         .attr('barinfo', `${point.legend}`)
         .attr('class', 'bar')
-        .attr('style', (this.enableGradient || point.gradient) ? `fill:url(#${gradientId})` : `fill:${point.color!}`)
+        .attr('style', this.enableGradient || point.gradient ? `fill:url(#${gradientId})` : `fill:${point.color!}`)
         .attr('rx', `${this.roundCorners ? 3 : 0}`)
         .attr(
           'x',
