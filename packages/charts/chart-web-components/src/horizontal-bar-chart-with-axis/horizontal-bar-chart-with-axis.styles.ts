@@ -27,7 +27,7 @@ import {
 } from '@fluentui/web-components';
 
 export const styles: ElementStyles = css`
-  ${display('inline-block')}
+  ${display('block')}
 
   :host {
     position: relative;
@@ -165,7 +165,7 @@ export const styles: ElementStyles = css`
   }
 
   @media (forced-colors: active) {
-   .legend-rect,
+    .legend-rect,
     .tooltip-info {
       forced-color-adjust: none;
     }

@@ -32,7 +32,7 @@ import {
  * @public
  */
 export const styles = css`
-  ${display('inline-block')}
+  ${display('block')}
 
   :host {
     ${typographyBody1Styles}
@@ -182,4 +182,4 @@ export const styles = css`
       color: CanvasText;
     }
   }
-`
+`;

@@ -31,7 +31,7 @@ import {
  * @public
  */
 export const styles: ElementStyles = css`
-  ${display('inline-block')}
+  ${display('block')}
 
   :host {
     position: relative;
