@@ -1,4 +1,5 @@
-import { attr, FASTElement, observable } from '@microsoft/fast-element';
+import { attr, observable } from '@microsoft/fast-element';
+import { ChartBase } from '../utils/chart-base.js';
 import {
   getColorFromToken,
   getNextColor,
@@ -157,27 +158,12 @@ const getClosestPairDiffAndRange = (values: number[]) => {
   return [closestPairDiff, sorted[sorted.length - 1] - sorted[0]] as const;
 };
 
-export class HorizontalBarChartWithAxis extends FASTElement {
+export class HorizontalBarChartWithAxis extends ChartBase {
   @attr({ converter: jsonConverter })
   public data!: HorizontalBarChartWithAxisDataPoint[];
 
-  @attr({ attribute: 'chart-title' })
-  public chartTitle?: string;
-
   @attr
   public width?: number | string;
-
-  @attr({ attribute: 'legend-list-label' })
-  public legendListLabel?: string;
-
-  @attr({ attribute: 'hide-legends', mode: 'boolean' })
-  public hideLegends: boolean = false;
-
-  @attr({ attribute: 'hide-tooltip', mode: 'boolean' })
-  public hideTooltip: boolean = false;
-
-  @attr({ attribute: 'hide-labels', mode: 'boolean' })
-  public hideLabels: boolean = false;
 
   @attr({ attribute: 'show-y-axis-labels', mode: 'boolean' })
   public showYAxisLabels: boolean = false;
@@ -190,12 +176,6 @@ export class HorizontalBarChartWithAxis extends FASTElement {
 
   @attr({ attribute: 'enable-gradient', mode: 'boolean' })
   public enableGradient: boolean = false;
-
-  @attr({ attribute: 'round-corners', mode: 'boolean' })
-  public roundCorners: boolean = false;
-
-  @attr({ attribute: 'allow-multiple-legend-selection', mode: 'boolean' })
-  public allowMultipleLegendSelection: boolean = false;
 
   @attr({ attribute: 'bar-height' })
   public barHeight?: number | string;
@@ -227,27 +207,8 @@ export class HorizontalBarChartWithAxis extends FASTElement {
   @attr({ attribute: 'y-axis-category-order' })
   public yAxisCategoryOrder: AxisCategoryOrder = 'default';
 
-  @attr
-  public culture?: string;
-
   @observable
   public legends: HorizontalBarChartWithAxisLegend[] = [];
-
-  @observable
-  public activeLegend: string = '';
-  protected activeLegendChanged(_oldValue: string, _newValue: string) {
-    if (this._isSettingActiveLegend) {
-      return;
-    }
-
-    this._updateLegendInteractionState();
-  }
-
-  @observable
-  public isLegendSelected: boolean = false;
-
-  @observable
-  public selectedLegends: string[] = [];
 
   @observable
   public tooltipProps: TooltipProps = {
@@ -262,21 +223,8 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     yPos: 0,
   };
 
-  public chartContainer!: HTMLDivElement;
-  public elementInternals: ElementInternals = this.attachInternals();
-
   private _renderedBars: RenderedBar[] = [];
   private _resizeObserver?: ResizeObserver;
-  private _isRTL: boolean = false;
-  private _isSettingActiveLegend: boolean = false;
-  private _renderPending = false;
-  private _renderDirty = false;
-  private _frameHandle: number | null = null;
-
-  constructor() {
-    super();
-    this.elementInternals.role = 'region';
-  }
 
   connectedCallback() {
     // Class field initializers create own data properties that shadow the FAST @attr
@@ -286,18 +234,11 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     const self = this as Record<string, unknown>;
     const attrFields = [
       'data',
-      'chartTitle',
       'width',
-      'legendListLabel',
-      'hideLegends',
-      'hideTooltip',
-      'hideLabels',
       'showYAxisLabels',
       'showYAxisLabelsTooltip',
       'useSingleColor',
       'enableGradient',
-      'roundCorners',
-      'allowMultipleLegendSelection',
       'barHeight',
       'height',
       'xAxisTickCount',
@@ -308,15 +249,8 @@ export class HorizontalBarChartWithAxis extends FASTElement {
       'yMinValue',
       'yMaxValue',
       'yAxisCategoryOrder',
-      'culture',
     ] as const;
-    const observableFields = [
-      'legends',
-      'activeLegend',
-      'isLegendSelected',
-      'selectedLegends',
-      'tooltipProps',
-    ] as const;
+    const observableFields = ['legends', 'tooltipProps'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
     const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
     for (const field of attrFields) {
@@ -340,8 +274,7 @@ export class HorizontalBarChartWithAxis extends FASTElement {
       }
     }
 
-    this._isRTL = getRTL(this);
-    this._resizeObserver = new ResizeObserver(() => this._renderChart());
+    this._resizeObserver = new ResizeObserver(() => this._requestRender());
     this._resizeObserver.observe(this);
     if (this.data) {
       this._renderChart();
@@ -350,81 +283,10 @@ export class HorizontalBarChartWithAxis extends FASTElement {
 
   public disconnectedCallback() {
     this._resizeObserver?.disconnect();
-    this._cancelScheduledRender();
     super.disconnectedCallback();
   }
 
-  public handleLegendMouseoverAndFocus(legendTitle: string) {
-    if (this.allowMultipleLegendSelection) {
-      if (this.selectedLegends.length > 0) {
-        return;
-      }
-    } else {
-      if (this.isLegendSelected) {
-        return;
-      }
-    }
-
-    this._setActiveLegend(legendTitle);
-  }
-
-  public handleLegendMouseoutAndBlur() {
-    if (this.allowMultipleLegendSelection) {
-      if (this.selectedLegends.length > 0) {
-        return;
-      }
-    } else {
-      if (this.isLegendSelected) {
-        return;
-      }
-    }
-
-    this._setActiveLegend('');
-  }
-
-  public handleLegendClick(legendTitle: string) {
-    if (this.allowMultipleLegendSelection) {
-      const nextSelection = this.selectedLegends.includes(legendTitle)
-        ? this.selectedLegends.filter(legend => legend !== legendTitle)
-        : [...this.selectedLegends, legendTitle];
-      this.selectedLegends = nextSelection;
-      if (nextSelection.length === 0) {
-        this._setActiveLegend('');
-      } else if (!nextSelection.includes(this.activeLegend)) {
-        this._setActiveLegend(nextSelection[nextSelection.length - 1]);
-      } else {
-        this._updateLegendInteractionState();
-      }
-      return;
-    }
-
-    if (this.isLegendSelected && this.activeLegend === legendTitle) {
-      this._setActiveLegend('');
-      this.isLegendSelected = false;
-    } else {
-      this._setActiveLegend(legendTitle);
-      this.isLegendSelected = true;
-    }
-  }
-
-  public isLegendItemSelected(legendTitle: string) {
-    return Array.isArray(this.selectedLegends) && this.selectedLegends.includes(legendTitle);
-  }
-
-  public isLegendItemDimmed(legendTitle: string) {
-    const highlighted = this._getHighlightedLegends();
-    return highlighted.length > 0 && !highlighted.includes(legendTitle);
-  }
-
-  protected selectedLegendsChanged() {
-    this._updateLegendInteractionState();
-  }
-
   protected dataChanged() {
-    this._requestRender();
-  }
-
-  protected chartTitleChanged() {
     this._requestRender();
   }
 
@@ -436,31 +298,12 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     this._requestRender();
   }
 
-  protected hideLabelsChanged() {
-    this._requestRender();
-  }
-
   protected useSingleColorChanged() {
     this._requestRender();
   }
 
   protected enableGradientChanged() {
     this._requestRender();
-  }
-
-  protected roundCornersChanged() {
-    this._requestRender();
-  }
-
-  protected allowMultipleLegendSelectionChanged() {
-    if (!this.allowMultipleLegendSelection) {
-      this.selectedLegends = [];
-      this._setActiveLegend('');
-      this.isLegendSelected = false;
-      return;
-    }
-
-    this._updateLegendInteractionState();
   }
 
   protected barHeightChanged() {
@@ -507,43 +350,21 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     this._requestRender();
   }
 
-  protected cultureChanged() {
-    this._requestRender();
+  protected _getHostAriaLabel(): string {
+    if (!Array.isArray(this.data) || this.data.length === 0) {
+      return this.chartTitle || 'Horizontal bar chart with axis has no data.';
+    }
+    return (
+      (this.chartTitle ? `${this.chartTitle}. ` : '') + `Horizontal bar chart with axis with ${this.data.length} bars.`
+    );
   }
 
   public get tooltipInlineTransform() {
     return this._isRTL ? 'translateX(50%)' : 'translateX(-50%)';
   }
 
-  private _requestRender(): void {
-    this._renderDirty = true;
-
-    if (this._renderPending) {
-      return;
-    }
-
-    this._renderPending = true;
-    this._frameHandle = requestAnimationFrame(() => {
-      this._renderPending = false;
-      this._frameHandle = null;
-
-      if (!this._renderDirty) {
-        return;
-      }
-
-      this._renderDirty = false;
-      this._renderChart();
-    });
-  }
-
-  private _cancelScheduledRender(): void {
-    if (this._frameHandle !== null) {
-      cancelAnimationFrame(this._frameHandle);
-      this._frameHandle = null;
-    }
-
-    this._renderPending = false;
-    this._renderDirty = false;
+  protected _performRender(): void {
+    this._renderChart();
   }
 
   private _renderChart() {
@@ -555,13 +376,13 @@ export class HorizontalBarChartWithAxis extends FASTElement {
 
     if (!Array.isArray(this.data) || this.data.length === 0) {
       this.legends = [];
-      this.elementInternals.ariaLabel = this.chartTitle || 'Horizontal bar chart with axis has no data.';
+      this.elementInternals.ariaLabel = this._getHostAriaLabel();
       return;
     }
 
     this._validateData(this.data);
     this._isRTL = getRTL(this);
-    this.elementInternals.ariaLabel = this._getChartAriaLabel();
+    this.elementInternals.ariaLabel = this._getHostAriaLabel();
     this._applyHostDimensions();
 
     const width = Math.max(this.getBoundingClientRect().width || 640, 320);
@@ -600,7 +421,6 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     svg.setAttribute('width', `${width}`);
     svg.setAttribute('height', `${height}`);
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.setAttribute('aria-label', this.chartTitle || `Horizontal bar chart with axis with ${this.data.length} bars.`);
 
     const defs = createSvgElement<SVGDefsElement>('defs');
     svg.appendChild(defs);
@@ -733,10 +553,6 @@ export class HorizontalBarChartWithAxis extends FASTElement {
         throw new TypeError(`Invalid data[${index}].y: Expected a string or number.`);
       }
     });
-  }
-
-  private _getChartAriaLabel() {
-    return (this.chartTitle ? `${this.chartTitle}. ` : '') + `Horizontal bar chart with axis with ${this.data.length} bars.`;
   }
 
   private _getGroupedSeries(): GroupedSeries[] {
@@ -993,22 +809,8 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     return getNextColor(index, 0);
   }
 
-  private _applyHostDimensions() {
-    if (this.width === undefined || this.width === null || this.width === '') {
-      this.style.removeProperty('width');
-    } else {
-      this.style.width = this._toCssLength(this.width);
-    }
-
-    if (this.height === undefined || this.height === null || this.height === '') {
-      this.style.removeProperty('height');
-    } else {
-      this.style.height = this._toCssLength(this.height);
-    }
-  }
-
-  private _toCssLength(value: number | string) {
-    return typeof value === 'number' || /^\d+(\.\d+)?$/.test(value) ? `${value}px` : value;
+  protected _applyHostDimensions() {
+    super._applyHostDimensions(this.width, this.height);
   }
 
   private _appendGradient(
@@ -1215,29 +1017,7 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     return point.callOutAccessibilityData?.ariaLabel || `${yValue}. ${legend ? `${legend}, ` : ''}${xValue}.`;
   }
 
-  private _getHighlightedLegends(): string[] {
-    if (this.allowMultipleLegendSelection) {
-      if (Array.isArray(this.selectedLegends) && this.selectedLegends.length > 0) {
-        return this.selectedLegends;
-      }
-      return this.activeLegend ? [this.activeLegend] : [];
-    }
-    return this.activeLegend ? [this.activeLegend] : [];
-  }
-
-  private _setActiveLegend(value: string) {
-    this._isSettingActiveLegend = true;
-    this.activeLegend = value;
-    this._isSettingActiveLegend = false;
-    this._updateLegendInteractionState();
-  }
-
-  private _updateLegendInteractionState() {
-    this._applyActiveLegendState();
-    this._applyLegendButtonState();
-  }
-
-  private _applyActiveLegendState() {
+  protected _applyActiveLegendState() {
     const highlighted = this._getHighlightedLegends();
     if (!Array.isArray(this._renderedBars)) {
       return;
@@ -1248,21 +1028,6 @@ export class HorizontalBarChartWithAxis extends FASTElement {
       element.classList.toggle('inactive', !shouldHighlight);
       element.setAttribute('opacity', shouldHighlight ? '1' : '0.1');
       element.setAttribute('tabindex', shouldHighlight ? '0' : '-1');
-    });
-  }
-
-  private _applyLegendButtonState() {
-    const legends = this.shadowRoot?.querySelectorAll<HTMLButtonElement>('.legend');
-    if (!legends) {
-      return;
-    }
-
-    const highlighted = this._getHighlightedLegends();
-    legends.forEach(button => {
-      const title = button.querySelector('.legend-text')?.textContent ?? '';
-      const isActive = highlighted.length === 0 || highlighted.includes(title);
-      button.classList.toggle('inactive', !isActive);
-      button.setAttribute('aria-selected', `${highlighted.includes(title) || title === this.activeLegend}`);
     });
   }
 }

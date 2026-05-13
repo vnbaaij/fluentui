@@ -1,4 +1,5 @@
-import { attr, FASTElement, nullableNumberConverter, observable } from '@microsoft/fast-element';
+import { attr, nullableNumberConverter, observable } from '@microsoft/fast-element';
+import { ChartBase } from '../utils/chart-base.js';
 import { format as d3Format } from 'd3-format';
 import { arc as d3Arc, pie as d3Pie, PieArcDatum } from 'd3-shape';
 import {
@@ -12,7 +13,7 @@ import {
 } from '../utils/chart-helpers.js';
 import type { ChartDataPoint, ChartProps, Legend } from './donut-chart.options.js';
 
-export class DonutChart extends FASTElement {
+export class DonutChart extends ChartBase {
   @observable
   public tooltipProps = {
     isVisible: false,
@@ -26,45 +27,14 @@ export class DonutChart extends FASTElement {
   @observable
   public legends: Legend[] = [];
 
-  @observable
-  public activeLegend: string = '';
-  protected activeLegendChanged(_oldValue: string, _newValue: string) {
-    if (this._isSettingActiveLegend) {
-      return;
-    }
-
-    this._updateLegendInteractionState();
-  }
-
-  @observable
-  public isLegendSelected: boolean = false;
-
-  @observable
-  public selectedLegends: string[] = [];
-
-  @attr({ attribute: 'chart-title' })
-  public chartTitle?: string;
-
   @attr({ converter: nullableNumberConverter })
   public height: number = 200;
 
   @attr({ converter: nullableNumberConverter })
   public width: number = 200;
 
-  @attr({ attribute: 'hide-legends', mode: 'boolean' })
-  public hideLegends: boolean = false;
-
-  @attr({ attribute: 'hide-tooltip', mode: 'boolean' })
-  public hideTooltip: boolean = false;
-
-  @attr({ attribute: 'hide-labels', mode: 'boolean' })
-  public hideLabels: boolean = false;
-
   @attr({ attribute: 'show-labels-in-percent', mode: 'boolean' })
   public showLabelsInPercent: boolean = false;
-
-  @attr({ attribute: 'round-corners', mode: 'boolean' })
-  public roundCorners: boolean = false;
 
   @attr({ converter: jsonConverter })
   public data!: ChartProps;
@@ -75,110 +45,26 @@ export class DonutChart extends FASTElement {
   @attr({ attribute: 'value-inside-donut' })
   public valueInsideDonut?: string;
 
-  @attr({ attribute: 'legend-list-label' })
-  public legendListLabel?: string;
-
   @attr
   public order: 'default' | 'sorted' = 'default';
 
-  @attr
-  public culture?: string;
-
-  @attr({ attribute: 'allow-multiple-legend-selection', mode: 'boolean' })
-  public allowMultipleLegendSelection: boolean = false;
-
-  public chartContainer!: HTMLDivElement;
   public group!: SVGGElement;
-  public elementInternals: ElementInternals = this.attachInternals();
 
   private _arcs: SVGPathElement[] = [];
   private _arcLabels: SVGTextElement[] = [];
-  private _isRTL: boolean = false;
-  private _isSettingActiveLegend: boolean = false;
   private _isSettingTooltipProps: boolean = false;
   private _textInsideDonut?: SVGTextElement;
-
-  private _renderPending = false;
-  private _renderDirty = false;
-  private _frameHandle: number | null = null;
 
   private readonly _handleMouseLeave = () => {
     this._setTooltipProps({ isVisible: false, legend: '', yValue: '', color: '', xPos: 0, yPos: 0 });
   };
-
-  constructor() {
-    super();
-
-    this.elementInternals.role = 'region';
-  }
 
   protected tooltipPropsChanged(_oldValue: any, _newValue: any) {
     if (this._isSettingTooltipProps) {
       return;
     }
 
-    this._updateTooltipState();
-  }
-
-  public handleLegendMouseoverAndFocus(legendTitle: string) {
-    if (this.allowMultipleLegendSelection) {
-      if (this.selectedLegends.length > 0) {
-        return;
-      }
-    } else if (this.isLegendSelected) {
-      return;
-    }
-
-    this._setActiveLegend(legendTitle);
-  }
-
-  public handleLegendMouseoutAndBlur() {
-    if (this.allowMultipleLegendSelection) {
-      if (this.selectedLegends.length > 0) {
-        return;
-      }
-    } else if (this.isLegendSelected) {
-      return;
-    }
-
-    this._setActiveLegend('');
-  }
-
-  public handleLegendClick(legendTitle: string) {
-    if (this.allowMultipleLegendSelection) {
-      const nextSelection = this.selectedLegends.includes(legendTitle)
-        ? this.selectedLegends.filter(legend => legend !== legendTitle)
-        : [...this.selectedLegends, legendTitle];
-
-      this.selectedLegends = nextSelection;
-
-      if (nextSelection.length === 0) {
-        this._setActiveLegend('');
-      } else if (!nextSelection.includes(this.activeLegend)) {
-        this._setActiveLegend(nextSelection[nextSelection.length - 1]);
-      } else {
-        this._updateLegendInteractionState();
-      }
-
-      return;
-    }
-
-    if (this.isLegendSelected && this.activeLegend === legendTitle) {
-      this._setActiveLegend('');
-      this.isLegendSelected = false;
-    } else {
-      this._setActiveLegend(legendTitle);
-      this.isLegendSelected = true;
-    }
-  }
-
-  public isLegendItemSelected(legendTitle: string) {
-    return Array.isArray(this.selectedLegends) && this.selectedLegends.includes(legendTitle);
-  }
-
-  public isLegendItemDimmed(legendTitle: string) {
-    const highlighted = this._getHighlightedLegends();
-    return highlighted.length > 0 && !highlighted.includes(legendTitle);
+    this._updateTextInsideDonut();
   }
 
   connectedCallback() {
@@ -190,23 +76,15 @@ export class DonutChart extends FASTElement {
     // no corresponding HTML attribute (FAST won't call the setter in that case).
     const self = this as Record<string, unknown>;
     const attrFields = [
-      'chartTitle',
       'height',
       'width',
-      'hideLegends',
-      'hideTooltip',
-      'hideLabels',
       'showLabelsInPercent',
-      'roundCorners',
       'data',
       'innerRadius',
       'valueInsideDonut',
-      'legendListLabel',
       'order',
-      'culture',
-      'allowMultipleLegendSelection',
     ] as const;
-    const observableFields = ['tooltipProps', 'legends', 'activeLegend', 'isLegendSelected', 'selectedLegends'] as const;
+    const observableFields = ['tooltipProps', 'legends'] as const;
 
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
     const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
@@ -242,22 +120,13 @@ export class DonutChart extends FASTElement {
 
   public disconnectedCallback() {
     this.removeEventListener('mouseleave', this._handleMouseLeave);
-    this._cancelScheduledRender();
     super.disconnectedCallback();
-  }
-
-  protected roundCornersChanged() {
-    this._requestRender();
   }
 
   protected dataChanged(_oldValue: ChartProps, newValue: ChartProps) {
     if (newValue) {
       this._requestRender();
     }
-  }
-
-  protected chartTitleChanged() {
-    this._requestRender();
   }
 
   protected widthChanged() {
@@ -276,83 +145,19 @@ export class DonutChart extends FASTElement {
     this._requestRender();
   }
 
-  protected hideLabelsChanged() {
-    this._requestRender();
-  }
-
-  protected hideLegendsChanged(_oldValue: boolean, newValue: boolean) {
-    this.shadowRoot?.querySelector('.legend-container')?.toggleAttribute('hidden', newValue);
-  }
-
-  protected hideTooltipChanged() {
-    this._updateTooltipState();
-  }
-
   protected showLabelsInPercentChanged() {
     this._requestRender();
   }
 
-  protected cultureChanged() {
-    this._requestRender();
+  protected _getHostAriaLabel(): string {
+    return this.chartTitle || `Donut chart with ${this.data?.chartData?.length ?? 0} segments.`;
   }
 
   protected orderChanged() {
     this._requestRender();
   }
 
-  protected allowMultipleLegendSelectionChanged() {
-    if (!this.allowMultipleLegendSelection) {
-      this.selectedLegends = [];
-      this._setActiveLegend('');
-      this.isLegendSelected = false;
-      return;
-    }
-
-    this._updateLegendInteractionState();
-  }
-
-  protected selectedLegendsChanged() {
-    this._updateLegendInteractionState();
-  }
-
-  /**
-   * Schedules a single re-render on the next animation frame, batching
-   * multiple attribute changes from one Blazor render cycle into a single
-   * visual update. Interactive-state changes (activeLegend, tooltipProps)
-   * bypass this and update immediately.
-   */
-  private _requestRender(): void {
-    this._renderDirty = true;
-
-    if (this._renderPending) {
-      return;
-    }
-
-    this._renderPending = true;
-    this._frameHandle = requestAnimationFrame(() => {
-      this._renderPending = false;
-      this._frameHandle = null;
-
-      if (!this._renderDirty) {
-        return;
-      }
-
-      this._renderDirty = false;
-      this._rerenderIfReady();
-    });
-  }
-
-  private _cancelScheduledRender(): void {
-    if (this._frameHandle !== null) {
-      cancelAnimationFrame(this._frameHandle);
-      this._frameHandle = null;
-    }
-
-    this._renderPending = false;
-    this._renderDirty = false;
-  }
-
-  private _rerenderIfReady() {
+  protected _performRender() {
     if (!this.$fastController.isConnected || !this.data || !this.group) {
       return;
     }
@@ -387,8 +192,7 @@ export class DonutChart extends FASTElement {
     const chartData = this._resolveChartData();
 
     this.legends = this._getLegends(chartData);
-    this.elementInternals.ariaLabel =
-      this.chartTitle || this.data.chartTitle || `Donut chart with ${chartData.length} segments.`;
+    this.elementInternals.ariaLabel = this._getHostAriaLabel();
 
     return chartData;
   }
@@ -421,7 +225,9 @@ export class DonutChart extends FASTElement {
     const outerRadius = Math.max(0, (Math.min(this.height, this.width) - 20) / 2);
     const cornerRadius = this.roundCorners ? 3 : 0;
 
-    const pie = d3Pie<ChartDataPoint>().value(d => d.data).padAngle(0.02);
+    const pie = d3Pie<ChartDataPoint>()
+      .value(d => d.data)
+      .padAngle(0.02);
 
     const arc = d3Arc<PieArcDatum<ChartDataPoint>>()
       .innerRadius(this.innerRadius)
@@ -511,8 +317,6 @@ export class DonutChart extends FASTElement {
       this._textInsideDonut.setAttribute('dominant-baseline', 'middle');
       this._updateTextInsideDonut();
     }
-
-    this._updateTooltipState();
   }
 
   private _getLegends(chartData: ChartDataPoint[]): Legend[] {
@@ -522,19 +326,7 @@ export class DonutChart extends FASTElement {
     }));
   }
 
-  private _getHighlightedLegends(): string[] {
-    if (this.allowMultipleLegendSelection) {
-      if (Array.isArray(this.selectedLegends) && this.selectedLegends.length > 0) {
-        return this.selectedLegends;
-      }
-
-      return this.activeLegend ? [this.activeLegend] : [];
-    }
-
-    return this.activeLegend ? [this.activeLegend] : [];
-  }
-
-  private _applyActiveLegendState() {
+  protected _applyActiveLegendState() {
     if (!this._arcs || !this._arcLabels) {
       return;
     }
@@ -547,51 +339,20 @@ export class DonutChart extends FASTElement {
         arcEl.setAttribute('tabindex', '0');
       });
       this._arcLabels.forEach(label => label.classList.remove('inactive'));
-      return;
+    } else {
+      this._arcs.forEach(arcEl => {
+        const legendId = arcEl.getAttribute('data-id');
+        const isActive = legendId !== null && highlighted.includes(legendId);
+        arcEl.classList.toggle('inactive', !isActive);
+        arcEl.setAttribute('tabindex', isActive ? '0' : '-1');
+      });
+
+      this._arcLabels.forEach(label => {
+        const legendId = label.getAttribute('data-id');
+        label.classList.toggle('inactive', legendId === null || !highlighted.includes(legendId));
+      });
     }
 
-    this._arcs.forEach(arcEl => {
-      const legendId = arcEl.getAttribute('data-id');
-      const isActive = legendId !== null && highlighted.includes(legendId);
-      arcEl.classList.toggle('inactive', !isActive);
-      arcEl.setAttribute('tabindex', isActive ? '0' : '-1');
-    });
-
-    this._arcLabels.forEach(label => {
-      const legendId = label.getAttribute('data-id');
-      label.classList.toggle('inactive', legendId === null || !highlighted.includes(legendId));
-    });
-  }
-
-  private _updateLegendInteractionState() {
-    this._applyActiveLegendState();
-    this._applyLegendButtonState();
-    this._updateTextInsideDonut();
-  }
-
-  private _setActiveLegend(value: string) {
-    this._isSettingActiveLegend = true;
-    this.activeLegend = value;
-    this._isSettingActiveLegend = false;
-    this._updateLegendInteractionState();
-  }
-
-  private _applyLegendButtonState() {
-    const legends = this.shadowRoot?.querySelectorAll<HTMLButtonElement>('.legend');
-    if (!legends) {
-      return;
-    }
-
-    const highlighted = this._getHighlightedLegends();
-    legends.forEach(button => {
-      const title = button.querySelector('.legend-text')?.textContent ?? '';
-      const isActive = highlighted.length === 0 || highlighted.includes(title);
-      button.classList.toggle('inactive', !isActive);
-      button.setAttribute('aria-selected', `${highlighted.includes(title)}`);
-    });
-  }
-
-  private _updateTooltipState() {
     this._updateTextInsideDonut();
   }
 
@@ -599,7 +360,7 @@ export class DonutChart extends FASTElement {
     this._isSettingTooltipProps = true;
     this.tooltipProps = value;
     this._isSettingTooltipProps = false;
-    this._updateTooltipState();
+    this._updateTextInsideDonut();
   }
 
   private _createArcLabel(
@@ -642,7 +403,9 @@ export class DonutChart extends FASTElement {
   }
 
   private _formatDataPointValue(dataPoint: ChartDataPoint): string {
-    return dataPoint.yAxisCalloutData ?? dataPoint.calloutData ?? dataPoint.data.toLocaleString(this.culture || undefined);
+    return (
+      dataPoint.yAxisCalloutData ?? dataPoint.calloutData ?? dataPoint.data.toLocaleString(this.culture || undefined)
+    );
   }
 
   private _getTextInsideDonut(valueInsideDonut: string) {
