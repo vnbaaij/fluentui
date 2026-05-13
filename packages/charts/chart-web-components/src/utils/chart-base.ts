@@ -1,4 +1,6 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
+import type { ChartLegend } from '../chart-legend/chart-legend.js';
+import type { Legend } from './chart.options.js';
 
 /**
  * Abstract base class shared by all chart web components.
@@ -52,6 +54,9 @@ export abstract class ChartBase extends FASTElement {
 
   @observable
   public selectedLegends: string[] = [];
+
+  @observable
+  public legends: Legend[] = [];
 
   // ── Public refs ──────────────────────────────────────────────────
 
@@ -112,7 +117,7 @@ export abstract class ChartBase extends FASTElement {
       'culture',
       'allowMultipleLegendSelection',
     ] as const;
-    const observableFields = ['activeLegend', 'isLegendSelected', 'selectedLegends'] as const;
+    const observableFields = ['activeLegend', 'isLegendSelected', 'selectedLegends', 'legends'] as const;
 
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
     const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
@@ -230,15 +235,6 @@ export abstract class ChartBase extends FASTElement {
     }
   }
 
-  public isLegendItemSelected(legendTitle: string) {
-    return this.selectedLegends.includes(legendTitle);
-  }
-
-  public isLegendItemDimmed(legendTitle: string) {
-    const highlighted = this._getHighlightedLegends();
-    return highlighted.length > 0 && !highlighted.includes(legendTitle);
-  }
-
   // ── Protected legend helpers ─────────────────────────────────────
 
   protected _getHighlightedLegends(): string[] {
@@ -261,18 +257,10 @@ export abstract class ChartBase extends FASTElement {
   }
 
   protected _applyLegendButtonState() {
-    const legends = this.shadowRoot?.querySelectorAll<HTMLButtonElement>('.legend');
-    if (!legends) {
-      return;
+    const el = this.shadowRoot?.querySelector<ChartLegend>('fluent-chart-legend');
+    if (el) {
+      el.highlighted = this._getHighlightedLegends();
     }
-
-    const highlighted = this._getHighlightedLegends();
-    legends.forEach(button => {
-      const title = button.querySelector('.legend-text')?.textContent ?? '';
-      const isActive = highlighted.length === 0 || highlighted.includes(title);
-      button.classList.toggle('inactive', !isActive);
-      button.setAttribute('aria-selected', `${highlighted.includes(title)}`);
-    });
   }
 
   // ── Render scheduling ────────────────────────────────────────────

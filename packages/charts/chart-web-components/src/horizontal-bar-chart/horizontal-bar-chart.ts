@@ -9,6 +9,7 @@ import {
   validateChartPropsArray,
 } from '../utils/chart-helpers.js';
 import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
+import type { Legend } from '../utils/chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
 
 /**
@@ -39,9 +40,6 @@ export class HorizontalBarChart extends ChartBase {
   public enableGradient: boolean = false;
 
   @observable
-  public legends: ChartDataPoint[] = [];
-
-  @observable
   public tooltipProps = {
     isVisible: false,
     legend: '',
@@ -61,7 +59,7 @@ export class HorizontalBarChart extends ChartBase {
     // callbacks, and so that observable assignments notify template bindings.
     const self = this as Record<string, unknown>;
     const attrFields = ['width', 'height', 'variant', 'data', 'hideRatio', 'chartDataMode', 'enableGradient'] as const;
-    const observableFields = ['legends', 'tooltipProps'] as const;
+    const observableFields = ['tooltipProps'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
     const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
 
@@ -209,7 +207,6 @@ export class HorizontalBarChart extends ChartBase {
         if (!uniqueLegendsMap.has(point.legend)) {
           uniqueLegendsMap.set(point.legend, {
             legend: point.legend,
-            data: point.data,
             color: point.gradient ? point.gradient[0] : point.color,
           });
         }

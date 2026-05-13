@@ -409,9 +409,8 @@ test.describe('Donut-chart - hide-legends', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
 
     const element = page.locator('fluent-donut-chart');
-    const legendContainer = element.locator('.legend-container');
-    await expect(legendContainer).toHaveCount(1);
-    await expect(legendContainer).not.toBeHidden();
+    const legendContainer = element.locator('fluent-chart-legend');
+    await expect(legendContainer).toBeVisible();
 
     await element.evaluate(el => {
       el.setAttribute('hide-legends', '');
@@ -648,7 +647,7 @@ test.describe('Donut-chart - legend-list-label', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
 
     const element = page.locator('fluent-donut-chart');
-    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Chart segments');
+    await expect(element.locator('fluent-chart-legend')).toHaveAttribute('aria-label', 'Chart segments');
   });
 
   test('Should update aria-label when legend-list-label attribute changes', async ({ page }) => {
@@ -666,13 +665,13 @@ test.describe('Donut-chart - legend-list-label', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
 
     const element = page.locator('fluent-donut-chart');
-    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Initial label');
+    await expect(element.locator('fluent-chart-legend')).toHaveAttribute('aria-label', 'Initial label');
 
     await element.evaluate(el => {
       el.setAttribute('legend-list-label', 'Updated label');
     });
 
-    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Updated label');
+    await expect(element.locator('fluent-chart-legend')).toHaveAttribute('aria-label', 'Updated label');
   });
 });
 

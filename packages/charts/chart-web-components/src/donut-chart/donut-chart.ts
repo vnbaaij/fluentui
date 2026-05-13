@@ -11,7 +11,8 @@ import {
   validateChartProps,
   wrapText,
 } from '../utils/chart-helpers.js';
-import type { ChartDataPoint, ChartProps, Legend } from './donut-chart.options.js';
+import type { ChartDataPoint, ChartProps } from './donut-chart.options.js';
+import type { Legend } from '../utils/chart.options.js';
 
 export class DonutChart extends ChartBase {
   @observable
@@ -23,9 +24,6 @@ export class DonutChart extends ChartBase {
     xPos: 0,
     yPos: 0,
   };
-
-  @observable
-  public legends: Legend[] = [];
 
   @attr({ converter: nullableNumberConverter })
   public height: number = 200;
@@ -84,7 +82,7 @@ export class DonutChart extends ChartBase {
       'valueInsideDonut',
       'order',
     ] as const;
-    const observableFields = ['tooltipProps', 'legends'] as const;
+    const observableFields = ['tooltipProps'] as const;
 
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
     const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
@@ -321,7 +319,7 @@ export class DonutChart extends ChartBase {
 
   private _getLegends(chartData: ChartDataPoint[]): Legend[] {
     return chartData.map(d => ({
-      title: d.legend,
+      legend: d.legend,
       color: d.color!,
     }));
   }

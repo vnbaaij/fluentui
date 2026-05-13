@@ -11,8 +11,8 @@ import {
 import type {
   AxisCategoryOrder,
   HorizontalBarChartWithAxisDataPoint,
-  HorizontalBarChartWithAxisLegend,
 } from './horizontal-bar-chart-with-axis.options.js';
+import type { Legend } from '../utils/chart.options.js';
 
 type TooltipProps = {
   isVisible: boolean;
@@ -208,9 +208,6 @@ export class HorizontalBarChartWithAxis extends ChartBase {
   public yAxisCategoryOrder: AxisCategoryOrder = 'default';
 
   @observable
-  public legends: HorizontalBarChartWithAxisLegend[] = [];
-
-  @observable
   public tooltipProps: TooltipProps = {
     isVisible: false,
     legend: '',
@@ -250,7 +247,7 @@ export class HorizontalBarChartWithAxis extends ChartBase {
       'yMaxValue',
       'yAxisCategoryOrder',
     ] as const;
-    const observableFields = ['legends', 'tooltipProps'] as const;
+    const observableFields = ['tooltipProps'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
     const savedObservables: Partial<Record<(typeof observableFields)[number], unknown>> = {};
     for (const field of attrFields) {

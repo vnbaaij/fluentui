@@ -908,22 +908,7 @@ test.describe('Horizontal-bar-chart - hide-legends', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
 
     const element = page.locator('fluent-horizontal-bar-chart');
-    await expect(element.locator('.legend-container')).toHaveCount(0);
-  });
-
-  test('Should show legend container when hide-legends is false', async ({ page }) => {
-    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
-    await page.setContent(/* html */ `
-      <div>
-        <fluent-horizontal-bar-chart
-          data='${JSON.stringify(basicChartTestData)}'>
-        </fluent-horizontal-bar-chart>
-      </div>
-    `);
-    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
-
-    const element = page.locator('fluent-horizontal-bar-chart');
-    await expect(element.locator('.legend-container')).toHaveCount(1);
+    await expect(element.locator('fluent-chart-legend')).toBeHidden();
   });
 
   test('Should react to hide-legends attribute change', async ({ page }) => {
@@ -938,15 +923,15 @@ test.describe('Horizontal-bar-chart - hide-legends', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
 
     const element = page.locator('fluent-horizontal-bar-chart');
-    await expect(element.locator('.legend-container')).toHaveCount(1);
+    await expect(element.locator('fluent-chart-legend')).toBeVisible();
 
     await element.evaluate(el => el.setAttribute('hide-legends', 'true'));
 
-    await expect(element.locator('.legend-container')).toHaveCount(0);
+    await expect(element.locator('fluent-chart-legend')).toBeHidden();
 
     await element.evaluate(el => el.removeAttribute('hide-legends'));
 
-    await expect(element.locator('.legend-container')).toHaveCount(1);
+    await expect(element.locator('fluent-chart-legend')).toBeVisible();
   });
 });
 
@@ -1007,7 +992,7 @@ test.describe('Horizontal-bar-chart - legend-list-label', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
 
     const element = page.locator('fluent-horizontal-bar-chart');
-    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Chart legend');
+    await expect(element.locator('fluent-chart-legend')).toHaveAttribute('aria-label', 'Chart legend');
   });
 
   test('Should update aria-label when legend-list-label attribute changes', async ({ page }) => {
@@ -1023,11 +1008,11 @@ test.describe('Horizontal-bar-chart - legend-list-label', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
 
     const element = page.locator('fluent-horizontal-bar-chart');
-    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Initial label');
+    await expect(element.locator('fluent-chart-legend')).toHaveAttribute('aria-label', 'Initial label');
 
     await element.evaluate(el => el.setAttribute('legend-list-label', 'Updated label'));
 
-    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Updated label');
+    await expect(element.locator('fluent-chart-legend')).toHaveAttribute('aria-label', 'Updated label');
   });
 });
 

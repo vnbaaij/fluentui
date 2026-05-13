@@ -466,10 +466,10 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     `);
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
-    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Chart legends');
+    await expect(element.locator('fluent-chart-legend')).toHaveAttribute('aria-label', 'Chart legends');
 
     await element.evaluate(el => el.setAttribute('legend-list-label', 'Updated legends'));
-    await expect(element.locator('.legend-container')).toHaveAttribute('aria-label', 'Updated legends');
+    await expect(element.locator('fluent-chart-legend')).toHaveAttribute('aria-label', 'Updated legends');
   });
 
   test('hides tooltip when hide-tooltip attribute is set', async ({ page }) => {
