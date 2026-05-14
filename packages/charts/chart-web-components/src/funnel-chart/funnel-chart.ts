@@ -1,8 +1,8 @@
 import { attr, nullableNumberConverter } from '@microsoft/fast-element';
 import { ChartBase } from '../utils/chart-base.js';
 import { getColorFromToken, getNextColor, jsonConverter, SVG_NAMESPACE_URI } from '../utils/chart-helpers.js';
-import type { FunnelDataPoint, FunnelOrientation, FunnelSubValue } from './funnel-chart.options.js';
 import type { Legend } from '../utils/chart.options.js';
+import type { FunnelDataPoint, FunnelOrientation, FunnelSubValue } from './funnel-chart.options.js';
 import {
   buildStackedGeometryParams,
   getContrastTextColor,
@@ -11,8 +11,18 @@ import {
   getStackedHorizontalFunnelSegmentGeometry,
   getStackedVerticalFunnelSegmentGeometry,
   getVerticalFunnelSegmentGeometry,
+  isSimpleFunnelDataPoint,
   isStackedFunnelData,
-} from './funnelGeometry.js';
+} from './funnel-geometry.js';
+
+const orientationConverter = {
+  fromView(value: string | null): FunnelOrientation {
+    return value === 'horizontal' ? 'horizontal' : 'vertical';
+  },
+  toView(value: FunnelOrientation): string {
+    return value;
+  },
+};
 
 /**
  * A Funnel Chart HTML Element.
@@ -30,7 +40,7 @@ export class FunnelChart extends ChartBase {
   @attr({ converter: jsonConverter })
   public data!: FunnelDataPoint[];
 
-  @attr
+  @attr({ converter: orientationConverter })
   public orientation: FunnelOrientation = 'vertical';
 
   public svgElement!: SVGSVGElement;
@@ -84,7 +94,11 @@ export class FunnelChart extends ChartBase {
     this._requestRender();
   }
 
-  protected orientationChanged() {
+  protected orientationChanged(_oldValue: FunnelOrientation, newValue: FunnelOrientation) {
+    if (newValue !== 'horizontal' && newValue !== 'vertical') {
+      this.orientation = 'vertical';
+      return;
+    }
     this._requestRender();
   }
 
@@ -157,21 +171,29 @@ export class FunnelChart extends ChartBase {
       });
       return Array.from(seen.entries()).map(([category, color]) => ({ legend: category, color }));
     }
-    return data.map(d => ({ legend: d.stage, color: d.color! }));
+    return data.filter(isSimpleFunnelDataPoint).map(d => ({ legend: d.stage, color: d.color! }));
   }
 
   private _renderSimpleFunnel(data: FunnelDataPoint[], funnelWidth: number, funnelHeight: number) {
-    data.forEach((d, i) => {
+    const simpleData = data.filter(isSimpleFunnelDataPoint);
+    simpleData.forEach((d, i) => {
       const geom =
         this.orientation === 'vertical'
-          ? getVerticalFunnelSegmentGeometry({ d, i, data, funnelWidth, funnelHeight, isRTL: this._isRTL })
-          : getHorizontalFunnelSegmentGeometry({ d, i, data, funnelWidth, funnelHeight, isRTL: this._isRTL });
+          ? getVerticalFunnelSegmentGeometry({ d, i, data: simpleData, funnelWidth, funnelHeight, isRTL: this._isRTL })
+          : getHorizontalFunnelSegmentGeometry({
+              d,
+              i,
+              data: simpleData,
+              funnelWidth,
+              funnelHeight,
+              isRTL: this._isRTL,
+            });
 
       const textProps = getSegmentTextProps({
         availableWidth: geom.availableWidth,
         textX: geom.textX,
         textY: geom.textY,
-        value: d.value!,
+        value: d.value,
       });
 
       this._createSegment({
@@ -181,8 +203,8 @@ export class FunnelChart extends ChartBase {
         ariaLabel: `${d.stage}, ${d.value}.`,
         legendKey: d.stage,
         textProps,
-        onHover: (event: MouseEvent) => this._showTooltip(d.stage, String(d.value!), d.color!, event),
-        onFocus: (path: SVGPathElement) => this._showTooltipForElement(d.stage, String(d.value!), d.color!, path),
+        onHover: (event: MouseEvent) => this._showTooltip(d.stage, String(d.value), d.color!, event),
+        onFocus: (path: SVGPathElement) => this._showTooltipForElement(d.stage, String(d.value), d.color!, path),
       });
     });
   }
@@ -212,8 +234,7 @@ export class FunnelChart extends ChartBase {
           legendKey: sv.category,
           textProps,
           onHover: (event: MouseEvent) => this._showTooltip(sv.category, String(sv.value), sv.color, event),
-          onFocus: (path: SVGPathElement) =>
-            this._showTooltipForElement(sv.category, String(sv.value), sv.color, path),
+          onFocus: (path: SVGPathElement) => this._showTooltipForElement(sv.category, String(sv.value), sv.color, path),
         });
       });
     });

@@ -1,6 +1,5 @@
 import { test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
-import type { FunnelChart as FluentFunnelChart } from './funnel-chart.js';
 import type { FunnelDataPoint } from './funnel-chart.options.js';
 
 const simpleData: FunnelDataPoint[] = [
@@ -132,6 +131,29 @@ test.describe('FunnelChart - Horizontal', () => {
     const element = page.locator('fluent-funnel-chart');
     const segments = element.locator('.funnel-segment');
     await expect(segments).toHaveCount(simpleData.length);
+  });
+
+  test('Should mirror horizontal segment direction in RTL mode', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div dir="rtl">
+        <fluent-funnel-chart
+          chart-title="Horizontal RTL funnel"
+          width="600"
+          height="300"
+          orientation="horizontal"
+          data='${JSON.stringify(simpleData)}'
+        ></fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+
+    const element = page.locator('fluent-funnel-chart');
+    const segments = element.locator('.funnel-segment');
+    const firstSegmentPath = await segments.nth(0).getAttribute('d');
+    const lastSegmentPath = await segments.nth(simpleData.length - 1).getAttribute('d');
+
+    expect(firstSegmentPath).toContain('M360,');
+    expect(lastSegmentPath).toContain('M0,');
   });
 });
 

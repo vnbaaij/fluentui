@@ -1,4 +1,12 @@
-import type { FunnelDataPoint, FunnelSubValue } from './funnel-chart.options.js';
+import type { FunnelDataPoint } from './funnel-chart.options.js';
+
+export interface SimpleFunnelDataPoint extends FunnelDataPoint {
+  value: number;
+}
+
+export function isSimpleFunnelDataPoint(dataPoint: FunnelDataPoint): dataPoint is SimpleFunnelDataPoint {
+  return Number.isFinite(dataPoint.value);
+}
 
 export interface FunnelSegmentGeometry {
   pathD: string;
@@ -25,17 +33,17 @@ export function getVerticalFunnelSegmentGeometry({
   funnelHeight,
   isRTL,
 }: {
-  d: FunnelDataPoint;
+  d: SimpleFunnelDataPoint;
   i: number;
-  data: FunnelDataPoint[];
+  data: SimpleFunnelDataPoint[];
   funnelWidth: number;
   funnelHeight: number;
   isRTL: boolean;
 }): FunnelSegmentGeometry {
   const segmentHeight = funnelHeight / data.length;
-  const widthScale = (value: number) => (value / Math.max(...data.map(dp => dp.value!))) * funnelWidth;
-  const topWidth = widthScale(d.value!);
-  const bottomWidth = i < data.length - 1 ? widthScale(data[i + 1].value!) : 0;
+  const widthScale = (value: number) => (value / Math.max(...data.map(dp => dp.value))) * funnelWidth;
+  const topWidth = widthScale(d.value);
+  const bottomWidth = i < data.length - 1 ? widthScale(data[i + 1].value) : 0;
   const xOffset = (funnelWidth - topWidth) / 2;
   const nextXOffset = (funnelWidth - bottomWidth) / 2;
   const xStart = isRTL ? funnelWidth - xOffset : xOffset;
@@ -70,21 +78,21 @@ export function getHorizontalFunnelSegmentGeometry({
   funnelHeight,
   isRTL,
 }: {
-  d: FunnelDataPoint;
+  d: SimpleFunnelDataPoint;
   i: number;
-  data: FunnelDataPoint[];
+  data: SimpleFunnelDataPoint[];
   funnelWidth: number;
   funnelHeight: number;
   isRTL: boolean;
 }): FunnelSegmentGeometry {
   const segmentWidth = funnelWidth / data.length;
-  const heightScale = (value: number) => (value / Math.max(...data.map(dp => dp.value!))) * funnelHeight;
-  const leftHeight = heightScale(d.value!);
-  const rightHeight = i < data.length - 1 ? heightScale(data[i + 1].value!) : 0;
+  const heightScale = (value: number) => (value / Math.max(...data.map(dp => dp.value))) * funnelHeight;
+  const leftHeight = heightScale(d.value);
+  const rightHeight = i < data.length - 1 ? heightScale(data[i + 1].value) : 0;
   const yOffset = (funnelHeight - leftHeight) / 2;
   const nextYOffset = (funnelHeight - rightHeight) / 2;
-  const x0 = i * segmentWidth;
-  const x1 = (i + 1) * segmentWidth;
+  const x0 = isRTL ? funnelWidth - (i + 1) * segmentWidth : i * segmentWidth;
+  const x1 = isRTL ? funnelWidth - i * segmentWidth : (i + 1) * segmentWidth;
 
   const isLastSegment = i === data.length - 1;
   let textX: number;
