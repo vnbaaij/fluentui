@@ -94,7 +94,7 @@ export class FunnelChart extends ChartBase {
     this._requestRender();
   }
 
-  protected orientationChanged(_oldValue: string, _newValue: string) {
+  protected orientationChanged() {
     this._requestRender();
   }
 

@@ -25,6 +25,9 @@ interface Stage {
   subValues: SubValue[];
 }
 
+/**
+ * Gets vertical funnel segment geometry scaled by `maxValue`, the maximum stage value across all simple data points.
+ */
 export function getVerticalFunnelSegmentGeometry({
   d,
   i,
@@ -72,6 +75,9 @@ export function getVerticalFunnelSegmentGeometry({
   return { pathD, textX, textY, availableWidth };
 }
 
+/**
+ * Gets horizontal funnel segment geometry scaled by `maxValue`, mirroring x coordinates when `isRTL` is true.
+ */
 export function getHorizontalFunnelSegmentGeometry({
   d,
   i,

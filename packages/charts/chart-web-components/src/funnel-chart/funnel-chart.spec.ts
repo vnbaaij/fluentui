@@ -151,11 +151,13 @@ test.describe('FunnelChart - Horizontal', () => {
     const segments = element.locator('.funnel-segment');
     const firstSegmentPath = await segments.nth(0).getAttribute('d');
     const lastSegmentPath = await segments.nth(simpleData.length - 1).getAttribute('d');
+    const funnelWidth = 600 * 0.8;
+    const segmentWidth = funnelWidth / simpleData.length;
+    const expectedFirstX = funnelWidth - segmentWidth;
+    const expectedLastX = 0;
 
-    // 600 * 0.8 = 480 funnel width, 480 / 4 stages = 120 per segment, first x0 in RTL is 480 - 120 = 360.
-    expect(firstSegmentPath).toContain('M360,');
-    // Last stage starts at x0 = 480 - (4 * 120) = 0 in RTL.
-    expect(lastSegmentPath).toContain('M0,');
+    expect(firstSegmentPath).toContain(`M${expectedFirstX},`);
+    expect(lastSegmentPath).toContain(`M${expectedLastX},`);
   });
 });
 
