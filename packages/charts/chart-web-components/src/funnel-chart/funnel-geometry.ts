@@ -97,7 +97,7 @@ export function getHorizontalFunnelSegmentGeometry({
   const nextYOffset = (funnelHeight - rightHeight) / 2;
   const x0 = isRTL ? funnelWidth - (i + 1) * segmentWidth : i * segmentWidth;
   const x1 = isRTL ? funnelWidth - i * segmentWidth : (i + 1) * segmentWidth;
-  const segmentSpan = Math.abs(x1 - x0);
+  const segmentPixelWidth = Math.abs(x1 - x0);
 
   const isLastSegment = i === data.length - 1;
   let textX: number;
@@ -105,19 +105,19 @@ export function getHorizontalFunnelSegmentGeometry({
   let availableWidth = segmentWidth * 0.8;
 
   if (isLastSegment) {
-    textX = x0 + segmentSpan * 0.25;
+    textX = x0 + segmentPixelWidth * 0.25;
     textY = funnelHeight / 2;
-    const segmentArea = (leftHeight * segmentSpan) / 2;
+    const segmentArea = (leftHeight * segmentPixelWidth) / 2;
     if (leftHeight < 40 || segmentArea < 800) {
       availableWidth = 0;
     } else {
-      availableWidth = segmentSpan * 0.75 * 0.6;
+      availableWidth = segmentPixelWidth * 0.75 * 0.6;
     }
   } else {
     textX = (x0 + x1) / 2;
     textY = funnelHeight / 2;
     const minHeight = Math.min(leftHeight, rightHeight);
-    availableWidth = minHeight > 20 ? segmentSpan * 0.8 : 0;
+    availableWidth = minHeight > 20 ? segmentPixelWidth * 0.8 : 0;
   }
 
   const pathD = `M${x0},${yOffset}
