@@ -15,6 +15,15 @@ import {
   isStackedFunnelData,
 } from './funnel-geometry.js';
 
+const orientationConverter = {
+  fromView(value: string | null): 'vertical' | 'horizontal' {
+    return value === 'horizontal' ? 'horizontal' : 'vertical';
+  },
+  toView(value: 'vertical' | 'horizontal'): string {
+    return value;
+  },
+};
+
 /**
  * A Funnel Chart HTML Element.
  * Supports vertical and horizontal orientation, and stacked sub-values.
@@ -31,7 +40,7 @@ export class FunnelChart extends ChartBase {
   @attr({ converter: jsonConverter })
   public data!: FunnelDataPoint[];
 
-  @attr
+  @attr({ converter: orientationConverter })
   public orientation: 'vertical' | 'horizontal' = 'vertical';
 
   public svgElement!: SVGSVGElement;
@@ -85,11 +94,7 @@ export class FunnelChart extends ChartBase {
     this._requestRender();
   }
 
-  protected orientationChanged(_oldValue: string, newValue: string) {
-    if (newValue !== 'horizontal' && newValue !== 'vertical') {
-      this.orientation = 'vertical';
-      return;
-    }
+  protected orientationChanged(_oldValue: string, _newValue: string) {
     this._requestRender();
   }
 
@@ -167,6 +172,9 @@ export class FunnelChart extends ChartBase {
 
   private _renderSimpleFunnel(data: FunnelDataPoint[], funnelWidth: number, funnelHeight: number) {
     const simpleData = data.filter(isSimpleFunnelDataPoint);
+    if (simpleData.length === 0) {
+      return;
+    }
     const maxValue = Math.max(1, ...simpleData.map(point => point.value));
     simpleData.forEach((d, i) => {
       const geom =
