@@ -29,6 +29,7 @@ export function getVerticalFunnelSegmentGeometry({
   d,
   i,
   data,
+  maxValue,
   funnelWidth,
   funnelHeight,
   isRTL,
@@ -36,12 +37,13 @@ export function getVerticalFunnelSegmentGeometry({
   d: SimpleFunnelDataPoint;
   i: number;
   data: SimpleFunnelDataPoint[];
+  maxValue: number;
   funnelWidth: number;
   funnelHeight: number;
   isRTL: boolean;
 }): FunnelSegmentGeometry {
   const segmentHeight = funnelHeight / data.length;
-  const widthScale = (value: number) => (value / Math.max(...data.map(dp => dp.value))) * funnelWidth;
+  const widthScale = (value: number) => (value / maxValue) * funnelWidth;
   const topWidth = widthScale(d.value);
   const bottomWidth = i < data.length - 1 ? widthScale(data[i + 1].value) : 0;
   const xOffset = (funnelWidth - topWidth) / 2;
@@ -74,6 +76,7 @@ export function getHorizontalFunnelSegmentGeometry({
   d,
   i,
   data,
+  maxValue,
   funnelWidth,
   funnelHeight,
   isRTL,
@@ -81,12 +84,13 @@ export function getHorizontalFunnelSegmentGeometry({
   d: SimpleFunnelDataPoint;
   i: number;
   data: SimpleFunnelDataPoint[];
+  maxValue: number;
   funnelWidth: number;
   funnelHeight: number;
   isRTL: boolean;
 }): FunnelSegmentGeometry {
   const segmentWidth = funnelWidth / data.length;
-  const heightScale = (value: number) => (value / Math.max(...data.map(dp => dp.value))) * funnelHeight;
+  const heightScale = (value: number) => (value / maxValue) * funnelHeight;
   const leftHeight = heightScale(d.value);
   const rightHeight = i < data.length - 1 ? heightScale(data[i + 1].value) : 0;
   const yOffset = (funnelHeight - leftHeight) / 2;

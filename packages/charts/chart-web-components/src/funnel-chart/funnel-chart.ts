@@ -2,7 +2,7 @@ import { attr, nullableNumberConverter } from '@microsoft/fast-element';
 import { ChartBase } from '../utils/chart-base.js';
 import { getColorFromToken, getNextColor, jsonConverter, SVG_NAMESPACE_URI } from '../utils/chart-helpers.js';
 import type { Legend } from '../utils/chart.options.js';
-import type { FunnelDataPoint, FunnelOrientation, FunnelSubValue } from './funnel-chart.options.js';
+import type { FunnelDataPoint, FunnelSubValue } from './funnel-chart.options.js';
 import {
   buildStackedGeometryParams,
   getContrastTextColor,
@@ -14,15 +14,6 @@ import {
   isSimpleFunnelDataPoint,
   isStackedFunnelData,
 } from './funnel-geometry.js';
-
-const orientationConverter = {
-  fromView(value: string | null): FunnelOrientation {
-    return value === 'horizontal' ? 'horizontal' : 'vertical';
-  },
-  toView(value: FunnelOrientation): string {
-    return value;
-  },
-};
 
 /**
  * A Funnel Chart HTML Element.
@@ -40,8 +31,8 @@ export class FunnelChart extends ChartBase {
   @attr({ converter: jsonConverter })
   public data!: FunnelDataPoint[];
 
-  @attr({ converter: orientationConverter })
-  public orientation: FunnelOrientation = 'vertical';
+  @attr
+  public orientation: 'vertical' | 'horizontal' = 'vertical';
 
   public svgElement!: SVGSVGElement;
   public group!: SVGGElement;
@@ -94,7 +85,7 @@ export class FunnelChart extends ChartBase {
     this._requestRender();
   }
 
-  protected orientationChanged(_oldValue: FunnelOrientation, newValue: FunnelOrientation) {
+  protected orientationChanged(_oldValue: string, newValue: string) {
     if (newValue !== 'horizontal' && newValue !== 'vertical') {
       this.orientation = 'vertical';
       return;
@@ -176,14 +167,24 @@ export class FunnelChart extends ChartBase {
 
   private _renderSimpleFunnel(data: FunnelDataPoint[], funnelWidth: number, funnelHeight: number) {
     const simpleData = data.filter(isSimpleFunnelDataPoint);
+    const maxValue = Math.max(1, ...simpleData.map(point => point.value));
     simpleData.forEach((d, i) => {
       const geom =
         this.orientation === 'vertical'
-          ? getVerticalFunnelSegmentGeometry({ d, i, data: simpleData, funnelWidth, funnelHeight, isRTL: this._isRTL })
+          ? getVerticalFunnelSegmentGeometry({
+              d,
+              i,
+              data: simpleData,
+              maxValue,
+              funnelWidth,
+              funnelHeight,
+              isRTL: this._isRTL,
+            })
           : getHorizontalFunnelSegmentGeometry({
               d,
               i,
               data: simpleData,
+              maxValue,
               funnelWidth,
               funnelHeight,
               isRTL: this._isRTL,
