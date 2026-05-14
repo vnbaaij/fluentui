@@ -15,6 +15,9 @@ import {
   isStackedFunnelData,
 } from './funnel-geometry.js';
 
+/**
+ * Normalizes orientation attribute values and defaults invalid values to `vertical`.
+ */
 const orientationConverter = {
   fromView(value: string | null): 'vertical' | 'horizontal' {
     return value === 'horizontal' ? 'horizontal' : 'vertical';

@@ -26,7 +26,8 @@ interface Stage {
 }
 
 const LAST_SEGMENT_TEXT_OFFSET_RATIO = 0.25;
-const LAST_SEGMENT_LABEL_WIDTH_RATIO = 0.75 * 0.6;
+// Width ratio for the label area in the tapered final segment (75% of segment width, then 60% padding factor).
+const LAST_SEGMENT_LABEL_WIDTH_RATIO = 0.45;
 
 /**
  * Gets vertical funnel segment geometry scaled by `maxValue`, the maximum stage value across all simple data points.
@@ -104,6 +105,7 @@ export function getHorizontalFunnelSegmentGeometry({
   const rightHeight = i < data.length - 1 ? heightScale(data[i + 1].value) : 0;
   const yOffset = (funnelHeight - leftHeight) / 2;
   const nextYOffset = (funnelHeight - rightHeight) / 2;
+  // Mirror segment x-coordinates in RTL so stages render from right to left.
   const x0 = isRTL ? funnelWidth - (i + 1) * segmentWidth : i * segmentWidth;
   const x1 = isRTL ? funnelWidth - i * segmentWidth : (i + 1) * segmentWidth;
   const segmentPixelWidth = Math.abs(x1 - x0);
