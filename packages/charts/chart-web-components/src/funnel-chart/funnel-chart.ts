@@ -175,7 +175,10 @@ export class FunnelChart extends ChartBase {
     if (simpleData.length === 0) {
       return;
     }
-    const maxValue = Math.max(1, ...simpleData.map(point => point.value));
+    const maxValue = Math.max(...simpleData.map(point => point.value));
+    if (maxValue <= 0) {
+      return;
+    }
     simpleData.forEach((d, i) => {
       const geom =
         this.orientation === 'vertical'

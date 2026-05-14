@@ -5,7 +5,7 @@ export interface SimpleFunnelDataPoint extends FunnelDataPoint {
 }
 
 export function isSimpleFunnelDataPoint(dataPoint: FunnelDataPoint): dataPoint is SimpleFunnelDataPoint {
-  return Number.isFinite(dataPoint.value);
+  return typeof dataPoint.value === 'number' && Number.isFinite(dataPoint.value);
 }
 
 export interface FunnelSegmentGeometry {
@@ -24,6 +24,9 @@ interface SubValue {
 interface Stage {
   subValues: SubValue[];
 }
+
+const LAST_SEGMENT_TEXT_OFFSET_RATIO = 0.25;
+const LAST_SEGMENT_LABEL_WIDTH_RATIO = 0.75 * 0.6;
 
 /**
  * Gets vertical funnel segment geometry scaled by `maxValue`, the maximum stage value across all simple data points.
@@ -111,13 +114,13 @@ export function getHorizontalFunnelSegmentGeometry({
   let availableWidth = segmentWidth * 0.8;
 
   if (isLastSegment) {
-    textX = x0 + segmentPixelWidth * 0.25;
+    textX = x0 + segmentPixelWidth * LAST_SEGMENT_TEXT_OFFSET_RATIO;
     textY = funnelHeight / 2;
     const segmentArea = (leftHeight * segmentPixelWidth) / 2;
     if (leftHeight < 40 || segmentArea < 800) {
       availableWidth = 0;
     } else {
-      availableWidth = segmentPixelWidth * 0.75 * 0.6;
+      availableWidth = segmentPixelWidth * LAST_SEGMENT_LABEL_WIDTH_RATIO;
     }
   } else {
     textX = (x0 + x1) / 2;
