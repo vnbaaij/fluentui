@@ -105,7 +105,7 @@ export function getHorizontalFunnelSegmentGeometry({
   let availableWidth = segmentWidth * 0.8;
 
   if (isLastSegment) {
-    textX = isRTL ? x0 - segmentSpan * 0.25 : x0 + segmentSpan * 0.25;
+    textX = x0 + segmentSpan * 0.25;
     textY = funnelHeight / 2;
     const segmentArea = (leftHeight * segmentSpan) / 2;
     if (leftHeight < 40 || segmentArea < 800) {
