@@ -1,4 +1,14 @@
 export {
+  ChartLegend,
+  ChartLegendDefinition,
+  ChartLegendStyles,
+  ChartLegendTemplate } from './chart-legend/index.js';
+export {
+  DonutChart,
+  DonutChartDefinition,
+  DonutChartStyles,
+  DonutChartTemplate } from './donut-chart/index.js';
+export {
   HorizontalBarChart,
   HorizontalBarChartDefinition,
   HorizontalBarChartStyles,
@@ -10,5 +20,3 @@ export {
   HorizontalBarChartWithAxisStyles,
   HorizontalBarChartWithAxisTemplate,
 } from './horizontal-bar-chart-with-axis/index.js';
-export { DonutChart, DonutChartDefinition, DonutChartStyles, DonutChartTemplate } from './donut-chart/index.js';
-export { ChartLegend, ChartLegendDefinition, ChartLegendStyles, ChartLegendTemplate } from './chart-legend/index.js';
