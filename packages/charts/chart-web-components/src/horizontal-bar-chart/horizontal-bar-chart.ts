@@ -39,6 +39,8 @@ export class HorizontalBarChart extends ChartBase {
   @attr({ attribute: 'enable-gradient', mode: 'boolean' })
   public enableGradient: boolean = false;
 
+  protected override _enableResizeObserver = true;
+
   private _barHeight: number = 12;
   private _bars: SVGRectElement[] = [];
 

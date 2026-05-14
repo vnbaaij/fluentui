@@ -45,7 +45,7 @@ export const styles: ElementStyles = css`
     box-shadow: ${shadow4};
     border: ${strokeWidthThick};
   }
-  .tooltip-line {
+  .tooltip-inner {
     padding-inline-start: ${spacingHorizontalS};
     height: 50px;
     border-inline-start: ${strokeWidthThickest} solid;
@@ -55,7 +55,7 @@ export const styles: ElementStyles = css`
     color: ${colorNeutralForeground1};
     text-align: start;
   }
-  .tooltip-data-y {
+  .tooltip-value {
     ${typographyTitle2Styles}
     text-align: start;
   }

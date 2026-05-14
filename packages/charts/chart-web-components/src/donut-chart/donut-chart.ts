@@ -5,7 +5,6 @@ import { arc as d3Arc, pie as d3Pie, PieArcDatum } from 'd3-shape';
 import {
   getColorFromToken,
   getNextColor,
-  getRTL,
   jsonConverter,
   SVG_NAMESPACE_URI,
   validateChartProps,
@@ -150,8 +149,6 @@ export class DonutChart extends ChartBase {
 
   private _initializeAndRender() {
     const chartData = this._prepareChartData();
-
-    this._isRTL = getRTL(this);
 
     this._render(chartData);
   }

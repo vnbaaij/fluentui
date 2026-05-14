@@ -3,7 +3,6 @@ import { ChartBase } from '../utils/chart-base.js';
 import {
   getColorFromToken,
   getNextColor,
-  getRTL,
   jsonConverter,
   lightenColor,
   SVG_NAMESPACE_URI,
@@ -204,8 +203,9 @@ export class HorizontalBarChartWithAxis extends ChartBase {
   /** Narrows the inherited base tooltipProps type to include axis label fields. */
   public declare tooltipProps: HBCWATooltipProps;
 
+  protected override _enableResizeObserver = true;
+
   private _renderedBars: RenderedBar[] = [];
-  private _resizeObserver?: ResizeObserver;
 
   connectedCallback() {
     // Class field initializers create own data properties that shadow the FAST @attr
@@ -259,16 +259,9 @@ export class HorizontalBarChartWithAxis extends ChartBase {
       }
     }
 
-    this._resizeObserver = new ResizeObserver(() => this._requestRender());
-    this._resizeObserver.observe(this);
     if (this.data) {
       this._renderChart();
     }
-  }
-
-  public disconnectedCallback() {
-    this._resizeObserver?.disconnect();
-    super.disconnectedCallback();
   }
 
   protected dataChanged() {
@@ -366,7 +359,6 @@ export class HorizontalBarChartWithAxis extends ChartBase {
     }
 
     this._validateData(this.data);
-    this._isRTL = getRTL(this);
     this.elementInternals.ariaLabel = this._getHostAriaLabel();
     this._applyHostDimensions();
 

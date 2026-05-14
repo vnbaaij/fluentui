@@ -98,7 +98,7 @@ export const styles = css`
     filter: drop-shadow(0 0 2px ${colorNeutralShadowAmbient}) drop-shadow(0 8px 16px ${colorNeutralShadowKey});
   }
 
-  .tooltip-body {
+  .tooltip-inner {
     padding-inline-start: ${spacingHorizontalS};
     color: ${colorNeutralForeground1};
     border-inline-start: 4px solid;
@@ -108,7 +108,7 @@ export const styles = css`
     ${typographyCaption1Styles}
   }
 
-  .tooltip-content-y {
+  .tooltip-value {
     ${typographyTitle2Styles}
   }
 

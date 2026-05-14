@@ -1,6 +1,7 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
 import type { ChartLegend } from '../chart-legend/chart-legend.js';
 import type { Legend, TooltipProps } from './chart.options.js';
+import { getRTL } from './chart-helpers.js';
 
 /**
  * Abstract base class shared by all chart web components.
@@ -70,11 +71,15 @@ export abstract class ChartBase extends FASTElement {
 
   protected _isRTL: boolean = false;
 
+  /** Set to true in a subclass to automatically observe host resize and re-render. */
+  protected _enableResizeObserver: boolean = false;
+
   // ── Private state ────────────────────────────────────────────────
 
   private _isSettingActiveLegend: boolean = false;
   private _renderDirty = false;
   private _frameHandle: number | null = null;
+  private _resizeObserver?: ResizeObserver;
 
   constructor() {
     super();
@@ -151,9 +156,15 @@ export abstract class ChartBase extends FASTElement {
         self[field] = saved[field];
       }
     }
+
+    if (this._enableResizeObserver) {
+      this._resizeObserver = new ResizeObserver(() => this._requestRender());
+      this._resizeObserver.observe(this);
+    }
   }
 
   public disconnectedCallback() {
+    this._resizeObserver?.disconnect();
     this._cancelScheduledRender();
     super.disconnectedCallback();
   }
@@ -186,6 +197,12 @@ export abstract class ChartBase extends FASTElement {
       return;
     }
     this._updateLegendInteractionState();
+  }
+
+  protected hideTooltipChanged() {
+    if (this.hideTooltip) {
+      this._clearTooltip();
+    }
   }
 
   protected selectedLegendsChanged() {
@@ -308,6 +325,7 @@ export abstract class ChartBase extends FASTElement {
       }
 
       this._renderDirty = false;
+      this._isRTL = getRTL(this);
       this._performRender();
     });
   }
