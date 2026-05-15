@@ -362,7 +362,7 @@ export class HorizontalBarChartWithAxis extends ChartBase {
     this.elementInternals.ariaLabel = this._getHostAriaLabel();
     this._applyHostDimensions();
 
-    const width = Math.max(this.getBoundingClientRect().width || 640, 320);
+    const width = Math.max(this.chartContainer.getBoundingClientRect().width || this.getBoundingClientRect().width || 640, 320);
     const groups = this._getGroupedSeries();
     const numericYAxis = typeof groups[0]?.rawY === 'number';
     const yValues = groups.map(group => group.rawY).filter((value): value is number => typeof value === 'number');
@@ -928,12 +928,13 @@ export class HorizontalBarChartWithAxis extends ChartBase {
     }
 
     const span = domain[1] - domain[0] || 1;
+    const chartWidth = innerWidth + margins.left + margins.right;
     const rangeStart = this._isRTL
-      ? this.getBoundingClientRect().width - margins.right || margins.left + innerWidth
+      ? chartWidth - margins.right
       : margins.left;
     const rangeEnd = this._isRTL
       ? margins.left
-      : this.getBoundingClientRect().width - margins.right || margins.left + innerWidth;
+      : chartWidth - margins.right;
     const originX = rangeStart + ((0 - domain[0]) / span) * (rangeEnd - rangeStart);
     const line = createSvgElement<SVGLineElement>('line');
     line.setAttribute('class', 'origin-line');

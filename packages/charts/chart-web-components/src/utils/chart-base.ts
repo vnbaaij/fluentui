@@ -1,6 +1,6 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
 import type { ChartLegend } from '../chart-legend/chart-legend.js';
-import type { ChartTitleAlign, Legend, TooltipProps } from './chart.options.js';
+import type { ChartLegendPosition, ChartTitleAlign, ChartTitlePosition, Legend, TooltipProps } from './chart.options.js';
 import { getRTL } from './chart-helpers.js';
 
 /**
@@ -21,6 +21,14 @@ export abstract class ChartBase extends FASTElement {
   /** Horizontal alignment of the chart title. Defaults to `'start'`. */
   @attr({ attribute: 'title-align' })
   public titleAlign?: ChartTitleAlign;
+
+  /** Vertical position of the chart title. Defaults to `'top'`. */
+  @attr({ attribute: 'title-position' })
+  public titlePosition?: ChartTitlePosition;
+
+  /** Position of the legend relative to the chart. Defaults to `'bottom'`. */
+  @attr({ attribute: 'legend-position' })
+  public legendPosition?: ChartLegendPosition;
 
   @attr({ attribute: 'hide-legends', mode: 'boolean' })
   public hideLegends: boolean = false;
@@ -122,6 +130,8 @@ export abstract class ChartBase extends FASTElement {
     const attrFields = [
       'chartTitle',
       'titleAlign',
+      'titlePosition',
+      'legendPosition',
       'hideLegends',
       'hideTooltip',
       'hideLabels',
@@ -164,7 +174,7 @@ export abstract class ChartBase extends FASTElement {
 
     if (this._enableResizeObserver) {
       this._resizeObserver = new ResizeObserver(() => this._requestRender());
-      this._resizeObserver.observe(this);
+      this._resizeObserver.observe(this.chartContainer);
     }
   }
 
@@ -180,6 +190,14 @@ export abstract class ChartBase extends FASTElement {
     if (this.$fastController.isConnected) {
       this.elementInternals.ariaLabel = this._getHostAriaLabel();
     }
+  }
+
+  protected legendPositionChanged() {
+    // no-op: CSS handles layout via attr selectors
+  }
+
+  protected hideLegendsChanged() {
+    // no-op for base class: subclass logic handled by render
   }
 
   protected cultureChanged() {

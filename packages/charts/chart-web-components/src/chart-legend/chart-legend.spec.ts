@@ -134,7 +134,29 @@ test.describe('ChartLegend - highlighted', () => {
   });
 });
 
-// ── Events ───────────────────────────────────────────────────────────────────
+// ── Position ─────────────────────────────────────────────────────────────────
+
+test.describe('ChartLegend - position', () => {
+  test('Should reflect position attribute on host element', async ({ page }) => {
+    await setup(page, "position='start'");
+    const element = page.locator('fluent-chart-legend');
+    await expect(element).toHaveAttribute('position', 'start');
+  });
+
+  test('Should update position attribute dynamically', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    await element.evaluate(el => el.setAttribute('position', 'end'));
+    await expect(element).toHaveAttribute('position', 'end');
+  });
+
+  test('Should have no position attribute by default', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    await expect(element).not.toHaveAttribute('position');
+  });
+});
+
 
 test.describe('ChartLegend - events', () => {
   test('Should emit legend-click with legend title on button click', async ({ page }) => {

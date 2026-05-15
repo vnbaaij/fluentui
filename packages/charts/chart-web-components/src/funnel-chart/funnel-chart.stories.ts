@@ -1,8 +1,11 @@
 import { html } from '@microsoft/fast-element';
 import {
+  DropdownDefinition,
+  DropdownOptionDefinition,
   FieldDefinition,
   FluentDesignSystem,
   LabelDefinition,
+  ListboxDefinition,
   RadioDefinition,
   RadioGroupDefinition,
   SliderDefinition,
@@ -16,6 +19,7 @@ import type { FunnelDataPoint } from './funnel-chart.options.js';
 type FluentSliderElement = HTMLElement & { value: string };
 type FluentSwitchElement = HTMLElement & { checked: boolean };
 type FluentRadioGroupElement = HTMLElement;
+type FluentDropdownElement = HTMLElement & { value: string };
 
 const ensureDefinition = (tagName: string, define: () => void) => {
   if (!customElements.get(tagName)) {
@@ -23,8 +27,11 @@ const ensureDefinition = (tagName: string, define: () => void) => {
   }
 };
 
+ensureDefinition('fluent-dropdown', () => DropdownDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-listbox', () => ListboxDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-option', () => DropdownOptionDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-radio', () => RadioDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-radio-group', () => RadioGroupDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
@@ -164,6 +171,55 @@ const createRadioGroupField = (
     element: outerField,
     setValue: (newValue: string) => {
       radioGroup.setAttribute('value', newValue);
+    },
+  };
+};
+
+const createDropdownField = (
+  labelText: string,
+  id: string,
+  options: string[],
+  value: string,
+  onChange: (nextValue: string) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'above');
+  field.setAttribute('style', 'min-width:180px;');
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const dropdown = document.createElement('fluent-dropdown') as FluentDropdownElement;
+  dropdown.slot = 'input';
+  dropdown.id = id;
+  dropdown.setAttribute('value', value);
+
+  const listbox = document.createElement('fluent-listbox');
+  options.forEach(optionValue => {
+    const option = document.createElement('fluent-option');
+    option.setAttribute('value', optionValue);
+    if (optionValue === value) {
+      option.toggleAttribute('selected', true);
+    }
+    option.textContent = optionValue;
+    listbox.appendChild(option);
+  });
+
+  dropdown.appendChild(listbox);
+  dropdown.addEventListener('change', () => onChange(dropdown.value));
+  field.appendChild(dropdown);
+
+  return {
+    element: field,
+    setValue: (nextValue: string) => {
+      dropdown.setAttribute('value', nextValue);
+      dropdown.value = nextValue;
+      listbox.querySelectorAll('fluent-option').forEach(option => {
+        option.toggleAttribute('selected', option.getAttribute('value') === nextValue);
+      });
     },
   };
 };
@@ -419,12 +475,124 @@ export const RTL: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<Flue
   </div>
 `);
 
-export const Culture: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<FluentFunnelChart>>`
-  <fluent-funnel-chart
-    chart-title="Funnel chart culture example (de-DE)"
-    data="${JSON.stringify(simpleData)}"
-    width="600"
-    height="300"
-    culture="de-DE"
-  ></fluent-funnel-chart>
-`);
+export const Culture: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', `Funnel chart culture example (${currentCulture})`);
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField(
+    'Culture',
+    'funnel-culture',
+    [...cultures],
+    currentCulture,
+    nextCulture => {
+      currentCulture = nextCulture;
+      chart.setAttribute('culture', currentCulture);
+      chart.setAttribute('chart-title', `Funnel chart culture example (${currentCulture})`);
+    },
+  );
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
+
+export const TitleAlign: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const alignments = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof alignments)[number] = 'start';
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Funnel chart title alignment example');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('title-align', currentAlign);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const alignControl = createDropdownField(
+    'Title align',
+    'funnel-title-align',
+    [...alignments],
+    currentAlign,
+    nextAlign => {
+      currentAlign = nextAlign as (typeof alignments)[number];
+      chart.setAttribute('title-align', currentAlign);
+    },
+  );
+  controls.appendChild(alignControl.element);
+
+  return container;
+};
+
+export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const positions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentPosition: (typeof positions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Title and legend position example');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const posControl = createDropdownField(
+    'Legend position',
+    'funnel-legend-position',
+    [...positions],
+    currentPosition,
+    nextPosition => {
+      currentPosition = nextPosition as (typeof positions)[number];
+      if (currentPosition === 'bottom') {
+        chart.removeAttribute('legend-position');
+      } else {
+        chart.setAttribute('legend-position', currentPosition);
+      }
+    },
+  );
+
+  const titlePosControl= createDropdownField(
+    'Title position',
+    'funnel-title-position',
+    [...titlePositions],
+    currentTitlePosition,
+    nextTitlePosition => {
+      currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+      if (currentTitlePosition === 'top') {
+        chart.removeAttribute('title-position');
+      } else {
+        chart.setAttribute('title-position', currentTitlePosition);
+      }
+    },
+  );
+  controls.appendChild(titlePosControl.element);
+  controls.appendChild(posControl.element);
+
+  return container;
+};
+

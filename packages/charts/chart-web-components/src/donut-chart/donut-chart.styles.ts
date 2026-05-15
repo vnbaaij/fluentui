@@ -34,24 +34,103 @@ export const styles = css`
 
   :host {
     ${typographyBody1Styles}
-    align-items: center;
-    flex-direction: column;
+    display: grid;
+    grid-template-areas:
+      'title'
+      'chart'
+      'legend';
+    grid-template-columns: 1fr;
     width: 100%;
     height: 100%;
     position: relative;
   }
 
-  .chart {
-    box-sizing: content-box;
-    overflow: visible;
-    display: block;
-  }
+  /* ── Title and legend layout (CSS Grid named areas) ─────────── */
 
   .chart-title {
+    grid-area: title;
+    margin-bottom: ${spacingVerticalS};
     ${typographyBody1StrongStyles}
     color: ${colorNeutralForeground1};
-    margin-bottom: ${spacingVerticalS};
     text-align: start;
+  }
+
+  .chart-container {
+    grid-area: chart;
+  }
+
+  fluent-chart-legend {
+    grid-area: legend;
+  }
+
+  /* title-position="bottom" */
+  :host([title-position='bottom']) {
+    grid-template-areas:
+      'chart'
+      'legend'
+      'title';
+  }
+
+  :host([title-position='bottom']) .chart-title {
+    margin-bottom: 0;
+    margin-top: ${spacingVerticalS};
+  }
+
+  /* legend-position="top" */
+  :host([legend-position='top']) {
+    grid-template-areas:
+      'title'
+      'legend'
+      'chart';
+  }
+
+  /* legend-position="start" */
+  /* Use auto auto 1fr so the fixed-size SVG and legend sit flush together;
+     the 1fr spacer column absorbs leftover host width. */
+  :host([legend-position='start']) {
+    grid-template-areas:
+      'title  title  title'
+      'legend chart  .    ';
+    grid-template-columns: auto auto 1fr;
+  }
+
+  /* legend-position="end" */
+  :host([legend-position='end']) {
+    grid-template-areas:
+      'title  title  title'
+      'chart  legend .    ';
+    grid-template-columns: auto auto 1fr;
+  }
+
+  /* Legend on side: anchor legend to the top of its cell */
+  :host([legend-position='start']) fluent-chart-legend,
+  :host([legend-position='end']) fluent-chart-legend {
+    align-self: start;
+  }
+
+  /* Combined: title-position="bottom" + legend-position="top" */
+  :host([title-position='bottom'][legend-position='top']) {
+    grid-template-areas:
+      'legend'
+      'chart'
+      'title';
+    grid-template-columns: 1fr;
+  }
+
+  /* Combined: title-position="bottom" + legend-position="start" */
+  :host([title-position='bottom'][legend-position='start']) {
+    grid-template-areas:
+      'legend chart  .    '
+      'title  title  title';
+    grid-template-columns: auto auto 1fr;
+  }
+
+  /* Combined: title-position="bottom" + legend-position="end" */
+  :host([title-position='bottom'][legend-position='end']) {
+    grid-template-areas:
+      'chart  legend .    '
+      'title  title  title';
+    grid-template-columns: auto auto 1fr;
   }
 
   :host([title-align='center']) .chart-title {
@@ -60,6 +139,12 @@ export const styles = css`
 
   :host([title-align='end']) .chart-title {
     text-align: end;
+  }
+
+  .chart {
+    box-sizing: content-box;
+    overflow: visible;
+    display: block;
   }
 
   .arc.inactive {

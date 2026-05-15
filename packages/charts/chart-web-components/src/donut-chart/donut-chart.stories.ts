@@ -1,10 +1,14 @@
 import { html } from '@microsoft/fast-element';
 import {
+  DropdownDefinition,
+  DropdownOptionDefinition,
   FieldDefinition,
   FluentDesignSystem,
   LabelDefinition,
+  ListboxDefinition,
   SliderDefinition,
   SwitchDefinition,
+  TextInputDefinition,
 } from '@fluentui/web-components';
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
 import { renderComponent } from '../helpers.stories.js';
@@ -13,6 +17,8 @@ import type { ChartDataPoint, ChartProps } from './donut-chart.options.js';
 
 type FluentSliderElement = HTMLElement & { value: string };
 type FluentSwitchElement = HTMLElement & { checked: boolean };
+type FluentDropdownElement = HTMLElement & { value: string };
+type FluentTextInputElement = HTMLElement & { value: string };
 
 const ensureDefinition = (tagName: string, define: () => void) => {
   if (!customElements.get(tagName)) {
@@ -20,10 +26,14 @@ const ensureDefinition = (tagName: string, define: () => void) => {
   }
 };
 
+ensureDefinition('fluent-dropdown', () => DropdownDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-listbox', () => ListboxDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-option', () => DropdownOptionDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-text-input', () => TextInputDefinition.define(FluentDesignSystem.registry));
 
 const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
 const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
@@ -104,6 +114,83 @@ const createSwitchField = (
       control.toggleAttribute('checked', nextChecked);
     },
   };
+};
+
+const createDropdownField = (
+  labelText: string,
+  id: string,
+  options: string[],
+  value: string,
+  onChange: (nextValue: string) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'above');
+  field.setAttribute('style', 'min-width:180px;');
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const dropdown = document.createElement('fluent-dropdown') as FluentDropdownElement;
+  dropdown.slot = 'input';
+  dropdown.id = id;
+  dropdown.setAttribute('value', value);
+
+  const listbox = document.createElement('fluent-listbox');
+  options.forEach(optionValue => {
+    const option = document.createElement('fluent-option');
+    option.setAttribute('value', optionValue);
+    if (optionValue === value) {
+      option.toggleAttribute('selected', true);
+    }
+    option.textContent = optionValue;
+    listbox.appendChild(option);
+  });
+
+  dropdown.appendChild(listbox);
+  dropdown.addEventListener('change', () => onChange(dropdown.value));
+  field.appendChild(dropdown);
+
+  return {
+    element: field,
+    setValue: (nextValue: string) => {
+      dropdown.setAttribute('value', nextValue);
+      dropdown.value = nextValue;
+      listbox.querySelectorAll('fluent-option').forEach(option => {
+        option.toggleAttribute('selected', option.getAttribute('value') === nextValue);
+      });
+    },
+  };
+};
+
+const createTextInputField = (
+  labelText: string,
+  id: string,
+  value: string,
+  onChange: (nextValue: string | undefined) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'above');
+  field.setAttribute('style', 'min-width:220px;flex:1 1 220px;');
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const input = document.createElement('fluent-text-input') as FluentTextInputElement;
+  input.slot = 'input';
+  input.id = id;
+  input.setAttribute('value', value);
+  input.addEventListener('input', () => {
+    onChange(input.value || undefined);
+  });
+  field.appendChild(input);
+
+  return { element: field };
 };
 
 const basicTitle = 'Donut chart basic example';
@@ -368,16 +455,39 @@ export const LegendListLabel: Story<FluentDonutChart> = renderComponent(html<Sto
   </fluent-donut-chart>
 `);
 
-export const Culture: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
-  <fluent-donut-chart
-    chart-title="Donut chart culture example (de-DE)"
-    data="${JSON.stringify(data)}"
-    value-inside-donut="39.000"
-    inner-radius="55"
-    culture="de-DE"
-  >
-  </fluent-donut-chart>
-`);
+export const Culture: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', `Donut chart culture example (${currentCulture})`);
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('value-inside-donut', '39.000');
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField(
+    'Culture',
+    'donut-culture',
+    [...cultures],
+    currentCulture,
+    nextCulture => {
+      currentCulture = nextCulture;
+      chart.setAttribute('culture', currentCulture);
+      chart.setAttribute('chart-title', `Donut chart culture example (${currentCulture})`);
+    },
+  );
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
 
 export const MultipleLegendSelection: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -426,31 +536,104 @@ export const ValueInsideDonut: Story<FluentDonutChart> = () => {
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
-  const inputFieldStyle = 'min-width:220px;flex:1 1 220px;display:flex;flex-direction:column;gap:4px;';
-
-  const fieldWrapper = document.createElement('div');
-  fieldWrapper.setAttribute('style', inputFieldStyle);
-
-  const label = document.createElement('label');
-  label.textContent = 'Value inside donut';
-  label.setAttribute('style', 'font-size:14px;');
-  fieldWrapper.appendChild(label);
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.value = '39,000';
-  input.setAttribute('style', 'padding:4px 8px;font-size:14px;width:180px;');
-  input.addEventListener('input', () => {
-    if (input.value) {
-      chart.valueInsideDonut = input.value;
-      chart.setAttribute('value-inside-donut', input.value);
+  const inputField = createTextInputField('Value inside donut', 'donut-value-inside', '39,000', nextValue => {
+    if (nextValue) {
+      chart.valueInsideDonut = nextValue;
+      chart.setAttribute('value-inside-donut', nextValue);
     } else {
       chart.valueInsideDonut = undefined;
       chart.removeAttribute('value-inside-donut');
     }
   });
-  fieldWrapper.appendChild(input);
-  controls.appendChild(fieldWrapper);
+  controls.appendChild(inputField.element);
 
   return container;
 };
+
+export const TitleAlign: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const alignments = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof alignments)[number] = 'start';
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Donut chart title alignment example');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('value-inside-donut', '39,000');
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('title-align', currentAlign);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const alignControl = createDropdownField(
+    'Title align',
+    'donut-title-align',
+    [...alignments],
+    currentAlign,
+    nextAlign => {
+      currentAlign = nextAlign as (typeof alignments)[number];
+      chart.setAttribute('title-align', currentAlign);
+    },
+  );
+  controls.appendChild(alignControl.element);
+
+  return container;
+};
+
+export const TitleAndLegendPositions: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const positions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentPosition: (typeof positions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Title and legend position example');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('value-inside-donut', '39,000');
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const posControl = createDropdownField(
+    'Legend position',
+    'donut-legend-position',
+    [...positions],
+    currentPosition,
+    nextPosition => {
+      currentPosition = nextPosition as (typeof positions)[number];
+      if (currentPosition === 'bottom') {
+        chart.removeAttribute('legend-position');
+      } else {
+        chart.setAttribute('legend-position', currentPosition);
+      }
+    },
+  );
+
+  const titlePosControl= createDropdownField(
+    'Title position',
+    'donut-title-position',
+    [...titlePositions],
+    currentTitlePosition,
+    nextTitlePosition => {
+      currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+      if (currentTitlePosition === 'top') {
+        chart.removeAttribute('title-position');
+      } else {
+        chart.setAttribute('title-position', currentTitlePosition);
+      }
+    },
+  );
+  controls.appendChild(titlePosControl.element);
+  controls.appendChild(posControl.element);
+
+  return container;
+};
+

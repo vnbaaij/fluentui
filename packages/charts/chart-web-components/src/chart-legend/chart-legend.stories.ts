@@ -117,6 +117,13 @@ function note(text: string): HTMLParagraphElement {
   return p;
 }
 
+function mockTitle(text: string): HTMLDivElement {
+  const div = document.createElement('div');
+  div.style.cssText = 'font-weight:600;font-size:14px;margin-bottom:8px;';
+  div.textContent = text;
+  return div;
+}
+
 export default {
   title: 'Components/ChartLegend',
 } as Meta<FluentChartLegend>;
@@ -174,5 +181,81 @@ export const Hidden: Story<FluentChartLegend> = () => {
   el.hidden = true;
   container.appendChild(el);
   container.appendChild(note('The legend is hidden (display: none via :host([hidden])).'));
+  return container;
+};
+
+export const PositionTop: Story<FluentChartLegend> = () => {
+  const container = document.createElement('div');
+  container.style.cssText = 'border:1px dashed #ccc;padding:8px;';
+
+  const mockChart = document.createElement('div');
+  mockChart.style.cssText =
+    'background:#f0f0f0;height:120px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px;';
+  mockChart.textContent = '(chart area)';
+
+  const el = document.createElement('fluent-chart-legend') as FluentChartLegend;
+  el.items = items;
+  el.label = 'Legend at top';
+  el.setAttribute('position', 'top');
+  wireInteractivity(el);
+
+  container.appendChild(mockTitle('Chart title'));
+  container.appendChild(el);
+  container.appendChild(mockChart);
+  container.appendChild(note('Legend positioned at the top (position="top"). padding shifts to bottom.'));
+  return container;
+};
+
+export const PositionStart: Story<FluentChartLegend> = () => {
+  const container = document.createElement('div');
+  container.style.cssText = 'border:1px dashed #ccc;padding:8px;';
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:0;';
+
+  const el = document.createElement('fluent-chart-legend') as FluentChartLegend;
+  el.items = items;
+  el.label = 'Legend at start';
+  el.setAttribute('position', 'start');
+  wireInteractivity(el);
+
+  const mockChart = document.createElement('div');
+  mockChart.style.cssText =
+    'flex:1;background:#f0f0f0;height:120px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px;';
+  mockChart.textContent = '(chart area)';
+
+  row.appendChild(el);
+  row.appendChild(mockChart);
+
+  container.appendChild(mockTitle('Chart title'));
+  container.appendChild(row);
+  container.appendChild(note('Legend positioned at the start (position="start"). Renders in a column.'));
+  return container;
+};
+
+export const PositionEnd: Story<FluentChartLegend> = () => {
+  const container = document.createElement('div');
+  container.style.cssText = 'border:1px dashed #ccc;padding:8px;';
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:0;';
+
+  const mockChart = document.createElement('div');
+  mockChart.style.cssText =
+    'flex:1;background:#f0f0f0;height:120px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px;';
+  mockChart.textContent = '(chart area)';
+
+  const el = document.createElement('fluent-chart-legend') as FluentChartLegend;
+  el.items = items;
+  el.label = 'Legend at end';
+  el.setAttribute('position', 'end');
+  wireInteractivity(el);
+
+  row.appendChild(mockChart);
+  row.appendChild(el);
+
+  container.appendChild(mockTitle('Chart title'));
+  container.appendChild(row);
+  container.appendChild(note('Legend positioned at the end (position="end"). Renders in a column.'));
   return container;
 };

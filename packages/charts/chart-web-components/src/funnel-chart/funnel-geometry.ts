@@ -101,25 +101,37 @@ export function getHorizontalFunnelSegmentGeometry({
 }): FunnelSegmentGeometry {
   const segmentWidth = funnelWidth / data.length;
   const heightScale = (value: number) => (value / maxValue) * funnelHeight;
-  const leftHeight = heightScale(d.value);
-  const rightHeight = i < data.length - 1 ? heightScale(data[i + 1].value) : 0;
-  const yOffset = (funnelHeight - leftHeight) / 2;
-  const nextYOffset = (funnelHeight - rightHeight) / 2;
   // Mirror segment x-coordinates in RTL so stages render from right to left.
   const x0 = isRTL ? funnelWidth - (i + 1) * segmentWidth : i * segmentWidth;
   const x1 = isRTL ? funnelWidth - i * segmentWidth : (i + 1) * segmentWidth;
   const segmentPixelWidth = Math.abs(x1 - x0);
+
+  // In RTL the x-positions are mirrored, so the height assignments must be
+  // swapped too: the left edge (x0) connects to the next segment and the right
+  // edge (x1) represents the current stage — the opposite of LTR.
+  const ltrLeftHeight = heightScale(d.value);
+  const ltrRightHeight = i < data.length - 1 ? heightScale(data[i + 1].value) : 0;
+  const leftHeight = isRTL ? ltrRightHeight : ltrLeftHeight;
+  const rightHeight = isRTL ? ltrLeftHeight : ltrRightHeight;
+
+  const yOffset = (funnelHeight - leftHeight) / 2;
+  const nextYOffset = (funnelHeight - rightHeight) / 2;
 
   const isLastSegment = i === data.length - 1;
   let textX: number;
   let textY: number;
   let availableWidth = segmentWidth * 0.8;
 
+  // The wide end of the last (tapered) segment is opposite the taper point.
+  const wideEndHeight = isRTL ? rightHeight : leftHeight;
   if (isLastSegment) {
-    textX = x0 + segmentPixelWidth * LAST_SEGMENT_TEXT_OFFSET_RATIO;
+    // Place text near the wide end, away from the taper point.
+    textX = isRTL
+      ? x1 - segmentPixelWidth * LAST_SEGMENT_TEXT_OFFSET_RATIO
+      : x0 + segmentPixelWidth * LAST_SEGMENT_TEXT_OFFSET_RATIO;
     textY = funnelHeight / 2;
-    const segmentArea = (leftHeight * segmentPixelWidth) / 2;
-    if (leftHeight < 40 || segmentArea < 800) {
+    const segmentArea = (wideEndHeight * segmentPixelWidth) / 2;
+    if (wideEndHeight < 40 || segmentArea < 800) {
       availableWidth = 0;
     } else {
       availableWidth = segmentPixelWidth * LAST_SEGMENT_LABEL_WIDTH_RATIO;

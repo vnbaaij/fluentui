@@ -803,17 +803,39 @@ export const RTL: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html
   </div>
 `);
 
-export const Culture: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
-  StoryArgs<FluentHorizontalBarChartWithAxis>
->`
-  <fluent-horizontal-bar-chart-with-axis
-    style="width: 650px; height: 350px"
-    chart-title="Horizontal bar chart culture example (de-DE)"
-    culture="de-DE"
-    data="${JSON.stringify(categoricalData)}"
-  >
-  </fluent-horizontal-bar-chart-with-axis>
-`);
+export const Culture: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement(
+    'fluent-horizontal-bar-chart-with-axis',
+  ) as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField(
+    'Culture',
+    'hbcwa-culture',
+    [...cultures],
+    currentCulture,
+    nextCulture => {
+      currentCulture = nextCulture;
+      chart.setAttribute('culture', currentCulture);
+      chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
+    },
+  );
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
 
 export const LegendListLabel: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
@@ -1047,3 +1069,91 @@ export const DomainOverride: Story<FluentHorizontalBarChartWithAxis> = () => {
   applyDomain();
   return container;
 };
+
+export const TitleAlign: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const alignments = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof alignments)[number] = 'start';
+
+  const chart = document.createElement(
+    'fluent-horizontal-bar-chart-with-axis',
+  ) as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Title alignment example');
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('title-align', currentAlign);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const alignControl = createDropdownField(
+    'Title align',
+    'hbcwa-title-align',
+    [...alignments],
+    currentAlign,
+    nextAlign => {
+      currentAlign = nextAlign as (typeof alignments)[number];
+      chart.setAttribute('title-align', currentAlign);
+    },
+  );
+  controls.appendChild(alignControl.element);
+
+  return container;
+};
+
+export const TitleAndLegendPositions: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const positions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentPosition: (typeof positions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement(
+    'fluent-horizontal-bar-chart-with-axis',
+  ) as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Title and legend position example');
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const posControl = createDropdownField(
+    'Legend position',
+    'hbcwa-legend-position',
+    [...positions],
+    currentPosition,
+    nextPosition => {
+      currentPosition = nextPosition as (typeof positions)[number];
+      if (currentPosition === 'bottom') {
+        chart.removeAttribute('legend-position');
+      } else {
+        chart.setAttribute('legend-position', currentPosition);
+      }
+    },
+  );
+
+  const titlePosControl= createDropdownField(
+    'Title position',
+    'hbcwa-title-position',
+    [...titlePositions],
+    currentTitlePosition,
+    nextTitlePosition => {
+      currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+      if (currentTitlePosition === 'top') {
+        chart.removeAttribute('title-position');
+      } else {
+        chart.setAttribute('title-position', currentTitlePosition);
+      }
+    },
+  );
+  controls.appendChild(titlePosControl.element);
+  controls.appendChild(posControl.element);
+
+  return container;
+};
+

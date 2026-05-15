@@ -11,7 +11,7 @@ export function donutChartTemplate<T extends DonutChart>(): ElementViewTemplate<
   return html<T>`
     <template>
       ${when(x => !!x.chartTitle, html<T>`<div class="chart-title">${x => x.chartTitle}</div>`)}
-      <div ${ref('chartContainer')}>
+      <div class="chart-container" ${ref('chartContainer')}>
         <svg class="chart" width="${x => x.width}" height="${x => x.height}">
           <g ${ref('group')} transform="translate(${x => x.width / 2}, ${x => x.height / 2})"></g>
         </svg>
@@ -19,6 +19,7 @@ export function donutChartTemplate<T extends DonutChart>(): ElementViewTemplate<
       <fluent-chart-legend
         :items="${x => x.legends}"
         label="${x => x.legendListLabel}"
+        position="${x => x.legendPosition}"
         ?hidden="${x => x.hideLegends}"
         @legend-click="${(x, c) => x.handleLegendClick((c.event as CustomEvent<string>).detail)}"
         @legend-mouseover="${(x, c) => x.handleLegendMouseoverAndFocus((c.event as CustomEvent<string>).detail)}"

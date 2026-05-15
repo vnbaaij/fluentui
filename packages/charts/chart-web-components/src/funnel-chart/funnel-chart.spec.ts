@@ -214,3 +214,176 @@ test.describe('FunnelChart - Legend interaction', () => {
     await expect(segments.nth(1)).toHaveClass(/inactive/);
   });
 });
+
+// ── title-align ───────────────────────────────────────────────────────────────
+
+const funnelTitle = 'Funnel chart basic';
+
+test.describe('FunnelChart - title-align', () => {
+  async function setupWithTitle(page: import('@playwright/test').Page, extraAttrs = '') {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="${funnelTitle}"
+          width="350"
+          height="400"
+          ${extraAttrs}
+          data='${JSON.stringify(simpleData)}'>
+        </fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+  }
+
+  test('Should render .chart-title when chart-title is set', async ({ page }) => {
+    await setupWithTitle(page);
+    const element = page.locator('fluent-funnel-chart');
+    await expect(element.locator('.chart-title')).toHaveText(funnelTitle);
+  });
+
+  test('Should not render .chart-title when chart-title is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart width="350" height="400" data='${JSON.stringify(simpleData)}'></fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+    const element = page.locator('fluent-funnel-chart');
+    await expect(element.locator('.chart-title')).toHaveCount(0);
+  });
+
+  test('Should apply text-align:start by default', async ({ page }) => {
+    await setupWithTitle(page);
+    const title = page.locator('fluent-funnel-chart .chart-title');
+    await expect(title).toHaveCSS('text-align', 'start');
+  });
+
+  test('Should apply text-align:center when title-align="center"', async ({ page }) => {
+    await setupWithTitle(page, "title-align='center'");
+    const title = page.locator('fluent-funnel-chart .chart-title');
+    await expect(title).toHaveCSS('text-align', 'center');
+  });
+
+  test('Should apply text-align:end when title-align="end"', async ({ page }) => {
+    await setupWithTitle(page, "title-align='end'");
+    const title = page.locator('fluent-funnel-chart .chart-title');
+    await expect(title).toHaveCSS('text-align', 'end');
+  });
+
+  test('Should update text-align when title-align attribute changes dynamically', async ({ page }) => {
+    await setupWithTitle(page);
+    const element = page.locator('fluent-funnel-chart');
+    const title = element.locator('.chart-title');
+    await expect(title).toHaveCSS('text-align', 'start');
+    await element.evaluate(el => el.setAttribute('title-align', 'center'));
+    await expect(title).toHaveCSS('text-align', 'center');
+  });
+});
+
+// ── legend-position ───────────────────────────────────────────────────────────
+
+test.describe('FunnelChart - legend-position', () => {
+  async function setupWithLegendPosition(page: import('@playwright/test').Page, position: string) {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="${funnelTitle}"
+          width="350"
+          height="400"
+          legend-position="${position}"
+          data='${JSON.stringify(simpleData)}'>
+        </fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+  }
+
+  test('Should set position attribute on fluent-chart-legend when legend-position="top"', async ({ page }) => {
+    await setupWithLegendPosition(page, 'top');
+    const legend = page.locator('fluent-funnel-chart fluent-chart-legend');
+    await expect(legend).toHaveAttribute('position', 'top');
+  });
+
+  test('Should set position attribute on fluent-chart-legend when legend-position="start"', async ({ page }) => {
+    await setupWithLegendPosition(page, 'start');
+    const legend = page.locator('fluent-funnel-chart fluent-chart-legend');
+    await expect(legend).toHaveAttribute('position', 'start');
+  });
+
+  test('Should set position attribute on fluent-chart-legend when legend-position="end"', async ({ page }) => {
+    await setupWithLegendPosition(page, 'end');
+    const legend = page.locator('fluent-funnel-chart fluent-chart-legend');
+    await expect(legend).toHaveAttribute('position', 'end');
+  });
+
+  test('Should update legend position attribute when legend-position changes dynamically', async ({ page }) => {
+    await setupWithLegendPosition(page, 'top');
+    const element = page.locator('fluent-funnel-chart');
+    const legend = element.locator('fluent-chart-legend');
+    await expect(legend).toHaveAttribute('position', 'top');
+    await element.evaluate(el => el.setAttribute('legend-position', 'end'));
+    await expect(legend).toHaveAttribute('position', 'end');
+  });
+});
+
+// ── title-position ────────────────────────────────────────────────────────────
+
+test.describe('FunnelChart - title-position', () => {
+  test('Should keep title-position="bottom" regardless of legend position', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="${funnelTitle}"
+          width="350"
+          height="400"
+          title-position="bottom"
+          data='${JSON.stringify(simpleData)}'>
+        </fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+    const element = page.locator('fluent-funnel-chart');
+    await expect(element).toHaveAttribute('title-position', 'bottom');
+  });
+
+  test('Should keep title-position="bottom" when legend-position="top"', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="${funnelTitle}"
+          width="350"
+          height="400"
+          legend-position="top"
+          title-position="bottom"
+          data='${JSON.stringify(simpleData)}'>
+        </fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+    const element = page.locator('fluent-funnel-chart');
+    await expect(element).toHaveAttribute('title-position', 'bottom');
+  });
+
+  test('Should keep title-position="bottom" when legend is visible at default position', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="${funnelTitle}"
+          width="350"
+          height="400"
+          data='${JSON.stringify(simpleData)}'>
+        </fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+    const element = page.locator('fluent-funnel-chart');
+    await element.evaluate(el => el.setAttribute('title-position', 'bottom'));
+    await expect(element).toHaveAttribute('title-position', 'bottom');
+  });
+});
