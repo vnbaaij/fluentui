@@ -13,7 +13,7 @@ export function donutChartTemplate<T extends DonutChart>(): ElementViewTemplate<
       ${when(x => !!x.chartTitle, html<T>`<div class="chart-title">${x => x.chartTitle}</div>`)}
       <div class="chart-container" ${ref('chartContainer')}>
         <svg class="chart" width="${x => x.width}" height="${x => x.height}">
-          <g ${ref('group')} transform="translate(${x => x.width / 2}, ${x => x.height / 2})"></g>
+          <g ${ref('group')} transform="translate(${x => (x.width ?? 200) / 2}, ${x => (x.height ?? 200) / 2})"></g>
         </svg>
       </div>
       <fluent-chart-legend
