@@ -13,7 +13,7 @@ import {
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
 import { renderComponent } from '../helpers.stories.js';
 import { DonutChart as FluentDonutChart } from './donut-chart.js';
-import type { ChartDataPoint, ChartProps } from './donut-chart.options.js';
+import type { DonutDataPoint } from './donut-chart.options.js';
 
 type FluentSliderElement = HTMLElement & { value: string };
 type FluentSwitchElement = HTMLElement & { checked: boolean };
@@ -196,7 +196,7 @@ const createTextInputField = (
 const basicTitle = 'Donut chart basic example';
 const sortedTitle = 'Sorted donut chart example';
 
-const points: ChartDataPoint[] = [
+const points: DonutDataPoint[] = [
   {
     legend: 'first',
     data: 20000,
@@ -207,11 +207,9 @@ const points: ChartDataPoint[] = [
   },
 ];
 
-const data: ChartProps = {
-  chartData: points,
-};
+const data: DonutDataPoint[] = points;
 
-const sortedPoints: ChartDataPoint[] = [
+const sortedPoints: DonutDataPoint[] = [
   {
     legend: 'small',
     data: 5000,
@@ -226,9 +224,7 @@ const sortedPoints: ChartDataPoint[] = [
   },
 ];
 
-const sortedData: ChartProps = {
-  chartData: sortedPoints,
-};
+const sortedData: DonutDataPoint[] = sortedPoints;
 
 const storyTemplate = html<StoryArgs<FluentDonutChart>>`
   <fluent-donut-chart

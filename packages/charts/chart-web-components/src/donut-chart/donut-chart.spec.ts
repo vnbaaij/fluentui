@@ -1,11 +1,11 @@
 import { test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
 import type { DonutChart as FluentDonutChart } from './donut-chart.js';
-import type { ChartDataPoint, ChartProps } from './donut-chart.options.js';
+import type { DonutDataPoint } from './donut-chart.options.js';
 
 const basicTitle = 'Donut chart basic example';
 
-const points: ChartDataPoint[] = [
+const points: DonutDataPoint[] = [
   {
     legend: 'first',
     data: 20000,
@@ -16,9 +16,7 @@ const points: ChartDataPoint[] = [
   },
 ];
 
-const data: ChartProps = {
-  chartData: points,
-};
+const data: DonutDataPoint[] = points;
 
 test.describe('Donut-chart - Basic', () => {
   test.beforeEach(async ({ page }) => {
@@ -182,13 +180,11 @@ test.describe('Donut-chart - Reactive rerender', () => {
     const element = page.locator('fluent-donut-chart');
     await expect(element.locator('.arc')).toHaveCount(2);
 
-    const newData: ChartProps = {
-      chartData: [
+    const newData: DonutDataPoint[] = [
         { legend: 'alpha', data: 10000 },
         { legend: 'beta', data: 20000 },
         { legend: 'gamma', data: 30000 },
-      ],
-    };
+      ];
 
     await element.evaluate((el, d) => {
       el.setAttribute('chart-title', 'Updated chart');
@@ -421,13 +417,11 @@ test.describe('Donut-chart - hide-legends', () => {
 });
 
 test.describe('Donut-chart - allow-multiple-legend-selection', () => {
-  const multiData: ChartProps = {
-    chartData: [
+  const multiData: DonutDataPoint[] = [
       { legend: 'first', data: 20000 },
       { legend: 'second', data: 39000 },
       { legend: 'third', data: 15000 },
-    ],
-  };
+    ];
 
   test.beforeEach(async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
@@ -558,13 +552,11 @@ test.describe('Donut-chart - round-corners', () => {
 });
 
 test.describe('Donut-chart - order', () => {
-  const unorderedData: ChartProps = {
-    chartData: [
-      { legend: 'small', data: 5000 },
-      { legend: 'large', data: 39000 },
-      { legend: 'medium', data: 15000 },
-    ],
-  };
+  const unorderedData: DonutDataPoint[] = [
+    { legend: 'small', data: 5000 },
+    { legend: 'large', data: 39000 },
+    { legend: 'medium', data: 15000 },
+  ];
 
   test('Should render legends in default order when order is not set', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
@@ -604,12 +596,10 @@ test.describe('Donut-chart - order', () => {
   });
 
   test('uses chart-title attr and calloutData for highlighted center text', async ({ page }) => {
-    const calloutData: ChartProps = {
-      chartData: [
+    const calloutData: DonutDataPoint[] = [
         { legend: 'first', data: 20000, calloutData: '20K highlighted' },
         { legend: 'second', data: 39000 },
-      ],
-    };
+      ];
 
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
@@ -705,12 +695,10 @@ test.describe('Donut-chart - culture', () => {
   });
 
   test('Should format tooltip callout value using the specified culture', async ({ page }) => {
-    const cultureData: ChartProps = {
-      chartData: [
+    const cultureData: DonutDataPoint[] = [
         { legend: 'first', data: 1234.5 },
         { legend: 'second', data: 5678.9 },
-      ],
-    };
+      ];
 
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
@@ -888,13 +876,11 @@ test.describe('Donut-chart - value-inside-donut', () => {
 });
 
 test.describe('Donut-chart - order reactivity', () => {
-  const unorderedData: ChartProps = {
-    chartData: [
-      { legend: 'small', data: 5000 },
-      { legend: 'large', data: 39000 },
-      { legend: 'medium', data: 15000 },
-    ],
-  };
+  const unorderedData: DonutDataPoint[] = [
+    { legend: 'small', data: 5000 },
+    { legend: 'large', data: 39000 },
+    { legend: 'medium', data: 15000 },
+  ];
 
   test('Should reorder legends when order changes from default to sorted', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
