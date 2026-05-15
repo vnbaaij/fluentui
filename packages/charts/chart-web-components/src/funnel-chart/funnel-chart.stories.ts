@@ -542,8 +542,7 @@ export const TitleAlign: Story<FluentFunnelChart> = () => {
   return container;
 };
 
-export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {
-  const container = document.createElement('div');
+export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {  const container = document.createElement('div');
   const controls = document.createElement('div');
   controls.setAttribute('style', controlsRowStyle);
   container.appendChild(controls);
@@ -592,6 +591,58 @@ export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {
   );
   controls.appendChild(titlePosControl.element);
   controls.appendChild(posControl.element);
+
+  return container;
+};
+
+export const RoundedCorners: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
+
+  let roundCorners = false;
+  let orientation: 'horizontal' | 'vertical' = 'horizontal';
+
+  const renderChart = () => {
+    chart.roundCorners = roundCorners;
+    chart.toggleAttribute('round-corners', roundCorners);
+    chart.orientation = orientation;
+    chart.setAttribute('orientation', orientation);
+  };
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  controls.appendChild(
+    createSwitchField('Rounded corners', 'funnel-round-corners', roundCorners, nextChecked => {
+      roundCorners = nextChecked;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createRadioGroupField(
+      'Orientation',
+      'funnel-round-corners-orientation',
+      [
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Vertical', value: 'vertical' },
+      ],
+      orientation,
+      newValue => {
+        orientation = newValue as 'horizontal' | 'vertical';
+        renderChart();
+      },
+    ).element,
+  );
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Funnel chart rounded corners example');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('orientation', orientation);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
 
   return container;
 };

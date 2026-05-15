@@ -194,6 +194,7 @@ export class FunnelChart extends ChartBase {
               funnelWidth,
               funnelHeight,
               isRTL: this._isRTL,
+              roundCorners: this.roundCorners,
             })
           : getHorizontalFunnelSegmentGeometry({
               d,
@@ -203,6 +204,7 @@ export class FunnelChart extends ChartBase {
               funnelWidth,
               funnelHeight,
               isRTL: this._isRTL,
+              roundCorners: this.roundCorners,
             });
 
       const textProps = getSegmentTextProps({
@@ -232,8 +234,26 @@ export class FunnelChart extends ChartBase {
       (stage.subValues ?? []).forEach((sv: FunnelSubValue, k) => {
         const geom =
           this.orientation === 'vertical'
-            ? getStackedVerticalFunnelSegmentGeometry({ i, k, stages, totals, maxTotal, funnelWidth, funnelHeight })
-            : getStackedHorizontalFunnelSegmentGeometry({ i, k, stages, totals, maxTotal, funnelWidth, funnelHeight });
+            ? getStackedVerticalFunnelSegmentGeometry({
+                i,
+                k,
+                stages,
+                totals,
+                maxTotal,
+                funnelWidth,
+                funnelHeight,
+                roundCorners: this.roundCorners,
+              })
+            : getStackedHorizontalFunnelSegmentGeometry({
+                i,
+                k,
+                stages,
+                totals,
+                maxTotal,
+                funnelWidth,
+                funnelHeight,
+                roundCorners: this.roundCorners,
+              });
 
         const textProps = getSegmentTextProps({
           availableWidth: geom.availableWidth,
