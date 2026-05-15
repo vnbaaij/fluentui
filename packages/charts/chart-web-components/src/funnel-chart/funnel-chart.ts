@@ -16,11 +16,11 @@ import {
 } from './funnel-geometry.js';
 
 /**
- * Normalizes orientation attribute values and defaults invalid values to `vertical`.
+ * Normalizes orientation attribute values and defaults invalid values to `horizontal`.
  */
 const orientationConverter = {
   fromView(value: string | null): 'vertical' | 'horizontal' {
-    return value === 'horizontal' ? 'horizontal' : 'vertical';
+    return value === 'vertical' ? 'vertical' : 'horizontal';
   },
   toView(value: 'vertical' | 'horizontal'): string {
     return value;
@@ -44,7 +44,7 @@ export class FunnelChart extends ChartBase {
   public data!: FunnelDataPoint[];
 
   @attr({ converter: orientationConverter })
-  public orientation: 'vertical' | 'horizontal' = 'vertical';
+  public orientation: 'vertical' | 'horizontal' = 'horizontal';
 
   public svgElement!: SVGSVGElement;
   public group!: SVGGElement;
@@ -131,10 +131,11 @@ export class FunnelChart extends ChartBase {
       this.svgElement.setAttribute('height', String(this.height));
     }
 
+    const verticalPadding = 16;
     const funnelWidth = this.width * 0.8;
-    const funnelHeight = this.height * 0.8;
+    const funnelHeight = this.height - verticalPadding * 2;
     const funnelOffsetX = (this.width - funnelWidth) / 2;
-    const funnelOffsetY = (this.height - funnelHeight) / 2;
+    const funnelOffsetY = verticalPadding;
 
     this.group.setAttribute('transform', `translate(${funnelOffsetX}, ${funnelOffsetY})`);
 
@@ -361,6 +362,10 @@ export class FunnelChart extends ChartBase {
   }
 
   protected _applyActiveLegendState() {
+    if (!this._segments || !this._segmentTexts) {
+      return;
+    }
+
     const highlighted = this._getHighlightedLegends();
 
     if (highlighted.length === 0) {

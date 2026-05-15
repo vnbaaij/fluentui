@@ -1,11 +1,21 @@
 import { html } from '@microsoft/fast-element';
-import { FieldDefinition, FluentDesignSystem, SwitchDefinition } from '@fluentui/web-components';
+import {
+  FieldDefinition,
+  FluentDesignSystem,
+  LabelDefinition,
+  RadioDefinition,
+  RadioGroupDefinition,
+  SliderDefinition,
+  SwitchDefinition,
+} from '@fluentui/web-components';
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
 import { renderComponent } from '../helpers.stories.js';
 import { FunnelChart as FluentFunnelChart } from './funnel-chart.js';
 import type { FunnelDataPoint } from './funnel-chart.options.js';
 
+type FluentSliderElement = HTMLElement & { value: string };
 type FluentSwitchElement = HTMLElement & { checked: boolean };
+type FluentRadioGroupElement = HTMLElement;
 
 const ensureDefinition = (tagName: string, define: () => void) => {
   if (!customElements.get(tagName)) {
@@ -14,10 +24,64 @@ const ensureDefinition = (tagName: string, define: () => void) => {
 };
 
 ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-radio', () => RadioDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-radio-group', () => RadioGroupDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
 ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
 
-const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
+const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;margin-bottom:16px;';
+const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
 const toggleFieldStyle = 'min-width:220px;';
+
+// ── Control helpers ──────────────────────────────────────────────────────────
+
+const createSliderField = (
+  labelText: string,
+  id: string,
+  value: number,
+  min: number,
+  max: number,
+  onChange: (nextValue: number) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'above');
+  field.setAttribute('style', sliderFieldStyle);
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const slider = document.createElement('fluent-slider') as FluentSliderElement;
+  slider.slot = 'input';
+  slider.id = id;
+  slider.setAttribute('min', `${min}`);
+  slider.setAttribute('max', `${max}`);
+  slider.value = `${value}`;
+  slider.setAttribute('value', `${value}`);
+  field.appendChild(slider);
+
+  const message = document.createElement('fluent-label');
+  message.slot = 'message';
+  message.textContent = `${value}`;
+  field.appendChild(message);
+
+  slider.addEventListener('change', () => {
+    message.textContent = slider.value;
+    onChange(Number(slider.value));
+  });
+
+  return {
+    element: field,
+    setValue: (nextValue: number) => {
+      slider.value = `${nextValue}`;
+      slider.setAttribute('value', `${nextValue}`);
+      message.textContent = `${nextValue}`;
+    },
+  };
+};
 
 const createSwitchField = (
   labelText: string,
@@ -52,42 +116,95 @@ const createSwitchField = (
   };
 };
 
+const createRadioGroupField = (
+  labelText: string,
+  name: string,
+  options: Array<{ label: string; value: string }>,
+  currentValue: string,
+  onChange: (value: string) => void,
+) => {
+  const outerField = document.createElement('fluent-field');
+  outerField.setAttribute('label-position', 'above');
+
+  const groupLabel = document.createElement('label');
+  groupLabel.slot = 'label';
+  groupLabel.textContent = labelText;
+  outerField.appendChild(groupLabel);
+
+  const radioGroup = document.createElement('fluent-radio-group') as FluentRadioGroupElement;
+  radioGroup.slot = 'input';
+  radioGroup.setAttribute('name', name);
+  radioGroup.setAttribute('value', currentValue);
+  outerField.appendChild(radioGroup);
+
+  for (const option of options) {
+    const itemField = document.createElement('fluent-field');
+    itemField.setAttribute('label-position', 'after');
+
+    const radio = document.createElement('fluent-radio') as HTMLInputElement;
+    radio.slot = 'input';
+    radio.setAttribute('value', option.value);
+    if (option.value === currentValue) {
+      radio.toggleAttribute('checked', true);
+    }
+    // Listen directly on each radio — more reliable than reading radioGroup.value
+    // from a group-level change event (avoids FAST Observable timing issues).
+    radio.addEventListener('change', () => onChange(option.value));
+    itemField.appendChild(radio);
+
+    const itemLabel = document.createElement('label');
+    itemLabel.slot = 'label';
+    itemLabel.textContent = option.label;
+    itemField.appendChild(itemLabel);
+
+    radioGroup.appendChild(itemField);
+  }
+
+  return {
+    element: outerField,
+    setValue: (newValue: string) => {
+      radioGroup.setAttribute('value', newValue);
+    },
+  };
+};
+
 // ── Sample data ──────────────────────────────────────────────────────────────
 
+// DataVizPalette.color5/6/10/3 resolved values – matches the React Charts FunnelChart story
 const simpleData: FunnelDataPoint[] = [
-  { stage: 'Impressions', value: 8000, color: '#637cef' },
-  { stage: 'Clicks', value: 4000, color: '#e3008c' },
-  { stage: 'Leads', value: 1500, color: '#2aa0a4' },
-  { stage: 'Conversions', value: 600, color: '#9373c0' },
+  { stage: 'Visitors', value: 1000, color: '#13a10e' },
+  { stage: 'Signups', value: 600, color: '#3a96dd' },
+  { stage: 'Trials', value: 300, color: '#ae8c00' },
+  { stage: 'Customers', value: 250, color: '#2aa0a4' },
 ];
 
+// Matches the React Charts FunnelChart stacked story
 const stackedData: FunnelDataPoint[] = [
   {
-    stage: 'Awareness',
+    stage: 'Visit',
     subValues: [
-      { category: 'Organic', value: 5000, color: '#637cef' },
-      { category: 'Paid', value: 3000, color: '#e3008c' },
+      { category: 'A', value: 100, color: '#13a10e' },
+      { category: 'B', value: 80, color: '#3a96dd' },
+      { category: 'C', value: 50, color: '#ae8c00' },
+      { category: 'D', value: 30, color: '#2aa0a4' },
     ],
   },
   {
-    stage: 'Interest',
+    stage: 'Sign-Up',
     subValues: [
-      { category: 'Organic', value: 3000, color: '#637cef' },
-      { category: 'Paid', value: 2000, color: '#e3008c' },
-    ],
-  },
-  {
-    stage: 'Decision',
-    subValues: [
-      { category: 'Organic', value: 1200, color: '#637cef' },
-      { category: 'Paid', value: 800, color: '#e3008c' },
+      { category: 'A', value: 60, color: '#13a10e' },
+      { category: 'B', value: 40, color: '#3a96dd' },
+      { category: 'C', value: 20, color: '#ae8c00' },
+      { category: 'D', value: 10, color: '#2aa0a4' },
     ],
   },
   {
     stage: 'Purchase',
     subValues: [
-      { category: 'Organic', value: 500, color: '#637cef' },
-      { category: 'Paid', value: 300, color: '#e3008c' },
+      { category: 'A', value: 30, color: '#13a10e' },
+      { category: 'B', value: 20, color: '#3a96dd' },
+      { category: 'C', value: 10, color: '#ae8c00' },
+      { category: 'D', value: 5, color: '#2aa0a4' },
     ],
   },
 ];
@@ -98,53 +215,169 @@ export default {
   title: 'Components/FunnelChart',
 } as Meta<FluentFunnelChart>;
 
-export const Basic: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<FluentFunnelChart>>`
-  <fluent-funnel-chart
-    chart-title="Funnel chart basic example"
-    data="${JSON.stringify(simpleData)}"
-    width="350"
-    height="400"
-  ></fluent-funnel-chart>
-`);
+export const Basic: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
 
-export const Horizontal: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<FluentFunnelChart>>`
-  <fluent-funnel-chart
-    chart-title="Horizontal funnel chart"
-    data="${JSON.stringify(simpleData)}"
-    orientation="horizontal"
-    width="600"
-    height="300"
-  ></fluent-funnel-chart>
-`);
+  let width = 600;
+  let height = 500;
+  let hideLegends = false;
+  let allowMultiple = false;
+  let orientation: 'horizontal' | 'vertical' = 'horizontal';
 
-export const Stacked: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<FluentFunnelChart>>`
-  <fluent-funnel-chart
-    chart-title="Stacked funnel chart"
-    data="${JSON.stringify(stackedData)}"
-    width="350"
-    height="400"
-  ></fluent-funnel-chart>
-`);
+  const renderChart = () => {
+    chart.width = width;
+    chart.height = height;
+    chart.setAttribute('width', `${width}`);
+    chart.setAttribute('height', `${height}`);
+    chart.hideLegends = hideLegends;
+    chart.toggleAttribute('hide-legends', hideLegends);
+    chart.allowMultipleLegendSelection = allowMultiple;
+    chart.toggleAttribute('allow-multiple-legend-selection', allowMultiple);
+    chart.orientation = orientation;
+    chart.setAttribute('orientation', orientation);
+  };
 
-export const StackedHorizontal: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<FluentFunnelChart>>`
-  <fluent-funnel-chart
-    chart-title="Stacked horizontal funnel chart"
-    data="${JSON.stringify(stackedData)}"
-    orientation="horizontal"
-    width="600"
-    height="300"
-  ></fluent-funnel-chart>
-`);
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
 
-export const HideLegends: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<FluentFunnelChart>>`
-  <fluent-funnel-chart
-    chart-title="Funnel chart – hide legends"
-    data="${JSON.stringify(simpleData)}"
-    width="350"
-    height="400"
-    hide-legends
-  ></fluent-funnel-chart>
-`);
+  controls.appendChild(
+    createSliderField('Change Width', 'funnel-basic-width', width, 200, 1000, nextValue => {
+      width = nextValue;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createSliderField('Change Height', 'funnel-basic-height', height, 200, 1000, nextValue => {
+      height = nextValue;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createSwitchField('Hide Legend', 'funnel-basic-hide-legend', hideLegends, nextChecked => {
+      hideLegends = nextChecked;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createSwitchField('Multiple Legend Selection', 'funnel-basic-multi-select', allowMultiple, nextChecked => {
+      allowMultiple = nextChecked;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createRadioGroupField(
+      'Orientation',
+      'funnel-basic-orientation',
+      [
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Vertical', value: 'vertical' },
+      ],
+      orientation,
+      newValue => {
+        orientation = newValue as 'horizontal' | 'vertical';
+        renderChart();
+      },
+    ).element,
+  );
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Basic Funnel Chart');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', `${width}`);
+  chart.setAttribute('height', `${height}`);
+  chart.setAttribute('orientation', orientation);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  return container;
+};
+
+export const Stacked: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
+
+  let width = 600;
+  let height = 500;
+  let hideLegends = false;
+  let allowMultiple = false;
+  let orientation: 'horizontal' | 'vertical' = 'horizontal';
+
+  const renderChart = () => {
+    chart.width = width;
+    chart.height = height;
+    chart.setAttribute('width', `${width}`);
+    chart.setAttribute('height', `${height}`);
+    chart.hideLegends = hideLegends;
+    chart.toggleAttribute('hide-legends', hideLegends);
+    chart.allowMultipleLegendSelection = allowMultiple;
+    chart.toggleAttribute('allow-multiple-legend-selection', allowMultiple);
+    chart.orientation = orientation;
+    chart.setAttribute('orientation', orientation);
+  };
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  controls.appendChild(
+    createSliderField('Change Width', 'funnel-stacked-width', width, 200, 1000, nextValue => {
+      width = nextValue;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createSliderField('Change Height', 'funnel-stacked-height', height, 200, 1000, nextValue => {
+      height = nextValue;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createSwitchField('Hide Legend', 'funnel-stacked-hide-legend', hideLegends, nextChecked => {
+      hideLegends = nextChecked;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createSwitchField('Multiple Legend Selection', 'funnel-stacked-multi-select', allowMultiple, nextChecked => {
+      allowMultiple = nextChecked;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createRadioGroupField(
+      'Orientation',
+      'funnel-stacked-orientation',
+      [
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Vertical', value: 'vertical' },
+      ],
+      orientation,
+      newValue => {
+        orientation = newValue as 'horizontal' | 'vertical';
+        renderChart();
+      },
+    ).element,
+  );
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Stacked Funnel Chart');
+  chart.setAttribute('data', JSON.stringify(stackedData));
+  chart.setAttribute('width', `${width}`);
+  chart.setAttribute('height', `${height}`);
+  chart.setAttribute('orientation', orientation);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  return container;
+};
 
 export const HideTooltip: Story<FluentFunnelChart> = () => {
   const container = document.createElement('div');
@@ -157,53 +390,19 @@ export const HideTooltip: Story<FluentFunnelChart> = () => {
   const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
   chart.setAttribute('chart-title', 'Funnel chart – hide tooltip');
   chart.setAttribute('data', JSON.stringify(simpleData));
-  chart.setAttribute('width', '350');
-  chart.setAttribute('height', '400');
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
   chart.setAttribute('style', 'margin-top:20px;');
   chart.toggleAttribute('hide-tooltip', hideTooltip);
   container.appendChild(chart);
 
-  const hideTooltipControl = createSwitchField('Hide tooltip', 'funnel-hide-tooltip', hideTooltip, nextChecked => {
-    hideTooltip = nextChecked;
-    hideTooltipControl.setValue(nextChecked);
-    chart.hideTooltip = nextChecked;
-    chart.toggleAttribute('hide-tooltip', nextChecked);
-  });
-  controls.appendChild(hideTooltipControl.element);
-
-  return container;
-};
-
-export const MultipleLegendSelection: Story<FluentFunnelChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  let allowMultiple = true;
-
-  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
-  chart.setAttribute('chart-title', 'Funnel chart – multiple legend selection');
-  chart.setAttribute('data', JSON.stringify(simpleData));
-  chart.setAttribute('width', '350');
-  chart.setAttribute('height', '400');
-  chart.setAttribute('style', 'margin-top:20px;');
-  chart.allowMultipleLegendSelection = allowMultiple;
-  chart.toggleAttribute('allow-multiple-legend-selection', allowMultiple);
-  container.appendChild(chart);
-
-  const multipleControl = createSwitchField(
-    'Allow multiple legend selection',
-    'funnel-multiple-legend',
-    allowMultiple,
-    nextChecked => {
-      allowMultiple = nextChecked;
-      multipleControl.setValue(nextChecked);
-      chart.allowMultipleLegendSelection = nextChecked;
-      chart.toggleAttribute('allow-multiple-legend-selection', nextChecked);
-    },
+  controls.appendChild(
+    createSwitchField('Hide tooltip', 'funnel-hide-tooltip', hideTooltip, nextChecked => {
+      hideTooltip = nextChecked;
+      chart.hideTooltip = nextChecked;
+      chart.toggleAttribute('hide-tooltip', nextChecked);
+    }).element,
   );
-  controls.appendChild(multipleControl.element);
 
   return container;
 };
@@ -213,8 +412,8 @@ export const RTL: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<Flue
     <fluent-funnel-chart
       chart-title="Funnel chart RTL example"
       data="${JSON.stringify(simpleData)}"
-      width="350"
-      height="400"
+      width="600"
+      height="300"
     ></fluent-funnel-chart>
   </div>
 `);
@@ -223,8 +422,8 @@ export const Culture: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<
   <fluent-funnel-chart
     chart-title="Funnel chart culture example (de-DE)"
     data="${JSON.stringify(simpleData)}"
-    width="350"
-    height="400"
+    width="600"
+    height="300"
     culture="de-DE"
   ></fluent-funnel-chart>
 `);
