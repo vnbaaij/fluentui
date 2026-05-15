@@ -235,6 +235,7 @@ export const Basic: Story<FluentFunnelChart> = () => {
     chart.toggleAttribute('allow-multiple-legend-selection', allowMultiple);
     chart.orientation = orientation;
     chart.setAttribute('orientation', orientation);
+    chart.titleAlign = orientation === 'horizontal' ? 'center' : 'start';
   };
 
   const controls = document.createElement('div');

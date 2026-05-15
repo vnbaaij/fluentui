@@ -1,6 +1,6 @@
 import { attr, FASTElement, observable } from '@microsoft/fast-element';
 import type { ChartLegend } from '../chart-legend/chart-legend.js';
-import type { Legend, TooltipProps } from './chart.options.js';
+import type { ChartTitleAlign, Legend, TooltipProps } from './chart.options.js';
 import { getRTL } from './chart-helpers.js';
 
 /**
@@ -17,6 +17,10 @@ export abstract class ChartBase extends FASTElement {
 
   @attr({ attribute: 'chart-title' })
   public chartTitle?: string;
+
+  /** Horizontal alignment of the chart title. Defaults to `'start'`. */
+  @attr({ attribute: 'title-align' })
+  public titleAlign?: ChartTitleAlign;
 
   @attr({ attribute: 'hide-legends', mode: 'boolean' })
   public hideLegends: boolean = false;
@@ -117,6 +121,7 @@ export abstract class ChartBase extends FASTElement {
     const self = this as Record<string, unknown>;
     const attrFields = [
       'chartTitle',
+      'titleAlign',
       'hideLegends',
       'hideTooltip',
       'hideLabels',

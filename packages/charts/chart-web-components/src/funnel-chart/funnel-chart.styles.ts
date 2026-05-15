@@ -40,6 +40,15 @@ export const styles = css`
     ${typographyBody1StrongStyles}
     color: ${colorNeutralForeground1};
     margin-bottom: ${spacingVerticalS};
+    text-align: start;
+  }
+
+  :host([title-align='center']) .chart-title {
+    text-align: center;
+  }
+
+  :host([title-align='end']) .chart-title {
+    text-align: end;
   }
 
   .chart {

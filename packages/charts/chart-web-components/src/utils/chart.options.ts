@@ -1,4 +1,11 @@
 /**
+ * Horizontal alignment of the chart title.
+ *
+ * @public
+ */
+export type ChartTitleAlign = 'start' | 'center' | 'end';
+
+/**
  * A single legend item shared across all chart components.
  *
  * @public
