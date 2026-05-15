@@ -20,3 +20,10 @@ export {
   HorizontalBarChartWithAxisStyles,
   HorizontalBarChartWithAxisTemplate,
 } from './horizontal-bar-chart-with-axis/index.js';
+export {
+  FunnelChart,
+  FunnelChartDefinition,
+  FunnelChartStyles,
+  FunnelChartTemplate,
+} from './funnel-chart/index.js';
+export type { FunnelDataPoint, FunnelOrientation, FunnelSubValue } from './funnel-chart/index.js';
