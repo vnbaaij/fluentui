@@ -228,10 +228,10 @@ const createDropdownField = (
 
 // DataVizPalette.color5/6/10/3 resolved values – matches the React Charts FunnelChart story
 const simpleData: FunnelDataPoint[] = [
-  { stage: 'Visitors', value: 1000, color: '#13a10e' },
-  { stage: 'Signups', value: 600, color: '#3a96dd' },
-  { stage: 'Trials', value: 300, color: '#ae8c00' },
-  { stage: 'Customers', value: 250, color: '#2aa0a4' },
+  { stage: 'Visitors', value: 1000 },
+  { stage: 'Signups', value: 600 },
+  { stage: 'Trials', value: 300 },
+  { stage: 'Customers', value: 250 },
 ];
 
 // Matches the React Charts FunnelChart stacked story
@@ -542,7 +542,8 @@ export const TitleAlign: Story<FluentFunnelChart> = () => {
   return container;
 };
 
-export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {  const container = document.createElement('div');
+export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
   const controls = document.createElement('div');
   controls.setAttribute('style', controlsRowStyle);
   container.appendChild(controls);
@@ -575,7 +576,7 @@ export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {  const 
     },
   );
 
-  const titlePosControl= createDropdownField(
+  const titlePosControl = createDropdownField(
     'Title position',
     'funnel-title-position',
     [...titlePositions],
@@ -646,4 +647,3 @@ export const RoundedCorners: Story<FluentFunnelChart> = () => {
 
   return container;
 };
-
