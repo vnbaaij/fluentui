@@ -157,7 +157,6 @@ test.describe('ChartLegend - position', () => {
   });
 });
 
-
 test.describe('ChartLegend - events', () => {
   test('Should emit legend-click with legend title on button click', async ({ page }) => {
     await setup(page);
@@ -199,5 +198,125 @@ test.describe('ChartLegend - events', () => {
     await element.getByRole('option', { name: 'Apples' }).dispatchEvent('mouseout');
     const fired = await element.evaluate(el => (el as any).__mouseoutFired);
     expect(fired).toBe(true);
+  });
+});
+
+// ── Roving tabindex ───────────────────────────────────────────────────────────
+
+test.describe('ChartLegend - roving tabindex', () => {
+  test('Should set tabindex=0 on first button and -1 on others', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    const buttons = element.getByRole('option');
+    await expect(buttons.nth(0)).toHaveAttribute('tabindex', '0');
+    await expect(buttons.nth(1)).toHaveAttribute('tabindex', '-1');
+    await expect(buttons.nth(2)).toHaveAttribute('tabindex', '-1');
+  });
+
+  test('ArrowRight should move focus to next button', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    const buttons = element.getByRole('option');
+    await buttons.nth(0).focus();
+    await buttons.nth(0).press('ArrowRight');
+    await expect(buttons.nth(0)).toHaveAttribute('tabindex', '-1');
+    await expect(buttons.nth(1)).toHaveAttribute('tabindex', '0');
+    await expect(buttons.nth(1)).toBeFocused();
+  });
+
+  test('ArrowLeft should move focus to previous button', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    const buttons = element.getByRole('option');
+    await buttons.nth(1).focus();
+    await element.evaluate(el => {
+      (el.shadowRoot!.querySelectorAll('button.legend')[0] as HTMLButtonElement).tabIndex = -1;
+      (el.shadowRoot!.querySelectorAll('button.legend')[1] as HTMLButtonElement).tabIndex = 0;
+    });
+    await buttons.nth(1).press('ArrowLeft');
+    await expect(buttons.nth(0)).toHaveAttribute('tabindex', '0');
+    await expect(buttons.nth(1)).toHaveAttribute('tabindex', '-1');
+    await expect(buttons.nth(0)).toBeFocused();
+  });
+
+  test('ArrowRight should wrap from last to first button', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    const buttons = element.getByRole('option');
+    await element.evaluate(el => {
+      const btns = el.shadowRoot!.querySelectorAll<HTMLButtonElement>('button.legend');
+      btns.forEach((b, i) => {
+        b.tabIndex = i === 2 ? 0 : -1;
+      });
+    });
+    await buttons.nth(2).focus();
+    await buttons.nth(2).press('ArrowRight');
+    await expect(buttons.nth(0)).toHaveAttribute('tabindex', '0');
+    await expect(buttons.nth(2)).toHaveAttribute('tabindex', '-1');
+    await expect(buttons.nth(0)).toBeFocused();
+  });
+
+  test('ArrowLeft should wrap from first to last button', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    const buttons = element.getByRole('option');
+    await buttons.nth(0).focus();
+    await buttons.nth(0).press('ArrowLeft');
+    await expect(buttons.nth(2)).toHaveAttribute('tabindex', '0');
+    await expect(buttons.nth(0)).toHaveAttribute('tabindex', '-1');
+    await expect(buttons.nth(2)).toBeFocused();
+  });
+
+  test('Non-arrow keys should not move roving tabindex', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    const buttons = element.getByRole('option');
+    await buttons.nth(0).focus();
+    // Enter key should not change tabindex positions
+    await buttons.nth(0).press('Enter');
+    await expect(buttons.nth(0)).toHaveAttribute('tabindex', '0');
+    await expect(buttons.nth(1)).toHaveAttribute('tabindex', '-1');
+  });
+
+  test('Space key should emit legend-click (not prevented by keydown handler)', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    await element.evaluate(el => {
+      (el as any).__lastLegendClick = null;
+      el.addEventListener('legend-click', (e: Event) => {
+        (el as any).__lastLegendClick = (e as CustomEvent<string>).detail;
+      });
+    });
+    await element.getByRole('option', { name: 'Apples' }).focus();
+    await page.keyboard.press('Space');
+    const detail = await element.evaluate(el => (el as any).__lastLegendClick);
+    expect(detail).toBe('Apples');
+  });
+
+  test('Tab key should not be prevented (default browser focus move allowed)', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    const buttons = element.getByRole('option');
+    await buttons.nth(0).focus();
+    // Pressing Tab on button[0] should NOT keep focus on it
+    // (if Tab were prevented, the button would remain focused)
+    await page.keyboard.press('Tab');
+    await expect(buttons.nth(0)).not.toBeFocused();
+  });
+
+  test('Changing highlighted should not reset roving tabindex', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    const buttons = element.getByRole('option');
+    // Navigate to button 1
+    await buttons.nth(0).focus();
+    await buttons.nth(0).press('ArrowRight');
+    await expect(buttons.nth(1)).toHaveAttribute('tabindex', '0');
+    // Change highlighted — tabindex should remain on button 1
+    await element.evaluate(el => {
+      (el as FluentChartLegend).highlighted = ['Apples'];
+    });
+    await expect(buttons.nth(1)).toHaveAttribute('tabindex', '0');
+    await expect(buttons.nth(0)).toHaveAttribute('tabindex', '-1');
   });
 });
