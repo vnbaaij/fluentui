@@ -1141,7 +1141,7 @@ test.describe('Horizontal-bar-chart - culture', () => {
     await firstBar.dispatchEvent('mouseover');
 
     // de-DE uses comma as decimal separator: 1.234,5
-    const tooltipDataY = element.locator('.tooltip-data-y');
+    const tooltipDataY = element.locator('.tooltip-content-y');
     await expect(tooltipDataY).toContainText(',');
   });
 
@@ -1161,7 +1161,7 @@ test.describe('Horizontal-bar-chart - culture', () => {
     // First hover without culture — expect en-US style (period decimal)
     const firstBar = element.locator('.bar').first();
     await firstBar.dispatchEvent('mouseover');
-    const tooltipDataY = element.locator('.tooltip-data-y');
+    const tooltipDataY = element.locator('.tooltip-content-y');
     const enValue = await tooltipDataY.textContent();
 
     await firstBar.dispatchEvent('mouseout');

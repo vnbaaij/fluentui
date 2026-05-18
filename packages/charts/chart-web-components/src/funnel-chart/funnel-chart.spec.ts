@@ -194,6 +194,7 @@ test.describe('FunnelChart - Stacked', () => {
 
 test.describe('FunnelChart - Legend interaction', () => {
   test('Should dim other segments when a legend is hovered', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-funnel-chart

@@ -101,8 +101,9 @@ test.describe('Donut-chart - Basic', () => {
     const secondPath = element.getByLabel('second,');
     const firstLegend = element.getByRole('option', { name: 'First' });
 
+    // Initial state: roving tabindex puts first arc at 0, others at -1
     await expect(firstPath).toHaveAttribute('tabindex', '0');
-    await expect(secondPath).toHaveAttribute('tabindex', '0');
+    await expect(secondPath).toHaveAttribute('tabindex', '-1');
 
     await firstLegend.dispatchEvent('mouseover');
 
@@ -112,7 +113,7 @@ test.describe('Donut-chart - Basic', () => {
     await firstLegend.dispatchEvent('mouseout');
 
     await expect(firstPath).toHaveAttribute('tabindex', '0');
-    await expect(secondPath).toHaveAttribute('tabindex', '0');
+    await expect(secondPath).toHaveAttribute('tabindex', '-1');
   });
 
   test('Should update path css values with mouse hover event on legend', async ({ page }) => {

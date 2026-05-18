@@ -330,7 +330,7 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     `);
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
-    await expect(element.locator('.legend')).toHaveCount(0);
+    await expect(element.locator('fluent-chart-legend')).toBeHidden();
   });
 
   test('renders stacked categories and rounded corners', async ({ page }) => {
@@ -840,7 +840,9 @@ test.describe('HorizontalBarChartWithAxis - title-align', () => {
     await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
     await page.setContent(/* html */ `
       <div>
-        <fluent-horizontal-bar-chart-with-axis data='${JSON.stringify(categoricalData)}'></fluent-horizontal-bar-chart-with-axis>
+        <fluent-horizontal-bar-chart-with-axis data='${JSON.stringify(
+          categoricalData,
+        )}'></fluent-horizontal-bar-chart-with-axis>
       </div>
     `);
     await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
