@@ -475,3 +475,73 @@ export const CategoryOrder: Story<FluentGanttChart> = () => {
   container.appendChild(chart);
   return container;
 };
+
+export const AxisTitles: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Project timeline with axis titles';
+  chart.setAttribute('x-axis-title', 'Date');
+  chart.setAttribute('y-axis-title', 'Job');
+  chart.toggleAttribute('show-y-axis-labels', true);
+  container.appendChild(chart);
+  return container;
+};
+
+export const TickFormat: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = numericData;
+  chart.chartTitle = 'Tick format (.1f) on numeric x-axis';
+  chart.setAttribute('x-axis-tick-format', '.1f');
+  chart.toggleAttribute('show-y-axis-labels', true);
+  container.appendChild(chart);
+  return container;
+};
+
+export const TickPadding: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Custom tick padding = 14';
+  chart.setAttribute('tick-padding', '14');
+  chart.toggleAttribute('show-y-axis-labels', true);
+  container.appendChild(chart);
+  return container;
+};
+
+export const RotateXAxisLabels: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Rotated x-axis labels';
+  chart.toggleAttribute('rotate-x-axis-labels', true);
+  chart.toggleAttribute('show-y-axis-labels', true);
+  container.appendChild(chart);
+  return container;
+};
+
+export const SupportNegativeData: Story<FluentGanttChart> = () => {
+  const negativeNumericData: GanttChartDataPoint[] = [
+    { x: { start: -10, end: 0 }, y: 5, legend: 'Past', color: DataVizPalette.color1 },
+    { x: { start: -5, end: 10 }, y: 10, legend: 'Current', color: DataVizPalette.color2 },
+    { x: { start: 0, end: 20 }, y: 15, legend: 'Future', color: DataVizPalette.color3 },
+  ];
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = negativeNumericData;
+  chart.chartTitle = 'Negative numeric y-axis (support-negative-data)';
+  chart.toggleAttribute('support-negative-data', true);
+  container.appendChild(chart);
+  return container;
+};
+
+export const RoundedTicks: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = numericData;
+  chart.chartTitle = 'Rounded/niced y-axis tick domain';
+  chart.toggleAttribute('rounded-ticks', true);
+  container.appendChild(chart);
+  return container;
+};

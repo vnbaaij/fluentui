@@ -1162,3 +1162,100 @@ export const TitleAndLegendPositions: Story<FluentHorizontalBarChartWithAxis> = 
   return container;
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '480px' } } };
+
+export const AxisTitles: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 800px"
+    chart-title="Revenue by quarter"
+    x-axis-title="Revenue (USD)"
+    y-axis-title="Quarter"
+    data="${JSON.stringify(categoricalData)}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+AxisTitles.parameters = { docs: { story: { height: '420px' } } };
+
+export const TickFormat: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 800px"
+    chart-title="Fixed decimal tick format (.2f)"
+    x-axis-tick-format=".2f"
+    data="${JSON.stringify(numericYAxisData)}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+TickFormat.parameters = { docs: { story: { height: '420px' } } };
+
+export const TickPadding: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 800px"
+    chart-title="Tick padding = 14"
+    tick-padding="14"
+    data="${JSON.stringify(categoricalData)}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+TickPadding.parameters = { docs: { story: { height: '420px' } } };
+
+export const RotateXAxisLabels: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 800px"
+    chart-title="Rotated x-axis labels"
+    rotate-x-axis-labels
+    data="${JSON.stringify(categoricalData)}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+RotateXAxisLabels.parameters = { docs: { story: { height: '420px' } } };
+
+export const WrapXAxisLabels: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 800px"
+    chart-title="Wrapped x-axis labels"
+    wrap-x-axis-labels
+    data="${JSON.stringify(categoricalData.map(p => ({ ...p, x: p.x + 1234 })))}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+WrapXAxisLabels.parameters = { docs: { story: { height: '420px' } } };
+
+export const SupportNegativeData: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 800px"
+    chart-title="Negative numeric y-axis (support-negative-data)"
+    support-negative-data
+    data="${JSON.stringify([
+      { x: 1000, y: -5, legend: 'Oranges', color: DataVizPalette.color1 },
+      { x: 2000, y: 5, legend: 'Grapes', color: DataVizPalette.color2 },
+      { x: 1500, y: 10, legend: 'Apples', color: DataVizPalette.color3 },
+    ])}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+SupportNegativeData.parameters = { docs: { story: { height: '420px' } } };
+
+export const RoundedTicks: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChartWithAxis>
+>`
+  <fluent-horizontal-bar-chart-with-axis
+    style="width: 800px"
+    chart-title="Rounded/niced tick domain"
+    rounded-ticks
+    data="${JSON.stringify(numericYAxisData)}"
+  >
+  </fluent-horizontal-bar-chart-with-axis>
+`);
+RoundedTicks.parameters = { docs: { story: { height: '420px' } } };
+

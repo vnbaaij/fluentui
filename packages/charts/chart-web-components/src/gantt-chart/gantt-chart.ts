@@ -151,6 +151,28 @@ const getClosestPairDiffAndRange = (values: number[]) => {
   return [closestPairDiff, sorted[sorted.length - 1] - sorted[0]] as const;
 };
 
+/** @see HBCA _applyFormat for documentation. */
+const _applyFormat = (value: number, format: string): string => {
+  const match = format.match(/^([+]?)\.?(\d*)([fFeEgG%])$/);
+  if (!match) {
+    return String(value);
+  }
+  const [, , fractionStr, type] = match;
+  const fraction = fractionStr ? Number(fractionStr) : 0;
+  switch (type.toLowerCase()) {
+    case 'f':
+      return value.toFixed(fraction);
+    case 'e':
+      return value.toExponential(fraction);
+    case 'g':
+      return value.toPrecision(fraction || 6);
+    case '%':
+      return `${(value * 100).toFixed(fraction)}%`;
+    default:
+      return String(value);
+  }
+};
+
 export class GanttChart extends ChartBase {
   @attr({ converter: jsonConverter })
   public data!: GanttChartDataPoint[];
@@ -182,18 +204,6 @@ export class GanttChart extends ChartBase {
   @attr({ attribute: 'y-axis-padding' })
   public yAxisPadding?: number | string;
 
-  @attr({ attribute: 'x-min-value' })
-  public xMinValue?: number | string;
-
-  @attr({ attribute: 'x-max-value' })
-  public xMaxValue?: number | string;
-
-  @attr({ attribute: 'y-min-value' })
-  public yMinValue?: number | string;
-
-  @attr({ attribute: 'y-max-value' })
-  public yMaxValue?: number | string;
-
   @attr({ attribute: 'y-axis-category-order' })
   public yAxisCategoryOrder: AxisCategoryOrder = 'default';
 
@@ -222,10 +232,6 @@ export class GanttChart extends ChartBase {
       'xAxisTickCount',
       'yAxisTickCount',
       'yAxisPadding',
-      'xMinValue',
-      'xMaxValue',
-      'yMinValue',
-      'yMaxValue',
       'yAxisCategoryOrder',
     ] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
@@ -290,22 +296,6 @@ export class GanttChart extends ChartBase {
   }
 
   protected yAxisPaddingChanged() {
-    this._requestRender();
-  }
-
-  protected xMinValueChanged() {
-    this._requestRender();
-  }
-
-  protected xMaxValueChanged() {
-    this._requestRender();
-  }
-
-  protected yMinValueChanged() {
-    this._requestRender();
-  }
-
-  protected yMaxValueChanged() {
     this._requestRender();
   }
 
@@ -376,18 +366,20 @@ export class GanttChart extends ChartBase {
     const yValues = groups.map(group => group.rawY).filter((value): value is number => typeof value === 'number');
     const height = this._getChartHeight(groups.length, numericYAxis, yValues);
     const yLabelWidth = this._getYAxisLabelWidth(groups, numericYAxis);
+    const xAxisTitleOffset = this.xAxisTitle ? 20 : 0;
+    const yAxisTitleOffset = this.yAxisTitle ? 16 : 0;
     const margins = this._isRTL
       ? {
           top: 20,
-          right: yLabelWidth,
-          bottom: 35,
+          right: yLabelWidth + yAxisTitleOffset,
+          bottom: 35 + xAxisTitleOffset,
           left: 20,
         }
       : {
           top: 20,
           right: 20,
-          bottom: 35,
-          left: yLabelWidth,
+          bottom: 35 + xAxisTitleOffset,
+          left: yLabelWidth + yAxisTitleOffset,
         };
     const innerWidth = width - margins.left - margins.right;
     const plotLayout = this._getPlotLayout(groups.length, numericYAxis, height, margins, yValues);
@@ -698,8 +690,12 @@ export class GanttChart extends ChartBase {
   private _getNumericYDomain(yValues: number[]) {
     const yMin = Math.min(...yValues);
     const yMax = Math.max(...yValues);
-    const domainMin = Math.min(yMin, toOptionalNumber(this.yMinValue) ?? 0);
+    const domainMin = Math.min(yMin, toOptionalNumber(this.yMinValue) ?? (this.supportNegativeData ? yMin : 0));
     const domainMax = Math.max(yMax, toOptionalNumber(this.yMaxValue) ?? 0);
+    if (this.roundedTicks) {
+      const niced = getNiceDomainAndTicks(domainMin, domainMax, toNumber(this.yAxisTickCount, DEFAULT_Y_TICK_COUNT));
+      return niced.domain;
+    }
     return [domainMin, domainMax] as [number, number];
   }
 
@@ -850,6 +846,7 @@ export class GanttChart extends ChartBase {
     const span = max - min || 1;
     const toX = (value: number) => rangeStart + ((value - min) / span) * (rangeEnd - rangeStart);
     const rangeMs = max - min;
+    const tickGap = toNumber(this.tickPadding, 6);
 
     ticks.forEach(tick => {
       const x = toX(tick);
@@ -861,15 +858,55 @@ export class GanttChart extends ChartBase {
       tickLine.setAttribute('y2', `${20}`);
       axisLayer.appendChild(tickLine);
 
+      const labelY = axisY + tickGap + 12;
+      const rawLabel =
+        this.xAxisTickFormat && this._xAxisType !== 'date'
+          ? _applyFormat(tick, this.xAxisTickFormat)
+          : this._xAxisType === 'date'
+          ? this._formatDateTick(tick, rangeMs)
+          : formatAxisNumber(tick, this.culture);
+
       const text = createSvgElement<SVGTextElement>('text');
       text.setAttribute('class', 'axis-text');
       text.setAttribute('x', `${x}`);
-      text.setAttribute('y', `${axisY + 18}`);
-      text.setAttribute('text-anchor', 'middle');
-      text.textContent =
-        this._xAxisType === 'date' ? this._formatDateTick(tick, rangeMs) : formatAxisNumber(tick, this.culture);
+      text.setAttribute('y', `${labelY}`);
+
+      if (this.rotateXAxisLabels) {
+        text.setAttribute('text-anchor', this._isRTL ? 'start' : 'end');
+        text.setAttribute('transform', `rotate(-45, ${x}, ${labelY})`);
+        text.textContent = rawLabel;
+      } else if (this.wrapXAxisLabels) {
+        text.setAttribute('text-anchor', 'middle');
+        const words = rawLabel.split(' ');
+        if (words.length > 1) {
+          words.forEach((word, i) => {
+            const tspan = createSvgElement<SVGTSpanElement>('tspan');
+            tspan.setAttribute('x', `${x}`);
+            tspan.setAttribute('dy', i === 0 ? '0' : '1.2em');
+            tspan.textContent = word;
+            text.appendChild(tspan);
+          });
+        } else {
+          text.textContent = rawLabel;
+        }
+      } else {
+        text.setAttribute('text-anchor', 'middle');
+        text.textContent = rawLabel;
+      }
       axisLayer.appendChild(text);
     });
+
+    if (this.xAxisTitle) {
+      const titleX = (rangeStart + rangeEnd) / 2;
+      const titleY = height - 4;
+      const titleText = createSvgElement<SVGTextElement>('text');
+      titleText.setAttribute('class', 'axis-title');
+      titleText.setAttribute('x', `${titleX}`);
+      titleText.setAttribute('y', `${titleY}`);
+      titleText.setAttribute('text-anchor', 'middle');
+      titleText.textContent = this.xAxisTitle;
+      axisLayer.appendChild(titleText);
+    }
   }
 
   private _renderYAxis(
@@ -890,34 +927,50 @@ export class GanttChart extends ChartBase {
       yAxisScale.ticks.forEach(tick => {
         const ratio = (tick - yAxisScale.domain[0]) / safeSpan;
         const y = height - margins.bottom - ratio * (height - margins.top - margins.bottom);
-        this._appendYAxisTick(axisLayer, axisX, y, formatCompactNumber(tick, this.culture).toLowerCase());
+        const label = this.yAxisTickFormat
+          ? _applyFormat(tick, this.yAxisTickFormat)
+          : formatCompactNumber(tick, this.culture).toLowerCase();
+        this._appendYAxisTick(axisLayer, axisX, y, label);
       });
-      return;
+    } else {
+      groups.forEach((group, index) => {
+        const y = yPositionForGroup(group, index);
+        const fullLabel = String(group.rawY);
+        const label = this.showYAxisLabels ? fullLabel : truncateText(fullLabel, 18);
+        this._appendYAxisTick(axisLayer, axisX, y, label, this.showYAxisLabelsTooltip ? fullLabel : undefined);
+      });
     }
 
-    groups.forEach((group, index) => {
-      const y = yPositionForGroup(group, index);
-      const fullLabel = String(group.rawY);
-      const label = this.showYAxisLabels ? fullLabel : truncateText(fullLabel, 18);
-      this._appendYAxisTick(axisLayer, axisX, y, label, this.showYAxisLabelsTooltip ? fullLabel : undefined);
-    });
+    if (this.yAxisTitle) {
+      const midY = (margins.top + (height - margins.bottom)) / 2;
+      const titleX = this._isRTL ? width - margins.right + 12 : 12;
+      const titleText = createSvgElement<SVGTextElement>('text');
+      titleText.setAttribute('class', 'axis-title');
+      titleText.setAttribute('x', `${titleX}`);
+      titleText.setAttribute('y', `${midY}`);
+      titleText.setAttribute('text-anchor', 'middle');
+      titleText.setAttribute('transform', `rotate(-90, ${titleX}, ${midY})`);
+      titleText.textContent = this.yAxisTitle;
+      axisLayer.appendChild(titleText);
+    }
   }
 
   private _appendYAxisTick(axisLayer: SVGGElement, axisX: number, y: number, label: string, tooltipText?: string) {
+    const tickGap = toNumber(this.tickPadding, 6);
     const tickLine = createSvgElement<SVGLineElement>('line');
     tickLine.setAttribute('class', 'axis-tick-line');
     tickLine.setAttribute('x1', `${axisX}`);
-    tickLine.setAttribute('x2', `${axisX + 6}`);
+    tickLine.setAttribute('x2', `${axisX + tickGap}`);
     tickLine.setAttribute('y1', `${y}`);
     tickLine.setAttribute('y2', `${y}`);
     axisLayer.appendChild(tickLine);
 
     const text = createSvgElement<SVGTextElement>('text');
     text.setAttribute('class', 'y-axis-text');
-    text.setAttribute('x', `${axisX + (this._isRTL ? 12 : -12)}`);
+    text.setAttribute('x', `${axisX + (this._isRTL ? tickGap + 6 : -(tickGap + 6))}`);
     text.setAttribute('y', `${y}`);
     text.setAttribute('dominant-baseline', 'central');
-    text.setAttribute('text-anchor', 'end');
+    text.setAttribute('text-anchor', this._isRTL ? 'start' : 'end');
     text.textContent = label;
 
     if (tooltipText) {

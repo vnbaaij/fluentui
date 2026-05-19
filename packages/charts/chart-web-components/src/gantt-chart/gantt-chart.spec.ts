@@ -284,3 +284,93 @@ test.describe('GanttChart - legend-position', () => {
     await expect(legend).toHaveAttribute('position', 'end');
   });
 });
+
+test.describe('GanttChart - axis-titles', () => {
+  test('Should render x-axis-title when attribute is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Axis title test"
+          x-axis-title="Sprint"
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const titleEl = page.locator('fluent-gantt-chart').locator('.axis-title');
+    await expect(titleEl.first()).toContainText('Sprint');
+  });
+
+  test('Should render y-axis-title when attribute is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Y axis title test"
+          y-axis-title="Task"
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const titleEl = page.locator('fluent-gantt-chart').locator('.axis-title');
+    await expect(titleEl.first()).toContainText('Task');
+  });
+
+  test('Should not render axis-title when attributes are absent', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="No axis title test"
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const titleEls = page.locator('fluent-gantt-chart').locator('.axis-title');
+    await expect(titleEls).toHaveCount(0);
+  });
+});
+
+test.describe('GanttChart - rotate-x-axis-labels', () => {
+  test('Should add transform rotate to x-axis text when rotate-x-axis-labels is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Rotate labels test"
+          rotate-x-axis-labels
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const axisTexts = page.locator('fluent-gantt-chart').locator('.axis-text');
+    const transform = await axisTexts.first().getAttribute('transform');
+    await expect(transform).toMatch(/rotate\(-45/);
+  });
+});
+
+test.describe('GanttChart - support-negative-data', () => {
+  test('Should render bars when y values include negatives and support-negative-data is set', async ({ page }) => {
+    const negativeNumericData: GanttChartDataPoint[] = [
+      { x: { start: -10, end: 0 }, y: 5, legend: 'Past', color: color1 },
+      { x: { start: -5, end: 10 }, y: 10, legend: 'Current', color: color2 },
+    ];
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Negative data test"
+          support-negative-data
+          data='${JSON.stringify(negativeNumericData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const bars = page.locator('fluent-gantt-chart').locator('.bar');
+    await expect(bars).toHaveCount(negativeNumericData.length);
+  });
+});

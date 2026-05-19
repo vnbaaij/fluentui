@@ -975,3 +975,95 @@ test.describe('HorizontalBarChartWithAxis - title-position', () => {
     await expect(element).toHaveAttribute('title-position', 'bottom');
   });
 });
+
+test.describe('HorizontalBarChartWithAxis - axis-titles', () => {
+  test('Should render x-axis-title element when attribute is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Axis title test"
+          x-axis-title="Revenue (USD)"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const titleEl = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.axis-title');
+    await expect(titleEl.first()).toContainText('Revenue (USD)');
+  });
+
+  test('Should render y-axis-title element when attribute is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Y axis title test"
+          y-axis-title="Quarter"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const titleEl = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.axis-title');
+    await expect(titleEl.first()).toContainText('Quarter');
+  });
+
+  test('Should not render axis-title element when attributes are absent', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="No title test"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const titleEls = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.axis-title');
+    await expect(titleEls).toHaveCount(0);
+  });
+});
+
+test.describe('HorizontalBarChartWithAxis - rotate-x-axis-labels', () => {
+  test('Should add transform rotate attribute to x-axis text when rotate-x-axis-labels is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Rotate labels test"
+          rotate-x-axis-labels
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const axisTexts = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.axis-text');
+    const firstText = axisTexts.first();
+    const transform = await firstText.getAttribute('transform');
+    await expect(transform).toMatch(/rotate\(-45/);
+  });
+});
+
+test.describe('HorizontalBarChartWithAxis - support-negative-data', () => {
+  test('Should allow y domain below zero when support-negative-data is set', async ({ page }) => {
+    const negativeData = [
+      { x: 1000, y: -5, legend: 'A', color: '#637cef' },
+      { x: 2000, y: 5, legend: 'B', color: '#e3008c' },
+    ];
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Negative data test"
+          support-negative-data
+          data='${JSON.stringify(negativeData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    // The chart should render bars (not be empty)
+    const bars = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.bar');
+    await expect(bars).toHaveCount(negativeData.length);
+  });
+});
