@@ -15,6 +15,7 @@ import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
 import { renderComponent } from '../helpers.stories.js';
 import { FunnelChart as FluentFunnelChart } from './funnel-chart.js';
 import type { FunnelDataPoint } from './funnel-chart.options.js';
+import { DataVizPalette } from '../utils/chart-helpers.js';
 
 type FluentSliderElement = HTMLElement & { value: string };
 type FluentSwitchElement = HTMLElement & { checked: boolean };
@@ -239,28 +240,28 @@ const stackedData: FunnelDataPoint[] = [
   {
     stage: 'Visit',
     subValues: [
-      { category: 'A', value: 100, color: '#13a10e' },
-      { category: 'B', value: 80, color: '#3a96dd' },
-      { category: 'C', value: 50, color: '#ae8c00' },
-      { category: 'D', value: 30, color: '#2aa0a4' },
+      { category: 'A', value: 100, color: DataVizPalette.color5 },
+      { category: 'B', value: 80, color: DataVizPalette.color6 },
+      { category: 'C', value: 50, color: DataVizPalette.color10 },
+      { category: 'D', value: 30, color: DataVizPalette.color3 },
     ],
   },
   {
     stage: 'Sign-Up',
     subValues: [
-      { category: 'A', value: 60, color: '#13a10e' },
-      { category: 'B', value: 40, color: '#3a96dd' },
-      { category: 'C', value: 20, color: '#ae8c00' },
-      { category: 'D', value: 10, color: '#2aa0a4' },
+      { category: 'A', value: 60, color: DataVizPalette.color5 },
+      { category: 'B', value: 40, color: DataVizPalette.color6 },
+      { category: 'C', value: 20, color: DataVizPalette.color10 },
+      { category: 'D', value: 10, color: DataVizPalette.color3 },
     ],
   },
   {
     stage: 'Purchase',
     subValues: [
-      { category: 'A', value: 30, color: '#13a10e' },
-      { category: 'B', value: 20, color: '#3a96dd' },
-      { category: 'C', value: 10, color: '#ae8c00' },
-      { category: 'D', value: 5, color: '#2aa0a4' },
+      { category: 'A', value: 30, color: DataVizPalette.color5 },
+      { category: 'B', value: 20, color: DataVizPalette.color6 },
+      { category: 'C', value: 10, color: DataVizPalette.color10 },
+      { category: 'D', value: 5, color: DataVizPalette.color3 },
     ],
   },
 ];
@@ -353,6 +354,7 @@ export const Basic: Story<FluentFunnelChart> = () => {
 
   return container;
 };
+Basic.parameters = { docs: { story: { height: '760px' } } };
 
 export const Stacked: Story<FluentFunnelChart> = () => {
   const container = document.createElement('div');
@@ -435,6 +437,7 @@ export const Stacked: Story<FluentFunnelChart> = () => {
 
   return container;
 };
+Stacked.parameters = { docs: { story: { height: '760px' } } };
 
 export const HideTooltip: Story<FluentFunnelChart> = () => {
   const container = document.createElement('div');
@@ -463,6 +466,7 @@ export const HideTooltip: Story<FluentFunnelChart> = () => {
 
   return container;
 };
+HideTooltip.parameters = { docs: { story: { height: '420px' } } };
 
 export const RTL: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<FluentFunnelChart>>`
   <div dir="rtl">
@@ -508,6 +512,7 @@ export const Culture: Story<FluentFunnelChart> = () => {
 
   return container;
 };
+Culture.parameters = { docs: { story: { height: '440px' } } };
 
 export const TitleAlign: Story<FluentFunnelChart> = () => {
   const container = document.createElement('div');
@@ -541,6 +546,7 @@ export const TitleAlign: Story<FluentFunnelChart> = () => {
 
   return container;
 };
+TitleAlign.parameters = { docs: { story: { height: '440px' } } };
 
 export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {
   const container = document.createElement('div');
@@ -595,6 +601,7 @@ export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {
 
   return container;
 };
+TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
 
 export const RoundedCorners: Story<FluentFunnelChart> = () => {
   const container = document.createElement('div');
@@ -647,3 +654,4 @@ export const RoundedCorners: Story<FluentFunnelChart> = () => {
 
   return container;
 };
+RoundedCorners.parameters = { docs: { story: { height: '440px' } } };

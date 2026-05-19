@@ -18,6 +18,7 @@ import type {
   AxisCategoryOrder,
   HorizontalBarChartWithAxisDataPoint,
 } from './horizontal-bar-chart-with-axis.options.js';
+import { DataVizPalette } from '../utils/chart-helpers.js';
 
 type FluentSliderElement = HTMLElement & { value: string };
 type FluentCheckboxElement = HTMLElement & { checked: boolean };
@@ -45,7 +46,7 @@ const categoricalData: HorizontalBarChartWithAxisDataPoint[] = [
     y: 'String One',
     x: 1000,
     legend: 'Oranges',
-    color: '#637cef',
+    color: DataVizPalette.color1,
     xAxisCalloutData: '1K',
     yAxisCalloutData: 'String One',
   },
@@ -53,7 +54,7 @@ const categoricalData: HorizontalBarChartWithAxisDataPoint[] = [
     y: 'String Two',
     x: 5000,
     legend: 'Grapes',
-    color: '#e3008c',
+    color: DataVizPalette.color2,
     xAxisCalloutData: '5K',
     yAxisCalloutData: 'String Two',
   },
@@ -61,7 +62,7 @@ const categoricalData: HorizontalBarChartWithAxisDataPoint[] = [
     y: 'String Three',
     x: 3000,
     legend: 'Apples',
-    color: '#2aa0a4',
+    color: DataVizPalette.color3,
     xAxisCalloutData: '3K',
     yAxisCalloutData: 'String Three',
   },
@@ -69,7 +70,7 @@ const categoricalData: HorizontalBarChartWithAxisDataPoint[] = [
     y: 'String Four',
     x: 2000,
     legend: 'Bananas',
-    color: '#9373c0',
+    color: DataVizPalette.color4,
     xAxisCalloutData: '2K',
     yAxisCalloutData: 'String Four',
   },
@@ -80,7 +81,7 @@ const numericYAxisData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 10000,
     y: 5000,
     legend: 'Oranges',
-    color: '#637cef',
+    color: DataVizPalette.color1,
     xAxisCalloutData: '10K',
     yAxisCalloutData: '5K',
   },
@@ -88,7 +89,7 @@ const numericYAxisData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 20000,
     y: 50000,
     legend: 'Dogs',
-    color: '#e3008c',
+    color: DataVizPalette.color2,
     xAxisCalloutData: '20K',
     yAxisCalloutData: '50K',
   },
@@ -96,7 +97,7 @@ const numericYAxisData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 25000,
     y: 30000,
     legend: 'Apples',
-    color: '#2aa0a4',
+    color: DataVizPalette.color3,
     xAxisCalloutData: '25K',
     yAxisCalloutData: '30K',
   },
@@ -104,7 +105,7 @@ const numericYAxisData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 40000,
     y: 13000,
     legend: 'Bananas',
-    color: '#9373c0',
+    color: DataVizPalette.color4,
     xAxisCalloutData: '40K',
     yAxisCalloutData: '13K',
   },
@@ -115,7 +116,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 10000,
     y: 'Q1',
     legend: 'Product A',
-    color: '#637cef',
+    color: DataVizPalette.color1,
     xAxisCalloutData: '10K',
     yAxisCalloutData: 'Q1',
   },
@@ -123,7 +124,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: -5000,
     y: 'Q1',
     legend: 'Product B',
-    color: '#e3008c',
+    color: DataVizPalette.color2,
     xAxisCalloutData: '-5K',
     yAxisCalloutData: 'Q1',
   },
@@ -131,7 +132,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 8000,
     y: 'Q1',
     legend: 'Product C',
-    color: '#2aa0a4',
+    color: DataVizPalette.color3,
     xAxisCalloutData: '8K',
     yAxisCalloutData: 'Q1',
   },
@@ -139,7 +140,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: -7000,
     y: 'Q2',
     legend: 'Product A',
-    color: '#637cef',
+    color: DataVizPalette.color1,
     xAxisCalloutData: '-7K',
     yAxisCalloutData: 'Q2',
   },
@@ -147,7 +148,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 12000,
     y: 'Q2',
     legend: 'Product B',
-    color: '#e3008c',
+    color: DataVizPalette.color2,
     xAxisCalloutData: '12K',
     yAxisCalloutData: 'Q2',
   },
@@ -155,7 +156,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 3000,
     y: 'Q2',
     legend: 'Product C',
-    color: '#2aa0a4',
+    color: DataVizPalette.color3,
     xAxisCalloutData: '3K',
     yAxisCalloutData: 'Q2',
   },
@@ -163,7 +164,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 15000,
     y: 'Q3',
     legend: 'Product A',
-    color: '#637cef',
+    color: DataVizPalette.color1,
     xAxisCalloutData: '15K',
     yAxisCalloutData: 'Q3',
   },
@@ -171,7 +172,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: -4000,
     y: 'Q3',
     legend: 'Product B',
-    color: '#e3008c',
+    color: DataVizPalette.color2,
     xAxisCalloutData: '-4K',
     yAxisCalloutData: 'Q3',
   },
@@ -179,7 +180,7 @@ const stackedData: HorizontalBarChartWithAxisDataPoint[] = [
     x: 5000,
     y: 'Q3',
     legend: 'Product C',
-    color: '#2aa0a4',
+    color: DataVizPalette.color3,
     xAxisCalloutData: '5K',
     yAxisCalloutData: 'Q3',
   },
@@ -190,7 +191,7 @@ const negativeData: HorizontalBarChartWithAxisDataPoint[] = [
     x: [10, 20, 30, 40, 50][index],
     y: category,
     legend: 'Series 1',
-    color: '#637cef',
+    color: DataVizPalette.color1,
     yAxisCalloutData: '2020/04/30',
     xAxisCalloutData: '10%',
   })),
@@ -198,7 +199,7 @@ const negativeData: HorizontalBarChartWithAxisDataPoint[] = [
     x: [-10, -20, -30, -40, -50][index],
     y: category,
     legend: 'Series 1',
-    color: '#637cef',
+    color: DataVizPalette.color1,
     yAxisCalloutData: '2020/04/30',
     xAxisCalloutData: '10%',
   })),
@@ -206,7 +207,7 @@ const negativeData: HorizontalBarChartWithAxisDataPoint[] = [
     x: [20, 30, 40, 50, 60][index],
     y: category,
     legend: 'Series 2',
-    color: '#e3008c',
+    color: DataVizPalette.color2,
     yAxisCalloutData: '2020/04/30',
     xAxisCalloutData: '10%',
   })),
@@ -214,7 +215,7 @@ const negativeData: HorizontalBarChartWithAxisDataPoint[] = [
     x: [-20, -30, -40, -50, -60][index],
     y: category,
     legend: 'Series 2',
-    color: '#e3008c',
+    color: DataVizPalette.color2,
     yAxisCalloutData: '2020/04/30',
     xAxisCalloutData: '10%',
   })),
@@ -222,7 +223,7 @@ const negativeData: HorizontalBarChartWithAxisDataPoint[] = [
     x: [30, 40, 50, 60, 70][index],
     y: category,
     legend: 'Series 3',
-    color: '#2aa0a4',
+    color: DataVizPalette.color3,
     yAxisCalloutData: '2020/04/30',
     xAxisCalloutData: '10%',
   })),
@@ -230,7 +231,7 @@ const negativeData: HorizontalBarChartWithAxisDataPoint[] = [
     x: [-30, -40, -50, -60, -70][index],
     y: category,
     legend: 'Series 3',
-    color: '#2aa0a4',
+    color: DataVizPalette.color3,
     yAxisCalloutData: '2020/04/30',
     xAxisCalloutData: '10%',
   })),
@@ -238,7 +239,7 @@ const negativeData: HorizontalBarChartWithAxisDataPoint[] = [
     x: [40, 50, 60, 70, 80][index],
     y: category,
     legend: 'Series 4',
-    color: '#9373c0',
+    color: DataVizPalette.color4,
     yAxisCalloutData: '2020/04/30',
     xAxisCalloutData: '10%',
   })),
@@ -246,7 +247,7 @@ const negativeData: HorizontalBarChartWithAxisDataPoint[] = [
     x: [-40, -50, -60, -70, -80][index],
     y: category,
     legend: 'Series 4',
-    color: '#9373c0',
+    color: DataVizPalette.color4,
     yAxisCalloutData: '2020/04/30',
     xAxisCalloutData: '10%',
   })),
@@ -271,7 +272,13 @@ const categoryOrderOptions: AxisCategoryOrder[] = [
   'median descending',
 ];
 
-const categoryOrderColors = ['#637cef', '#e3008c', '#2aa0a4', '#9373c0', '#13a10e'];
+const categoryOrderColors = [
+  DataVizPalette.color1,
+  DataVizPalette.color2,
+  DataVizPalette.color3,
+  DataVizPalette.color4,
+  DataVizPalette.color5,
+];
 
 const getCategoryOrderData = (dataSize: number): HorizontalBarChartWithAxisDataPoint[] => {
   const data: HorizontalBarChartWithAxisDataPoint[] = [];
@@ -583,6 +590,7 @@ export const Basic: Story<FluentHorizontalBarChartWithAxis> = () => {
 
   return container;
 };
+Basic.parameters = { docs: { story: { height: '640px' } } };
 
 export const StringYAxis: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
@@ -735,6 +743,7 @@ export const CategoryOrder: Story<FluentHorizontalBarChartWithAxis> = () => {
 
   return container;
 };
+CategoryOrder.parameters = { docs: { story: { height: '560px' } } };
 
 export const HideLegends: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
@@ -812,30 +821,23 @@ export const Culture: Story<FluentHorizontalBarChartWithAxis> = () => {
   const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
   let currentCulture: string = 'en-US';
 
-  const chart = document.createElement(
-    'fluent-horizontal-bar-chart-with-axis',
-  ) as FluentHorizontalBarChartWithAxis;
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
   chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
   chart.setAttribute('culture', currentCulture);
   chart.setAttribute('data', JSON.stringify(categoricalData));
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
-  const cultureControl = createDropdownField(
-    'Culture',
-    'hbcwa-culture',
-    [...cultures],
-    currentCulture,
-    nextCulture => {
-      currentCulture = nextCulture;
-      chart.setAttribute('culture', currentCulture);
-      chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
-    },
-  );
+  const cultureControl = createDropdownField('Culture', 'hbcwa-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
+  });
   controls.appendChild(cultureControl.element);
 
   return container;
 };
+Culture.parameters = { docs: { story: { height: '480px' } } };
 
 export const LegendListLabel: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
@@ -874,6 +876,7 @@ export const HideTooltip: Story<FluentHorizontalBarChartWithAxis> = () => {
 
   return container;
 };
+HideTooltip.parameters = { docs: { story: { height: '480px' } } };
 
 export const MultipleLegendSelection: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
@@ -906,6 +909,7 @@ export const MultipleLegendSelection: Story<FluentHorizontalBarChartWithAxis> = 
 
   return container;
 };
+MultipleLegendSelection.parameters = { docs: { story: { height: '480px' } } };
 
 export const HideLabels: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
@@ -945,6 +949,7 @@ export const BarHeight: Story<FluentHorizontalBarChartWithAxis> = () => {
 
   return container;
 };
+BarHeight.parameters = { docs: { story: { height: '640px' } } };
 
 export const AxisTickCounts: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
@@ -981,6 +986,7 @@ export const AxisTickCounts: Story<FluentHorizontalBarChartWithAxis> = () => {
 
   return container;
 };
+AxisTickCounts.parameters = { docs: { story: { height: '540px' } } };
 
 export const YAxisPadding: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
@@ -1008,6 +1014,7 @@ export const YAxisPadding: Story<FluentHorizontalBarChartWithAxis> = () => {
 
   return container;
 };
+YAxisPadding.parameters = { docs: { story: { height: '540px' } } };
 
 export const DomainOverride: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
@@ -1069,6 +1076,7 @@ export const DomainOverride: Story<FluentHorizontalBarChartWithAxis> = () => {
   applyDomain();
   return container;
 };
+DomainOverride.parameters = { docs: { story: { height: '560px' } } };
 
 export const TitleAlign: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
@@ -1079,9 +1087,7 @@ export const TitleAlign: Story<FluentHorizontalBarChartWithAxis> = () => {
   const alignments = ['start', 'center', 'end'] as const;
   let currentAlign: (typeof alignments)[number] = 'start';
 
-  const chart = document.createElement(
-    'fluent-horizontal-bar-chart-with-axis',
-  ) as FluentHorizontalBarChartWithAxis;
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
   chart.setAttribute('chart-title', 'Title alignment example');
   chart.setAttribute('data', JSON.stringify(categoricalData));
   chart.setAttribute('title-align', currentAlign);
@@ -1102,6 +1108,7 @@ export const TitleAlign: Story<FluentHorizontalBarChartWithAxis> = () => {
 
   return container;
 };
+TitleAlign.parameters = { docs: { story: { height: '480px' } } };
 
 export const TitleAndLegendPositions: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
@@ -1114,9 +1121,7 @@ export const TitleAndLegendPositions: Story<FluentHorizontalBarChartWithAxis> = 
   let currentPosition: (typeof positions)[number] = 'bottom';
   let currentTitlePosition: (typeof titlePositions)[number] = 'top';
 
-  const chart = document.createElement(
-    'fluent-horizontal-bar-chart-with-axis',
-  ) as FluentHorizontalBarChartWithAxis;
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
   chart.setAttribute('chart-title', 'Title and legend position example');
   chart.setAttribute('data', JSON.stringify(categoricalData));
   chart.setAttribute('style', 'margin-top:20px;');
@@ -1137,7 +1142,7 @@ export const TitleAndLegendPositions: Story<FluentHorizontalBarChartWithAxis> = 
     },
   );
 
-  const titlePosControl= createDropdownField(
+  const titlePosControl = createDropdownField(
     'Title position',
     'hbcwa-title-position',
     [...titlePositions],
@@ -1156,4 +1161,4 @@ export const TitleAndLegendPositions: Story<FluentHorizontalBarChartWithAxis> = 
 
   return container;
 };
-
+TitleAndLegendPositions.parameters = { docs: { story: { height: '480px' } } };

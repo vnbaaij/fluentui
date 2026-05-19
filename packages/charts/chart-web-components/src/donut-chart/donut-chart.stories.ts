@@ -316,6 +316,7 @@ export const Sizing: Story<FluentDonutChart> = () => {
 
   return container;
 };
+Sizing.parameters = { docs: { story: { height: '460px' } } };
 
 export const RoundedCorners: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -367,6 +368,7 @@ export const RoundedCorners: Story<FluentDonutChart> = () => {
 
   return container;
 };
+RoundedCorners.parameters = { docs: { story: { height: '440px' } } };
 
 export const HideLegends: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
   <fluent-donut-chart
@@ -439,6 +441,7 @@ export const HideTooltip: Story<FluentDonutChart> = () => {
 
   return container;
 };
+HideTooltip.parameters = { docs: { story: { height: '440px' } } };
 
 export const LegendListLabel: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
   <fluent-donut-chart
@@ -469,21 +472,16 @@ export const Culture: Story<FluentDonutChart> = () => {
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
-  const cultureControl = createDropdownField(
-    'Culture',
-    'donut-culture',
-    [...cultures],
-    currentCulture,
-    nextCulture => {
-      currentCulture = nextCulture;
-      chart.setAttribute('culture', currentCulture);
-      chart.setAttribute('chart-title', `Donut chart culture example (${currentCulture})`);
-    },
-  );
+  const cultureControl = createDropdownField('Culture', 'donut-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.setAttribute('chart-title', `Donut chart culture example (${currentCulture})`);
+  });
   controls.appendChild(cultureControl.element);
 
   return container;
 };
+Culture.parameters = { docs: { story: { height: '440px' } } };
 
 export const MultipleLegendSelection: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -517,6 +515,7 @@ export const MultipleLegendSelection: Story<FluentDonutChart> = () => {
 
   return container;
 };
+MultipleLegendSelection.parameters = { docs: { story: { height: '440px' } } };
 
 export const ValueInsideDonut: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -545,6 +544,7 @@ export const ValueInsideDonut: Story<FluentDonutChart> = () => {
 
   return container;
 };
+ValueInsideDonut.parameters = { docs: { story: { height: '440px' } } };
 
 export const TitleAlign: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -578,6 +578,7 @@ export const TitleAlign: Story<FluentDonutChart> = () => {
 
   return container;
 };
+TitleAlign.parameters = { docs: { story: { height: '440px' } } };
 
 export const TitleAndLegendPositions: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -613,7 +614,7 @@ export const TitleAndLegendPositions: Story<FluentDonutChart> = () => {
     },
   );
 
-  const titlePosControl= createDropdownField(
+  const titlePosControl = createDropdownField(
     'Title position',
     'donut-title-position',
     [...titlePositions],
@@ -632,4 +633,4 @@ export const TitleAndLegendPositions: Story<FluentDonutChart> = () => {
 
   return container;
 };
-
+TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };

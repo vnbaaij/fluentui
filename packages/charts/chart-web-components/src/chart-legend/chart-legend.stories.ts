@@ -2,15 +2,16 @@ import { FluentDesignSystem } from '@fluentui/web-components';
 import type { Meta, Story } from '../helpers.stories.js';
 import { ChartLegend as FluentChartLegend } from './chart-legend.js';
 import { definition } from './chart-legend.definition.js';
+import { DataVizPalette } from '../utils/chart-helpers.js';
 
 if (!customElements.get('fluent-chart-legend')) {
   definition.define(FluentDesignSystem.registry);
 }
 
 const items = [
-  { legend: 'Apples', color: '#637cef' },
-  { legend: 'Oranges', color: '#e3008c' },
-  { legend: 'Bananas', color: '#00b7c3' },
+  { legend: 'Apples', color: DataVizPalette.color1 },
+  { legend: 'Oranges', color: DataVizPalette.color2 },
+  { legend: 'Bananas', color: DataVizPalette.color3 },
 ];
 
 interface WireOptions {

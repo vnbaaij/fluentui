@@ -14,6 +14,7 @@ import { renderComponent } from '../helpers.stories.js';
 import { HorizontalBarChart as FluentHorizontalBarChart } from './horizontal-bar-chart.js';
 import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
+import { DataVizPalette } from '../utils/chart-helpers.js';
 
 type FluentSliderElement = HTMLElement & { value: string };
 type FluentSwitchElement = HTMLElement & { checked: boolean };
@@ -171,7 +172,7 @@ const singleBarHBCData = [
         legend: 'one',
         data: 1543,
         total: 15000,
-        color: '#637cef',
+        color: DataVizPalette.color1,
       },
     ],
   },
@@ -182,7 +183,7 @@ const singleBarHBCData = [
         legend: 'two',
         data: 800,
         total: 15000,
-        color: '#e3008c',
+        color: DataVizPalette.color2,
       },
     ],
   },
@@ -193,7 +194,7 @@ const singleBarHBCData = [
         legend: 'three',
         data: 8888,
         total: 15000,
-        color: '#2aa0a4',
+        color: DataVizPalette.color3,
       },
     ],
   },
@@ -204,7 +205,7 @@ const singleBarHBCData = [
         legend: 'four',
         data: 15888,
         total: 15000,
-        color: '#9373c0',
+        color: DataVizPalette.color4,
       },
     ],
   },
@@ -215,7 +216,7 @@ const singleBarHBCData = [
         legend: 'five',
         data: 11444,
         total: 15000,
-        color: '#13a10e',
+        color: DataVizPalette.color5,
       },
     ],
   },
@@ -226,7 +227,7 @@ const singleBarHBCData = [
         legend: 'six',
         data: 14000,
         total: 15000,
-        color: '#3a96dd',
+        color: DataVizPalette.color6,
       },
     ],
   },
@@ -237,7 +238,7 @@ const singleBarHBCData = [
         legend: 'seven',
         data: 9855,
         total: 15000,
-        color: '#ca5010',
+        color: DataVizPalette.color7,
       },
     ],
   },
@@ -248,7 +249,7 @@ const singleBarHBCData = [
         legend: 'eight',
         data: 4250,
         total: 15000,
-        color: '#57811b',
+        color: DataVizPalette.color8,
       },
     ],
   },
@@ -262,7 +263,7 @@ const singleBarNMVariantData: ChartProps[] = [
         legend: 'one',
         data: 1543,
         total: 15000,
-        color: '#637cef',
+        color: DataVizPalette.color1,
       },
     ],
     chartDataText: '1.5k/15k hours',
@@ -274,7 +275,7 @@ const singleBarNMVariantData: ChartProps[] = [
         legend: 'two',
         data: 800,
         total: 15000,
-        color: '#e3008c',
+        color: DataVizPalette.color2,
       },
     ],
     chartDataText: '800/15k hours',
@@ -286,7 +287,7 @@ const singleBarNMVariantData: ChartProps[] = [
         legend: 'three',
         data: 8888,
         total: 15000,
-        color: '#2aa0a4',
+        color: DataVizPalette.color3,
       },
     ],
     chartDataText: '8.9k/15k hours',
@@ -298,7 +299,7 @@ const singleBarNMVariantData: ChartProps[] = [
         legend: 'four',
         data: 15888,
         total: 15000,
-        color: '#9373c0',
+        color: DataVizPalette.color4,
       },
     ],
     chartDataText: '16k/15k hours',
@@ -310,7 +311,7 @@ const singleBarNMVariantData: ChartProps[] = [
         legend: 'five',
         data: 11444,
         total: 15000,
-        color: '#13a10e',
+        color: DataVizPalette.color5,
       },
     ],
     chartDataText: '11k/15k hours',
@@ -322,7 +323,7 @@ const singleBarNMVariantData: ChartProps[] = [
         legend: 'six',
         data: 14000,
         total: 15000,
-        color: '#3a96dd',
+        color: DataVizPalette.color6,
       },
     ],
     chartDataText: '14k/15k hours',
@@ -334,7 +335,7 @@ const singleBarNMVariantData: ChartProps[] = [
         legend: 'seven',
         data: 9855,
         total: 15000,
-        color: '#ca5010',
+        color: DataVizPalette.color7,
       },
     ],
     chartDataText: '9.9k/15k hours',
@@ -346,7 +347,7 @@ const singleBarNMVariantData: ChartProps[] = [
         legend: 'eight',
         data: 4250,
         total: 15000,
-        color: '#57811b',
+        color: DataVizPalette.color8,
       },
     ],
     chartDataText: '4.3k/15k hours',
@@ -357,27 +358,27 @@ const chartPoints1: ChartDataPoint[] = [
   {
     legend: 'Debit card numbers (EU and USA)',
     data: 40,
-    color: '#0099BC',
+    color: DataVizPalette.color1,
   },
   {
     legend: 'Passport numbers (USA)',
     data: 23,
-    color: '#77004D',
+    color: DataVizPalette.color2,
   },
   {
     legend: 'Social security numbers',
     data: 35,
-    color: '#4F68ED',
+    color: DataVizPalette.color3,
   },
   {
     legend: 'Credit card Numbers',
     data: 87,
-    color: '#AE8C00',
+    color: DataVizPalette.color10,
   },
   {
     legend: 'Tax identification numbers (USA)',
     data: 87,
-    color: '#004E8C',
+    color: DataVizPalette.color4,
   },
 ];
 
@@ -385,27 +386,27 @@ const chartPoints2: ChartDataPoint[] = [
   {
     legend: 'Debit card numbers (EU and USA)',
     data: 40,
-    color: '#0099BC',
+    color: DataVizPalette.color1,
   },
   {
     legend: 'Passport numbers (USA)',
     data: 56,
-    color: '#77004D',
+    color: DataVizPalette.color2,
   },
   {
     legend: 'Social security numbers',
     data: 35,
-    color: '#4F68ED',
+    color: DataVizPalette.color3,
   },
   {
     legend: 'Credit card Numbers',
     data: 92,
-    color: '#AE8C00',
+    color: DataVizPalette.color10,
   },
   {
     legend: 'Tax identification numbers (USA)',
     data: 87,
-    color: '#004E8C',
+    color: DataVizPalette.color4,
   },
 ];
 
@@ -413,12 +414,12 @@ const chartPoints3: ChartDataPoint[] = [
   {
     legend: 'Phone Numbers',
     data: 40,
-    color: '#881798',
+    color: DataVizPalette.color9,
   },
   {
     legend: 'Credit card Numbers',
     data: 23,
-    color: '#AE8C00',
+    color: DataVizPalette.color10,
   },
 ];
 
@@ -445,7 +446,7 @@ const singlePointData = [
         legend: 'one',
         data: 1543,
         total: 15000,
-        gradient: ['#637cef', '#e3008c'],
+        gradient: [DataVizPalette.color1, DataVizPalette.color2],
       },
     ],
   },
@@ -459,7 +460,7 @@ const benchmarkData: ChartProps[] = [
         legend: 'one',
         data: 10,
         total: 100,
-        color: '#637cef',
+        color: DataVizPalette.color1,
       },
     ],
     benchmarkData: 50,
@@ -471,7 +472,7 @@ const benchmarkData: ChartProps[] = [
         legend: 'two',
         data: 30,
         total: 200,
-        color: '#e3008c',
+        color: DataVizPalette.color2,
       },
     ],
     benchmarkData: 30,
@@ -483,7 +484,7 @@ const benchmarkData: ChartProps[] = [
         legend: 'three',
         data: 15,
         total: 50,
-        color: '#2aa0a4',
+        color: DataVizPalette.color3,
       },
     ],
     benchmarkData: 5,
@@ -548,6 +549,7 @@ export const Sizing: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+Sizing.parameters = { docs: { story: { height: '460px' } } };
 
 export const singleDataPoint: Story<FluentHorizontalBarChart> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChart>
@@ -648,6 +650,7 @@ export const RoundedCorners: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+RoundedCorners.parameters = { docs: { story: { height: '520px' } } };
 
 export const ChartDataModeFraction: Story<FluentHorizontalBarChart> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChart>
@@ -729,6 +732,7 @@ export const HideLegends: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+HideLegends.parameters = { docs: { story: { height: '420px' } } };
 
 export const HideTooltip: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
@@ -760,6 +764,7 @@ export const HideTooltip: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+HideTooltip.parameters = { docs: { story: { height: '420px' } } };
 
 export const LegendListLabel: Story<FluentHorizontalBarChart> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChart>
@@ -789,21 +794,16 @@ export const Culture: Story<FluentHorizontalBarChart> = () => {
   chart.setAttribute('style', 'width:100%;margin-top:20px;');
   container.appendChild(chart);
 
-  const cultureControl = createDropdownField(
-    'Culture',
-    'hbc-culture',
-    [...cultures],
-    currentCulture,
-    nextCulture => {
-      currentCulture = nextCulture;
-      chart.setAttribute('culture', currentCulture);
-      chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
-    },
-  );
+  const cultureControl = createDropdownField('Culture', 'hbc-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
+  });
   controls.appendChild(cultureControl.element);
 
   return container;
 };
+Culture.parameters = { docs: { story: { height: '440px' } } };
 
 export const MultipleLegendSelection: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
@@ -836,6 +836,7 @@ export const MultipleLegendSelection: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+MultipleLegendSelection.parameters = { docs: { story: { height: '420px' } } };
 
 export const Gradient: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
@@ -868,6 +869,7 @@ export const Gradient: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+Gradient.parameters = { docs: { story: { height: '420px' } } };
 
 export const ChartDataModeInteractive: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
@@ -900,6 +902,7 @@ export const ChartDataModeInteractive: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+ChartDataModeInteractive.parameters = { docs: { story: { height: '500px' } } };
 
 export const TitleAlign: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
@@ -931,6 +934,7 @@ export const TitleAlign: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
+TitleAlign.parameters = { docs: { story: { height: '440px' } } };
 
 export const TitleAndLegendPositions: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
@@ -964,7 +968,7 @@ export const TitleAndLegendPositions: Story<FluentHorizontalBarChart> = () => {
     },
   );
 
-  const titlePosControl= createDropdownField(
+  const titlePosControl = createDropdownField(
     'Title position',
     'hbc-title-position',
     [...titlePositions],
@@ -983,4 +987,4 @@ export const TitleAndLegendPositions: Story<FluentHorizontalBarChart> = () => {
 
   return container;
 };
-
+TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
