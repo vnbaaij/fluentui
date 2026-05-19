@@ -70,16 +70,8 @@ export class HorizontalBarChart extends ChartBase {
     this._requestRender();
   }
 
-  protected dataChanged(_oldValue: ChartProps[], newValue: ChartProps[]) {
-    if (newValue) {
-      this._requestRender();
-    }
-  }
-
-  protected _getHostAriaLabel(): string {
-    return this.chartTitle
-      ? `${this.chartTitle}, horizontal bar chart`
-      : `Horizontal bar chart with ${this.data?.length ?? 0} categories.`;
+  protected dataChanged() {
+    this._requestRender();
   }
 
   protected widthChanged() {
@@ -104,6 +96,12 @@ export class HorizontalBarChart extends ChartBase {
 
   protected enableGradientChanged() {
     this._requestRender();
+  }
+
+  protected _getHostAriaLabel(): string {
+    return this.chartTitle
+      ? `${this.chartTitle}, horizontal bar chart`
+      : `Horizontal bar chart with ${this.data?.length ?? 0} categories.`;
   }
 
   protected _performRender(): void {
