@@ -6,10 +6,11 @@ import {
   getNextColor,
   jsonConverter,
   lightenColor,
+  parseDateOrNumber,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
-import type { AxisCategoryOrder, GanttChartDataPoint } from './gantt-chart.options.js';
-import type { Legend, TooltipProps } from '../utils/chart.options.js';
+import type { GanttChartDataPoint } from './gantt-chart.options.js';
+import type { AxisCategoryOrder, Legend, TooltipProps } from '../utils/chart.options.js';
 
 type GanttTooltipProps = TooltipProps & {
   xLabel: string;
@@ -353,7 +354,8 @@ export class GanttChart extends CartesianChartBase {
     }
 
     this._validateData(this.data);
-    this._xAxisType = this.data[0].x.start instanceof Date ? 'date' : 'number';
+    const firstStart = this.data[0].x.start;
+    this._xAxisType = firstStart instanceof Date || typeof firstStart === 'string' ? 'date' : 'number';
     this.elementInternals.ariaLabel = this._getHostAriaLabel();
     this._applyHostDimensions();
 
@@ -430,8 +432,8 @@ export class GanttChart extends CartesianChartBase {
         const color = this._getPointColor(point, globalPointIndex++, legendColorMap);
         const gradientId = this._appendGradient(defs, groupIndex, globalPointIndex - 1, point, color);
 
-        const xStart = scaleX(+point.x.start);
-        const xEnd = scaleX(+point.x.end);
+        const xStart = scaleX(+parseDateOrNumber(point.x.start));
+        const xEnd = scaleX(+parseDateOrNumber(point.x.end));
         const rectX = Math.min(xStart, xEnd);
         const barWidth = Math.max(Math.abs(xEnd - xStart), 1);
 
@@ -500,9 +502,12 @@ export class GanttChart extends CartesianChartBase {
       }
       const start = point.x.start;
       const end = point.x.end;
-      const isValidValue = (v: Date | number) => (v instanceof Date && !isNaN(v.getTime())) || typeof v === 'number';
+      const isValidValue = (v: Date | number | string) => {
+        if (typeof v === 'string') return !isNaN(new Date(v).getTime());
+        return (v instanceof Date && !isNaN(v.getTime())) || typeof v === 'number';
+      };
       if (!isValidValue(start) || !isValidValue(end)) {
-        throw new TypeError(`Invalid data[${index}].x: start and end must be Date or number.`);
+        throw new TypeError(`Invalid data[${index}].x: start and end must be Date, number, or ISO 8601 string.`);
       }
       if (typeof point.y !== 'string' && typeof point.y !== 'number') {
         throw new TypeError(`Invalid data[${index}].y: Expected a string or number.`);
@@ -552,7 +557,7 @@ export class GanttChart extends CartesianChartBase {
 
     // Aggregate by total duration of bars in the group
     const aggregate = (group: GroupedSeries) => {
-      const durations = group.points.map(point => +point.x.end - +point.x.start);
+      const durations = group.points.map(point => +parseDateOrNumber(point.x.end) - +parseDateOrNumber(point.x.start));
       switch (order) {
         case 'category ascending':
         case 'category descending':
@@ -662,8 +667,8 @@ export class GanttChart extends CartesianChartBase {
   }
 
   private _getXScaleInfo() {
-    const starts = this.data.map(p => +p.x.start);
-    const ends = this.data.map(p => +p.x.end);
+    const starts = this.data.map(p => +parseDateOrNumber(p.x.start));
+    const ends = this.data.map(p => +parseDateOrNumber(p.x.end));
     let rawMin = Math.min(...starts, ...ends);
     let rawMax = Math.max(...starts, ...ends);
 
@@ -825,7 +830,9 @@ export class GanttChart extends CartesianChartBase {
         day: '2-digit',
         timeZone: 'UTC',
       });
-      return `${fmt.format(new Date(+point.x.start))} - ${fmt.format(new Date(+point.x.end))}`;
+      return `${fmt.format(new Date(+parseDateOrNumber(point.x.start)))} - ${fmt.format(
+        new Date(+parseDateOrNumber(point.x.end)),
+      )}`;
     }
     return `${formatAxisNumber(+point.x.start, this.culture)} - ${formatAxisNumber(+point.x.end, this.culture)}`;
   }

@@ -13,7 +13,8 @@ import {
 import type { Meta, Story } from '../helpers.stories.js';
 import { GanttChart as FluentGanttChart } from './gantt-chart.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
-import type { AxisCategoryOrder, GanttChartDataPoint } from './gantt-chart.options.js';
+import type { GanttChartDataPoint } from './gantt-chart.options.js';
+import type { AxisCategoryOrder } from '../utils/chart.options.js';
 
 type FluentSliderElement = HTMLElement & { value: string };
 type FluentCheckboxElement = HTMLElement & { checked: boolean };

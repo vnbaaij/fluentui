@@ -14,10 +14,8 @@ import {
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
 import { renderComponent } from '../helpers.stories.js';
 import { HorizontalBarChartWithAxis as FluentHorizontalBarChartWithAxis } from './horizontal-bar-chart-with-axis.js';
-import type {
-  AxisCategoryOrder,
-  HorizontalBarChartWithAxisDataPoint,
-} from './horizontal-bar-chart-with-axis.options.js';
+import type { HorizontalBarChartWithAxisDataPoint } from './horizontal-bar-chart-with-axis.options.js';
+import type { AxisCategoryOrder } from '../utils/chart.options.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
 
 type FluentSliderElement = HTMLElement & { value: string };
@@ -1258,4 +1256,3 @@ export const RoundedTicks: Story<FluentHorizontalBarChartWithAxis> = renderCompo
   </fluent-horizontal-bar-chart-with-axis>
 `);
 RoundedTicks.parameters = { docs: { story: { height: '420px' } } };
-
