@@ -1,5 +1,5 @@
 import { attr } from '@microsoft/fast-element';
-import { ChartBase } from '../utils/chart-base.js';
+import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
   getColorFromToken,
   getNextColor,
@@ -181,7 +181,7 @@ const getClosestPairDiffAndRange = (values: number[]) => {
   return [closestPairDiff, sorted[sorted.length - 1] - sorted[0]] as const;
 };
 
-export class HorizontalBarChartWithAxis extends ChartBase {
+export class HorizontalBarChartWithAxis extends CartesianChartBase {
   @attr({ converter: jsonConverter })
   public data!: HorizontalBarChartWithAxisDataPoint[];
 

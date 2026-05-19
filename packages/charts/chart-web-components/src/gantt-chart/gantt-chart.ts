@@ -1,6 +1,6 @@
 import { attr } from '@microsoft/fast-element';
 import { scaleTime } from 'd3-scale';
-import { ChartBase } from '../utils/chart-base.js';
+import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
   getColorFromToken,
   getNextColor,
@@ -173,7 +173,7 @@ const _applyFormat = (value: number, format: string): string => {
   }
 };
 
-export class GanttChart extends ChartBase {
+export class GanttChart extends CartesianChartBase {
   @attr({ converter: jsonConverter })
   public data!: GanttChartDataPoint[];
 
