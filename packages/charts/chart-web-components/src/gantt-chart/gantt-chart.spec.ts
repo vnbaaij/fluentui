@@ -374,3 +374,48 @@ test.describe('GanttChart - support-negative-data', () => {
     await expect(bars).toHaveCount(negativeNumericData.length);
   });
 });
+
+// ── bar-height ────────────────────────────────────────────────────────────────
+
+test.describe('GanttChart - bar-height', () => {
+  test('Should render bars with specified bar-height', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Bar height test"
+          bar-height="15"
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const bars = page.locator('fluent-gantt-chart').locator('.bar');
+    await expect(bars.nth(0)).toHaveAttribute('height', '15');
+    await expect(bars.nth(1)).toHaveAttribute('height', '15');
+    await expect(bars.nth(2)).toHaveAttribute('height', '15');
+  });
+
+  test('Should update bar height when bar-height attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Bar height reactivity test"
+          bar-height="10"
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+    const firstBar = element.locator('.bar').first();
+
+    await expect(firstBar).toHaveAttribute('height', '10');
+
+    await element.evaluate(el => el.setAttribute('bar-height', '20'));
+    await page.waitForTimeout(50);
+
+    await expect(firstBar).toHaveAttribute('height', '20');
+  });
+});

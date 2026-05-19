@@ -546,3 +546,30 @@ export const RoundedTicks: Story<FluentGanttChart> = () => {
   container.appendChild(chart);
   return container;
 };
+
+export const BarHeight: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  let barHeight = 24;
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart — custom bar height';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('bar-height', `${barHeight}`);
+
+  const barHeightControl = createSliderField('Bar height', 'gantt-bar-height', barHeight, 4, 60, nextValue => {
+    barHeight = nextValue;
+    barHeightControl.setValue(nextValue);
+    chart.setAttribute('bar-height', `${nextValue}`);
+  });
+  controls.appendChild(barHeightControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+BarHeight.parameters = { docs: { story: { height: '420px' } } };

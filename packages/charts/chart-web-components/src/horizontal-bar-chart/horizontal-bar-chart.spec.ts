@@ -1617,3 +1617,66 @@ test.describe('HorizontalBarChart - title-position', () => {
     await expect(element).toHaveAttribute('title-position', 'bottom');
   });
 });
+
+// ── bar-height ────────────────────────────────────────────────────────────────
+
+test.describe('Horizontal-bar-chart - bar-height', () => {
+  const singleBarData: ChartProps[] = [
+    {
+      chartSeriesTitle: 'one',
+      chartData: [{ legend: 'one', data: 1543, total: 15000, color: '#637cef' }],
+    },
+  ];
+
+  test('Should render bars with default height of 12', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          data='${JSON.stringify(singleBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+    await expect(firstBar).toHaveAttribute('height', '12');
+  });
+
+  test('Should render bars with height equal to bar-height attribute', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          bar-height="20"
+          data='${JSON.stringify(singleBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+    await expect(firstBar).toHaveAttribute('height', '20');
+  });
+
+  test('Should update bar height when bar-height attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 400px">
+        <fluent-horizontal-bar-chart
+          bar-height="12"
+          data='${JSON.stringify(singleBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const firstBar = element.locator('.bar').first();
+
+    await expect(firstBar).toHaveAttribute('height', '12');
+
+    await element.evaluate(el => el.setAttribute('bar-height', '24'));
+
+    await expect(firstBar).toHaveAttribute('height', '24');
+  });
+});

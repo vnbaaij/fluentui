@@ -46,7 +46,6 @@ const X_AXIS_LABEL = 'X';
 const Y_AXIS_LABEL = 'Y';
 const DEFAULT_HEIGHT = 320;
 const DEFAULT_BAR_HEIGHT = 24;
-const DEFAULT_MAX_BAR_HEIGHT = 24;
 const DEFAULT_X_TICK_COUNT = 6;
 const DEFAULT_Y_TICK_COUNT = 4;
 const DEFAULT_Y_AXIS_PADDING = 0.5;
@@ -634,11 +633,8 @@ export class GanttChart extends CartesianChartBase {
     } else {
       // Categorical: no extra domain margin — D3 scaleBand outer padding (via startOffset) handles spacing.
       domainMargin = 0;
-      const innerHeight = height - baseMargins.top - baseMargins.bottom;
-      const step = innerHeight / Math.max(groupCount + padding, 1);
-      const bandwidth = step * (1 - padding);
       if (barHeight === 0) {
-        barHeight = Math.min(bandwidth, DEFAULT_MAX_BAR_HEIGHT);
+        barHeight = DEFAULT_BAR_HEIGHT;
       }
       barHeight = Math.max(barHeight, 1);
     }

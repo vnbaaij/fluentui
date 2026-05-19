@@ -988,3 +988,31 @@ export const TitleAndLegendPositions: Story<FluentHorizontalBarChart> = () => {
   return container;
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
+
+export const BarHeight: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let barHeight = 12;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart bar height example');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+  chart.barHeight = barHeight;
+  chart.setAttribute('bar-height', `${barHeight}`);
+  container.appendChild(chart);
+
+  const barHeightControl = createSliderField('Bar height', 'horizontal-bar-bar-height', barHeight, 4, 40, nextValue => {
+    barHeight = nextValue;
+    barHeightControl.setValue(nextValue);
+    chart.barHeight = nextValue;
+    chart.setAttribute('bar-height', `${nextValue}`);
+  });
+  controls.appendChild(barHeightControl.element);
+
+  return container;
+};
+BarHeight.parameters = { docs: { story: { height: '420px' } } };

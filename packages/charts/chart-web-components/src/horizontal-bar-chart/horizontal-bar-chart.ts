@@ -1,4 +1,4 @@
-import { attr } from '@microsoft/fast-element';
+import { attr, nullableNumberConverter } from '@microsoft/fast-element';
 import { ChartBase } from '../utils/chart-base.js';
 import { create as d3Create, select as d3Select } from 'd3-selection';
 import {
@@ -40,9 +40,10 @@ export class HorizontalBarChart extends ChartBase {
   @attr({ attribute: 'enable-gradient', mode: 'boolean' })
   public enableGradient: boolean = false;
 
-  protected override _enableResizeObserver = true;
+  @attr({ attribute: 'bar-height', converter: nullableNumberConverter })
+  public barHeight: number = 12;
 
-  private _barHeight: number = 12;
+  protected override _enableResizeObserver = true;
   private _bars: SVGRectElement[] = [];
 
   connectedCallback() {
@@ -51,7 +52,16 @@ export class HorizontalBarChart extends ChartBase {
     // attribute changes go through the FAST reactive system and trigger the *Changed()
     // callbacks, and so that observable assignments notify template bindings.
     const self = this as Record<string, unknown>;
-    const attrFields = ['width', 'height', 'variant', 'data', 'hideRatio', 'chartDataMode', 'enableGradient'] as const;
+    const attrFields = [
+      'width',
+      'height',
+      'variant',
+      'data',
+      'hideRatio',
+      'chartDataMode',
+      'enableGradient',
+      'barHeight',
+    ] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -95,6 +105,10 @@ export class HorizontalBarChart extends ChartBase {
   }
 
   protected enableGradientChanged() {
+    this._requestRender();
+  }
+
+  protected barHeightChanged() {
     this._requestRender();
   }
 
@@ -290,7 +304,7 @@ export class HorizontalBarChart extends ChartBase {
     let value = 0;
 
     const createBars = (g: SVGGElement, point: ChartDataPoint, index: number) => {
-      const barHeight = 12;
+      const barHeight = this.barHeight;
       const pointData = point.data ?? 0;
       if (index > 0) {
         prevPosition += value;
@@ -511,7 +525,7 @@ export class HorizontalBarChart extends ChartBase {
               }%`,
             )
             .attr('textAnchor', 'start')
-            .attr('y', this._barHeight / 2 + 6)
+            .attr('y', this.barHeight / 2 + 6)
             .attr('dominantBaseline', 'central')
             .attr('transform', `translate(${this._isRTL ? -4 : 4})`)
             .attr('aria-label', `Total: ${barLabel}`)
@@ -531,7 +545,7 @@ export class HorizontalBarChart extends ChartBase {
               }%`,
             )
             .attr('textAnchor', 'start')
-            .attr('y', this._barHeight / 2 + 6)
+            .attr('y', this.barHeight / 2 + 6)
             .attr('dominantBaseline', 'central')
             .attr('transform', `translate(${this._isRTL ? -4 : 4})`)
             .attr('aria-label', `Total: ${barLabel}`)
