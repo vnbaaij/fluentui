@@ -1256,3 +1256,78 @@ export const RoundedTicks: Story<FluentHorizontalBarChartWithAxis> = renderCompo
   </fluent-horizontal-bar-chart-with-axis>
 `);
 RoundedTicks.parameters = { docs: { story: { height: '420px' } } };
+
+export const TickValues: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Explicit tick values on x-axis');
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('style', 'width:800px;margin-top:20px;');
+  chart.tickValues = [0, 2500, 5000, 7500, 10000];
+  container.appendChild(chart);
+
+  return container;
+};
+TickValues.parameters = { docs: { story: { height: '420px' } } };
+
+export const StrokeWidth: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  let strokeWidth = 2;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'Bar stroke width');
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('style', 'width:800px;margin-top:20px;');
+  chart.setAttribute('stroke-width', `${strokeWidth}`);
+
+  const strokeControl = createSliderField('Stroke width', 'hbcwa-stroke-width', strokeWidth, 0, 8, nextValue => {
+    strokeWidth = nextValue;
+    strokeControl.setValue(nextValue);
+    chart.setAttribute('stroke-width', `${nextValue}`);
+  });
+  controls.appendChild(strokeControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+StrokeWidth.parameters = { docs: { story: { height: '420px' } } };
+
+export const ShowXAxisLabelsTooltip: Story<FluentHorizontalBarChartWithAxis> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  let tooltipEnabled = true;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart-with-axis') as FluentHorizontalBarChartWithAxis;
+  chart.setAttribute('chart-title', 'X-axis label tooltips (truncated labels)');
+  chart.setAttribute('data', JSON.stringify(categoricalData));
+  chart.setAttribute('style', 'width:800px;margin-top:20px;');
+  // Use a long format to produce labels that exceed the truncation threshold
+  chart.setAttribute('x-axis-tick-format', '.8f');
+  chart.toggleAttribute('show-x-axis-labels-tooltip', tooltipEnabled);
+
+  const tooltipControl = createSwitchField(
+    'Show x-axis label tooltips',
+    'hbcwa-x-axis-tooltip',
+    tooltipEnabled,
+    checked => {
+      tooltipEnabled = checked;
+      chart.toggleAttribute('show-x-axis-labels-tooltip', checked);
+    },
+  );
+  controls.appendChild(tooltipControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+ShowXAxisLabelsTooltip.parameters = { docs: { story: { height: '420px' } } };

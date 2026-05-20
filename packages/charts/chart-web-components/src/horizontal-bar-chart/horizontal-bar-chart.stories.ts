@@ -12,7 +12,7 @@ import {
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
 import { renderComponent } from '../helpers.stories.js';
 import { HorizontalBarChart as FluentHorizontalBarChart } from './horizontal-bar-chart.js';
-import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
+import type { HorizontalBarChartDataPoint, HorizontalBarChartProps } from './horizontal-bar-chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
 
@@ -255,7 +255,7 @@ const singleBarHBCData = [
   },
 ];
 
-const singleBarNMVariantData: ChartProps[] = [
+const singleBarNMVariantData: HorizontalBarChartProps[] = [
   {
     chartSeriesTitle: 'one',
     chartData: [
@@ -354,7 +354,7 @@ const singleBarNMVariantData: ChartProps[] = [
   },
 ];
 
-const chartPoints1: ChartDataPoint[] = [
+const chartPoints1: HorizontalBarChartDataPoint[] = [
   {
     legend: 'Debit card numbers (EU and USA)',
     data: 40,
@@ -382,7 +382,7 @@ const chartPoints1: ChartDataPoint[] = [
   },
 ];
 
-const chartPoints2: ChartDataPoint[] = [
+const chartPoints2: HorizontalBarChartDataPoint[] = [
   {
     legend: 'Debit card numbers (EU and USA)',
     data: 40,
@@ -410,7 +410,7 @@ const chartPoints2: ChartDataPoint[] = [
   },
 ];
 
-const chartPoints3: ChartDataPoint[] = [
+const chartPoints3: HorizontalBarChartDataPoint[] = [
   {
     legend: 'Phone Numbers',
     data: 40,
@@ -423,7 +423,7 @@ const chartPoints3: ChartDataPoint[] = [
   },
 ];
 
-const data: ChartProps[] = [
+const data: HorizontalBarChartProps[] = [
   {
     chartSeriesTitle: 'Monitored First',
     chartData: chartPoints1,
@@ -452,7 +452,7 @@ const singlePointData = [
   },
 ];
 
-const benchmarkData: ChartProps[] = [
+const benchmarkData: HorizontalBarChartProps[] = [
   {
     chartSeriesTitle: 'one',
     chartData: [

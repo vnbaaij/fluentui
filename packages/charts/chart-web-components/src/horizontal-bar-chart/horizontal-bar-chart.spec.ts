@@ -1,8 +1,8 @@
 import { Locator, test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
-import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
+import type { HorizontalBarChartDataPoint, HorizontalBarChartProps } from './horizontal-bar-chart.options.js';
 
-const chartPoints1: ChartDataPoint[] = [
+const chartPoints1: HorizontalBarChartDataPoint[] = [
   {
     legend: 'Debit card numbers (EU and USA)',
     data: 40,
@@ -30,7 +30,7 @@ const chartPoints1: ChartDataPoint[] = [
   },
 ];
 
-const chartPoints2: ChartDataPoint[] = [
+const chartPoints2: HorizontalBarChartDataPoint[] = [
   {
     legend: 'Debit card numbers (EU and USA)',
     data: 40,
@@ -58,7 +58,7 @@ const chartPoints2: ChartDataPoint[] = [
   },
 ];
 
-const chartPoints3: ChartDataPoint[] = [
+const chartPoints3: HorizontalBarChartDataPoint[] = [
   {
     legend: 'Phone Numbers',
     data: 40,
@@ -71,7 +71,7 @@ const chartPoints3: ChartDataPoint[] = [
   },
 ];
 
-const basicChartTestData: ChartProps[] = [
+const basicChartTestData: HorizontalBarChartProps[] = [
   {
     chartSeriesTitle: 'Monitored First',
     chartData: chartPoints1,
@@ -1384,7 +1384,7 @@ test.describe('Horizontal-bar-chart - enable-gradient', () => {
 });
 
 test.describe('Horizontal-bar-chart - variant reactivity', () => {
-  const variantReactivityData: ChartProps[] = [
+  const variantReactivityData: HorizontalBarChartProps[] = [
     {
       chartSeriesTitle: 'one',
       chartData: [{ legend: 'one', data: 4000, total: 10000, color: '#637cef' }],
@@ -1418,7 +1418,7 @@ test.describe('Horizontal-bar-chart - variant reactivity', () => {
   });
 
   test('Should toggle ratio text when variant changes to absolute-scale and back', async ({ page }) => {
-    const twoPointData: ChartProps[] = [
+    const twoPointData: HorizontalBarChartProps[] = [
       {
         chartSeriesTitle: 'series',
         chartData: [
@@ -1457,7 +1457,7 @@ test.describe('Horizontal-bar-chart - variant reactivity', () => {
 // ── title-align ───────────────────────────────────────────────────────────────
 
 const hbcTitle = 'HBC test chart';
-const hbcData: ChartProps[] = [{ chartTitle: 'Bars', chartData: chartPoints1 }];
+const hbcData: HorizontalBarChartProps[] = [{ chartSeriesTitle: 'Bars', chartData: chartPoints1 }];
 
 test.describe('HorizontalBarChart - title-align', () => {
   async function setupWithTitle(page: import('@playwright/test').Page, extraAttrs = '') {
@@ -1621,7 +1621,7 @@ test.describe('HorizontalBarChart - title-position', () => {
 // ── bar-height ────────────────────────────────────────────────────────────────
 
 test.describe('Horizontal-bar-chart - bar-height', () => {
-  const singleBarData: ChartProps[] = [
+  const singleBarData: HorizontalBarChartProps[] = [
     {
       chartSeriesTitle: 'one',
       chartData: [{ legend: 'one', data: 1543, total: 15000, color: '#637cef' }],

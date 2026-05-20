@@ -573,3 +573,131 @@ export const BarHeight: Story<FluentGanttChart> = () => {
   return container;
 };
 BarHeight.parameters = { docs: { story: { height: '420px' } } };
+
+export const TickValues: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = numericData;
+  chart.chartTitle = 'Gantt Chart — explicit tick values';
+  chart.tickValues = [0, 15, 30, 45, 60];
+  container.appendChild(chart);
+
+  return container;
+};
+
+export const TickFormatLocale: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+
+  const label = document.createElement('p');
+  label.textContent =
+    'tick-format is reserved for future d3-time-format support and currently has no visual effect. ' +
+    'Use date-localize-options + culture to customise date axis labels via Intl.';
+  label.setAttribute('style', 'font-style:italic;margin:0 0 8px;');
+  container.appendChild(label);
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart — tick-format (placeholder)';
+  chart.setAttribute('tick-format', '%m/%d');
+
+  container.appendChild(chart);
+  return container;
+};
+
+export const StrokeWidth: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  let strokeWidth = 2;
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart — bar stroke width';
+  chart.setAttribute('stroke-width', `${strokeWidth}`);
+
+  const strokeControl = createSliderField('Stroke width', 'gantt-stroke-width', strokeWidth, 0, 8, nextValue => {
+    strokeWidth = nextValue;
+    strokeControl.setValue(nextValue);
+    chart.setAttribute('stroke-width', `${nextValue}`);
+  });
+  controls.appendChild(strokeControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+
+export const ShowXAxisLabelsTooltip: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  let tooltipEnabled = true;
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart — x-axis label tooltips';
+  // Use a long date format to ensure labels get truncated
+  chart.setAttribute('tick-format', '%Y-%m-%d');
+  chart.toggleAttribute('show-x-axis-labels-tooltip', tooltipEnabled);
+
+  const tooltipControl = createSwitchField(
+    'Show x-axis label tooltips',
+    'gantt-x-axis-tooltip',
+    tooltipEnabled,
+    checked => {
+      tooltipEnabled = checked;
+      chart.toggleAttribute('show-x-axis-labels-tooltip', checked);
+    },
+  );
+  controls.appendChild(tooltipControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+
+export const DateLocalizeOptions: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  const localeOptions: Record<string, Intl.DateTimeFormatOptions> = {
+    'Year + Month (long)': { year: 'numeric', month: 'long' },
+    'Year + Month (short)': { year: 'numeric', month: 'short' },
+    'Month + Day': { month: 'long', day: 'numeric' },
+    'Year only': { year: 'numeric' },
+  };
+  const optionKeys = Object.keys(localeOptions);
+  let selectedKey = optionKeys[0];
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart — date localize options';
+  chart.dateLocalizeOptions = localeOptions[selectedKey];
+
+  const optionsControl = createDropdownField(
+    'Date format options',
+    'gantt-date-localize-options',
+    optionKeys,
+    selectedKey,
+    nextKey => {
+      selectedKey = nextKey;
+      chart.dateLocalizeOptions = localeOptions[nextKey];
+    },
+  );
+  controls.appendChild(optionsControl.element);
+
+  container.appendChild(chart);
+  return container;
+};

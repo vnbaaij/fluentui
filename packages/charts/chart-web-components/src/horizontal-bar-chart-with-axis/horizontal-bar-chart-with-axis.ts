@@ -476,6 +476,10 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
         rect.setAttribute('width', `${barWidth}`);
         rect.setAttribute('height', `${resolvedBarHeight}`);
         rect.setAttribute('fill', gradientId ? `url(#${gradientId})` : color);
+        if (this.strokeWidth !== undefined) {
+          rect.setAttribute('stroke-width', `${this.strokeWidth}`);
+          rect.setAttribute('stroke', color);
+        }
         rect.setAttribute('role', 'img');
         rect.setAttribute('tabindex', this._renderedBars.length === 0 ? '0' : '-1');
         rect.setAttribute('aria-label', this._getAriaLabel(point));
@@ -724,7 +728,11 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
       }
     }
 
-    return getNiceDomainAndTicks(min, max, toNumber(this.xAxisTickCount, DEFAULT_X_TICK_COUNT));
+    const result = getNiceDomainAndTicks(min, max, toNumber(this.xAxisTickCount, DEFAULT_X_TICK_COUNT));
+    if (this.tickValues) {
+      return { domain: result.domain, ticks: (this.tickValues as number[]).map(Number) };
+    }
+    return result;
   }
 
   private _getNumericYDomain(yValues: number[]) {
@@ -885,18 +893,30 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
         ? _applyFormat(tick, this.xAxisTickFormat)
         : formatAxisNumber(tick, this.culture);
 
+      const MAX_LABEL_CHARS = 10;
+      const displayLabel =
+        this.showXAxisLabelsTooltip && rawLabel.length > MAX_LABEL_CHARS
+          ? truncateText(rawLabel, MAX_LABEL_CHARS)
+          : rawLabel;
+      const isLabelTruncated = displayLabel !== rawLabel;
+
       const text = createSvgElement<SVGTextElement>('text');
       text.setAttribute('class', 'axis-text');
       text.setAttribute('x', `${x}`);
       text.setAttribute('y', `${labelY}`);
+      if (isLabelTruncated) {
+        const title = createSvgElement<SVGTitleElement>('title');
+        title.textContent = rawLabel;
+        text.appendChild(title);
+      }
 
       if (this.rotateXAxisLabels) {
         text.setAttribute('text-anchor', this._isRTL ? 'start' : 'end');
         text.setAttribute('transform', `rotate(-45, ${x}, ${labelY})`);
-        text.textContent = rawLabel;
+        text.textContent = displayLabel;
       } else if (this.wrapXAxisLabels) {
         text.setAttribute('text-anchor', 'middle');
-        const words = rawLabel.split(' ');
+        const words = displayLabel.split(' ');
         if (words.length > 1) {
           words.forEach((word, i) => {
             const tspan = createSvgElement<SVGTSpanElement>('tspan');
@@ -906,11 +926,11 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
             text.appendChild(tspan);
           });
         } else {
-          text.textContent = rawLabel;
+          text.textContent = displayLabel;
         }
       } else {
         text.setAttribute('text-anchor', 'middle');
-        text.textContent = rawLabel;
+        text.textContent = displayLabel;
       }
       axisLayer.appendChild(text);
     });

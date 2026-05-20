@@ -1,5 +1,6 @@
 import { attr } from '@microsoft/fast-element';
 import { scaleTime } from 'd3-scale';
+import { timeFormat } from 'd3-time-format';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
   getColorFromToken,
@@ -443,6 +444,10 @@ export class GanttChart extends CartesianChartBase {
         rect.setAttribute('width', `${barWidth}`);
         rect.setAttribute('height', `${resolvedBarHeight}`);
         rect.setAttribute('fill', gradientId ? `url(#${gradientId})` : color);
+        if (this.strokeWidth !== undefined) {
+          rect.setAttribute('stroke-width', `${this.strokeWidth}`);
+          rect.setAttribute('stroke', color);
+        }
         rect.setAttribute('role', 'img');
         rect.setAttribute('tabindex', this._renderedBars.length === 0 ? '0' : '-1');
         rect.setAttribute('aria-label', this._getAriaLabel(point));
@@ -684,7 +689,9 @@ export class GanttChart extends CartesianChartBase {
       .domain([new Date(rawMin), new Date(rawMax)])
       .nice(count);
     const [niceMin, niceMax] = scale.domain() as [Date, Date];
-    const ticks = scale.ticks(count).map(d => +d);
+    const ticks = this.tickValues
+      ? (this.tickValues as Array<Date | number | string>).map(v => +v)
+      : scale.ticks(count).map(d => +d);
     return { domain: [+niceMin, +niceMax] as [number, number], ticks };
   }
 
@@ -806,12 +813,16 @@ export class GanttChart extends CartesianChartBase {
 
   private _formatDateTick(ms: number, rangeMs: number): string {
     const date = new Date(ms);
+    if (this.tickFormat) {
+      return timeFormat(this.tickFormat)(date);
+    }
     const options: Intl.DateTimeFormatOptions =
-      rangeMs < 7 * 86_400_000
+      this.dateLocalizeOptions ??
+      (rangeMs < 7 * 86_400_000
         ? { month: 'short', day: 'numeric', hour: '2-digit' }
         : rangeMs < 365 * 86_400_000
         ? { month: 'short', day: 'numeric' }
-        : { year: 'numeric', month: 'short' };
+        : { year: 'numeric', month: 'short' });
     return new Intl.DateTimeFormat(this.culture || undefined, options).format(date);
   }
 
@@ -869,18 +880,30 @@ export class GanttChart extends CartesianChartBase {
           ? this._formatDateTick(tick, rangeMs)
           : formatAxisNumber(tick, this.culture);
 
+      const MAX_LABEL_CHARS = 10;
+      const displayLabel =
+        this.showXAxisLabelsTooltip && rawLabel.length > MAX_LABEL_CHARS
+          ? truncateText(rawLabel, MAX_LABEL_CHARS)
+          : rawLabel;
+      const isLabelTruncated = displayLabel !== rawLabel;
+
       const text = createSvgElement<SVGTextElement>('text');
       text.setAttribute('class', 'axis-text');
       text.setAttribute('x', `${x}`);
       text.setAttribute('y', `${labelY}`);
+      if (isLabelTruncated) {
+        const title = createSvgElement<SVGTitleElement>('title');
+        title.textContent = rawLabel;
+        text.appendChild(title);
+      }
 
       if (this.rotateXAxisLabels) {
         text.setAttribute('text-anchor', this._isRTL ? 'start' : 'end');
         text.setAttribute('transform', `rotate(-45, ${x}, ${labelY})`);
-        text.textContent = rawLabel;
+        text.textContent = displayLabel;
       } else if (this.wrapXAxisLabels) {
         text.setAttribute('text-anchor', 'middle');
-        const words = rawLabel.split(' ');
+        const words = displayLabel.split(' ');
         if (words.length > 1) {
           words.forEach((word, i) => {
             const tspan = createSvgElement<SVGTSpanElement>('tspan');
@@ -890,11 +913,11 @@ export class GanttChart extends CartesianChartBase {
             text.appendChild(tspan);
           });
         } else {
-          text.textContent = rawLabel;
+          text.textContent = displayLabel;
         }
       } else {
         text.setAttribute('text-anchor', 'middle');
-        text.textContent = rawLabel;
+        text.textContent = displayLabel;
       }
       axisLayer.appendChild(text);
     });

@@ -9,7 +9,7 @@ import {
   SVG_NAMESPACE_URI,
   validateChartPropsArray,
 } from '../utils/chart-helpers.js';
-import type { ChartDataPoint, ChartProps } from './horizontal-bar-chart.options.js';
+import type { HorizontalBarChartDataPoint, HorizontalBarChartProps } from './horizontal-bar-chart.options.js';
 import type { Legend } from '../utils/chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
 
@@ -29,7 +29,7 @@ export class HorizontalBarChart extends ChartBase {
   public variant?: Variant;
 
   @attr({ converter: jsonConverter })
-  public data!: ChartProps[];
+  public data!: HorizontalBarChartProps[];
 
   @attr({ attribute: 'hide-ratio', mode: 'boolean' })
   public hideRatio: boolean = false;
@@ -195,7 +195,7 @@ export class HorizontalBarChart extends ChartBase {
       });
   }
 
-  private _createSingleChartBars(singleChartData: ChartProps, index: number, nodes: any) {
+  private _createSingleChartBars(singleChartData: HorizontalBarChartProps, index: number, nodes: any) {
     const singleChartBars = this._createBarsAndLegends(singleChartData!, index);
 
     d3Select(nodes[index])
@@ -252,28 +252,36 @@ export class HorizontalBarChart extends ChartBase {
     return barSpacing;
   }
 
-  private _createBarsAndLegends(data: ChartProps, barNo?: number) {
+  private _createBarsAndLegends(data: HorizontalBarChartProps, barNo?: number) {
     const _isRTL = this._isRTL;
     const _computeLongestBarTotalValue = () => {
       let longestBarTotalValue = 0;
       this.data!.forEach(({ chartData }) => {
-        const barTotalValue = chartData!.reduce((acc: number, point: ChartDataPoint) => acc + (point.data ?? 0), 0);
+        const barTotalValue = chartData!.reduce(
+          (acc: number, point: HorizontalBarChartDataPoint) => acc + (point.data ?? 0),
+          0,
+        );
         longestBarTotalValue = Math.max(longestBarTotalValue, barTotalValue);
       });
       return longestBarTotalValue;
     };
     const longestBarTotalValue = _computeLongestBarTotalValue();
     const noOfBars =
-      data.chartData?.reduce((count: number, point: ChartDataPoint) => (count += (point.data || 0) > 0 ? 1 : 0), 0) ||
-      1;
+      data.chartData?.reduce(
+        (count: number, point: HorizontalBarChartDataPoint) => (count += (point.data || 0) > 0 ? 1 : 0),
+        0,
+      ) || 1;
     const barSpacingInPercent = this._calculateBarSpacing();
     const totalMarginPercent = barSpacingInPercent * (noOfBars - 1);
     const startingPoint: number[] = [];
-    const barTotalValue = data.chartData!.reduce((acc: number, point: ChartDataPoint) => acc + (point.data ?? 0), 0);
+    const barTotalValue = data.chartData!.reduce(
+      (acc: number, point: HorizontalBarChartDataPoint) => acc + (point.data ?? 0),
+      0,
+    );
     const total = this.variant === Variant.AbsoluteScale ? longestBarTotalValue : barTotalValue;
 
     let sumOfPercent = 0;
-    data.chartData!.map((point: ChartDataPoint) => {
+    data.chartData!.map((point: HorizontalBarChartDataPoint) => {
       const pointData = point.data ?? 0;
       const currValue = (pointData / total) * 100;
       let value = currValue ?? 0;
@@ -303,7 +311,7 @@ export class HorizontalBarChart extends ChartBase {
     let prevPosition = 0;
     let value = 0;
 
-    const createBars = (g: SVGGElement, point: ChartDataPoint, index: number) => {
+    const createBars = (g: SVGGElement, point: HorizontalBarChartDataPoint, index: number) => {
       const barHeight = this.barHeight;
       const pointData = point.data ?? 0;
       if (index > 0) {
@@ -431,7 +439,7 @@ export class HorizontalBarChart extends ChartBase {
     if (!this.hideLabels && showChartDataText) {
       const numData = data!.chartData![0].data ?? 0;
       const explicitTotal = data!.chartData![0].total;
-      const sumTotal = data!.chartData!.reduce((acc: number, p: ChartDataPoint) => acc + (p.data ?? 0), 0);
+      const sumTotal = data!.chartData!.reduce((acc: number, p: HorizontalBarChartDataPoint) => acc + (p.data ?? 0), 0);
       const barTotal = explicitTotal !== undefined ? explicitTotal : sumTotal;
 
       if (data.chartDataText) {

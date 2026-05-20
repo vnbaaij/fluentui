@@ -1067,3 +1067,117 @@ test.describe('HorizontalBarChartWithAxis - support-negative-data', () => {
     await expect(bars).toHaveCount(negativeData.length);
   });
 });
+
+test.describe('HorizontalBarChartWithAxis - tick-values', () => {
+  test('Should render exactly the provided tick values on the x-axis', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Tick values test"
+          tick-values='[0, 5000, 10000]'
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const axisLabels = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.axis-text');
+    await expect(axisLabels).toHaveCount(3);
+  });
+
+  test('Should update x-axis ticks when tick-values attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Tick values reactivity test"
+          tick-values='[0, 5000, 10000]'
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+
+    await expect(element.locator('.axis-text')).toHaveCount(3);
+
+    await element.evaluate(el => el.setAttribute('tick-values', '[0, 2500, 5000, 7500, 10000]'));
+    await page.waitForTimeout(50);
+
+    await expect(element.locator('.axis-text')).toHaveCount(5);
+  });
+});
+
+test.describe('HorizontalBarChartWithAxis - stroke-width', () => {
+  test('Should apply stroke-width attribute to bars', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Stroke width test"
+          stroke-width="2"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const bars = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.bar');
+    await expect(bars.nth(0)).toHaveAttribute('stroke-width', '2');
+    await expect(bars.nth(1)).toHaveAttribute('stroke-width', '2');
+    await expect(bars.nth(2)).toHaveAttribute('stroke-width', '2');
+    await expect(bars.nth(3)).toHaveAttribute('stroke-width', '2');
+  });
+
+  test('Should not set stroke-width when attribute is absent', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="No stroke width test"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const firstBar = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.bar').first();
+    await expect(firstBar).not.toHaveAttribute('stroke-width');
+  });
+});
+
+test.describe('HorizontalBarChartWithAxis - show-x-axis-labels-tooltip', () => {
+  test('Should truncate long x-axis labels and add title tooltip when enabled', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    // Use .10f format to produce labels > 10 chars (e.g. "0.0000000000")
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="X-axis labels tooltip test"
+          x-axis-tick-format=".10f"
+          show-x-axis-labels-tooltip
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const axisLabels = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.axis-text');
+    await expect(axisLabels.first()).not.toBeEmpty();
+    const titleCount = await axisLabels.first().locator('title').count();
+    expect(titleCount).toBe(1);
+  });
+
+  test('Should not add title tooltip when show-x-axis-labels-tooltip is absent', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="No x-axis labels tooltip test"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const axisLabels = page.locator('fluent-horizontal-bar-chart-with-axis').locator('.axis-text');
+    const firstTitleCount = await axisLabels.first().locator('title').count();
+    expect(firstTitleCount).toBe(0);
+  });
+});

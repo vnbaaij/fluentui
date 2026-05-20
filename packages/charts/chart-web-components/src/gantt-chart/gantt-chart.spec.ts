@@ -419,3 +419,187 @@ test.describe('GanttChart - bar-height', () => {
     await expect(firstBar).toHaveAttribute('height', '20');
   });
 });
+
+test.describe('GanttChart - tick-format', () => {
+  test('Should accept tick-format attribute without error (placeholder for future d3 support)', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+
+    const start = new Date('2024-03-01T00:00:00').getTime();
+    const end = new Date('2024-06-30T00:00:00').getTime();
+    const tasks = JSON.stringify([
+      { startTime: start, endTime: new Date('2024-04-01T00:00:00').getTime(), legendText: 'A', color: '#0078d4' },
+    ]);
+
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Tick format test"
+          tick-format="%m/%d"
+          data='${tasks}'
+          start-time='${start}'
+          end-time='${end}'
+        ></fluent-gantt-chart>
+      </div>
+    `);
+
+    const chart = page.locator('fluent-gantt-chart');
+    await expect(chart).toBeAttached();
+    await expect(chart).toHaveAttribute('tick-format', '%m/%d');
+  });
+});
+
+test.describe('GanttChart - tick-values', () => {
+  test('Should render exactly the provided tick values on the x-axis', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Tick values test"
+          tick-values='[5, 15, 25]'
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const axisLabels = page.locator('fluent-gantt-chart').locator('.axis-text');
+    await expect(axisLabels).toHaveCount(3);
+  });
+
+  test('Should update tick positions when tick-values attribute changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Tick values reactivity test"
+          tick-values='[5, 15, 25]'
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+
+    await expect(element.locator('.axis-text')).toHaveCount(3);
+
+    await element.evaluate(el => el.setAttribute('tick-values', '[0, 10, 20, 30]'));
+    await page.waitForTimeout(50);
+
+    await expect(element.locator('.axis-text')).toHaveCount(4);
+  });
+});
+
+test.describe('GanttChart - stroke-width', () => {
+  test('Should apply stroke-width attribute to bars', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Stroke width test"
+          stroke-width="3"
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const bars = page.locator('fluent-gantt-chart').locator('.bar');
+    await expect(bars.nth(0)).toHaveAttribute('stroke-width', '3');
+    await expect(bars.nth(1)).toHaveAttribute('stroke-width', '3');
+    await expect(bars.nth(2)).toHaveAttribute('stroke-width', '3');
+  });
+
+  test('Should not set stroke-width when attribute is absent', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="No stroke width test"
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const firstBar = page.locator('fluent-gantt-chart').locator('.bar').first();
+    await expect(firstBar).not.toHaveAttribute('stroke-width');
+  });
+});
+
+test.describe('GanttChart - show-x-axis-labels-tooltip', () => {
+  test('Should truncate long x-axis labels and add title tooltip when enabled', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    // Use .10f format to produce labels > 10 chars (e.g. "0.0000000000")
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="X-axis labels tooltip test"
+          x-axis-tick-format=".10f"
+          show-x-axis-labels-tooltip
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const axisLabels = page.locator('fluent-gantt-chart').locator('.axis-text');
+    await expect(axisLabels.first()).not.toBeEmpty();
+    // Every x-axis tick label should have a <title> child (tooltip)
+    const titleCount = await axisLabels.first().locator('title').count();
+    expect(titleCount).toBe(1);
+  });
+
+  test('Should not add title tooltip when show-x-axis-labels-tooltip is absent', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="No x-axis labels tooltip test"
+          data='${JSON.stringify(basicData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const axisLabels = page.locator('fluent-gantt-chart').locator('.axis-text');
+    const firstTitleCount = await axisLabels.first().locator('title').count();
+    expect(firstTitleCount).toBe(0);
+  });
+});
+
+test.describe('GanttChart - date-localize-options', () => {
+  const dateData: GanttChartDataPoint[] = [
+    { x: { start: '2009-01-01', end: '2009-02-28' }, y: 'Alpha', legend: 'Phase 1', color: color1 },
+    { x: { start: '2009-03-05', end: '2009-06-15' }, y: 'Beta', legend: 'Phase 2', color: color2 },
+  ];
+
+  test('Should use provided dateLocalizeOptions when formatting date axis ticks', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Date localize options test"
+          date-localize-options='{"year":"numeric","month":"long"}'
+          data='${JSON.stringify(dateData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const axisLabels = page.locator('fluent-gantt-chart').locator('.axis-text');
+    await expect(axisLabels.first()).not.toBeEmpty();
+    // With month:"long", labels should contain full month names (e.g. "January")
+    const allText = await axisLabels.allTextContents();
+    const hasLongMonth = allText.some(t =>
+      [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ].some(m => t.includes(m)),
+    );
+    expect(hasLongMonth).toBe(true);
+  });
+});
