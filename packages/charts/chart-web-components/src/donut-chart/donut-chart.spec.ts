@@ -182,10 +182,10 @@ test.describe('Donut-chart - Reactive rerender', () => {
     await expect(element.locator('.arc')).toHaveCount(2);
 
     const newData: DonutDataPoint[] = [
-        { legend: 'alpha', data: 10000 },
-        { legend: 'beta', data: 20000 },
-        { legend: 'gamma', data: 30000 },
-      ];
+      { legend: 'alpha', data: 10000 },
+      { legend: 'beta', data: 20000 },
+      { legend: 'gamma', data: 30000 },
+    ];
 
     await element.evaluate((el, d) => {
       el.setAttribute('chart-title', 'Updated chart');
@@ -419,10 +419,10 @@ test.describe('Donut-chart - hide-legends', () => {
 
 test.describe('Donut-chart - allow-multiple-legend-selection', () => {
   const multiData: DonutDataPoint[] = [
-      { legend: 'first', data: 20000 },
-      { legend: 'second', data: 39000 },
-      { legend: 'third', data: 15000 },
-    ];
+    { legend: 'first', data: 20000 },
+    { legend: 'second', data: 39000 },
+    { legend: 'third', data: 15000 },
+  ];
 
   test.beforeEach(async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
@@ -598,9 +598,9 @@ test.describe('Donut-chart - order', () => {
 
   test('uses chart-title attr and calloutData for highlighted center text', async ({ page }) => {
     const calloutData: DonutDataPoint[] = [
-        { legend: 'first', data: 20000, calloutData: '20K highlighted' },
-        { legend: 'second', data: 39000 },
-      ];
+      { legend: 'first', data: 20000, calloutData: '20K highlighted' },
+      { legend: 'second', data: 39000 },
+    ];
 
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
@@ -697,9 +697,9 @@ test.describe('Donut-chart - culture', () => {
 
   test('Should format tooltip callout value using the specified culture', async ({ page }) => {
     const cultureData: DonutDataPoint[] = [
-        { legend: 'first', data: 1234.5 },
-        { legend: 'second', data: 5678.9 },
-      ];
+      { legend: 'first', data: 1234.5 },
+      { legend: 'second', data: 5678.9 },
+    ];
 
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
@@ -1106,5 +1106,49 @@ test.describe('Donut-chart - title-position', () => {
     const element = page.locator('fluent-donut-chart');
     await element.evaluate(el => el.setAttribute('title-position', 'bottom'));
     await expect(element).toHaveAttribute('title-position', 'bottom');
+  });
+});
+
+test.describe('DonutChart - tooltipRenderer', () => {
+  test('Should inject custom renderer output into tooltip-body', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="tooltipRenderer test"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+    const element = page.locator('fluent-donut-chart');
+
+    await element.evaluate((el: any) => {
+      el.tooltipRenderer = (_point: any, defaultRender: any) =>
+        `<span class="custom-tip">${defaultRender(_point)}</span>`;
+    });
+
+    await element.getByLabel('first,').dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip-body .custom-tip')).toBeVisible();
+  });
+
+  test('Should show default tooltip-body when tooltipRenderer is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="default tooltip test"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+    const element = page.locator('fluent-donut-chart');
+
+    await element.getByLabel('first,').dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip')).toHaveCount(1);
+    await expect(element.locator('.tooltip-body')).toBeVisible();
   });
 });

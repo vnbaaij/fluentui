@@ -6,6 +6,7 @@ import type {
   ChartTitlePosition,
   Legend,
   TooltipProps,
+  TooltipRenderer,
 } from './chart.options.js';
 import { getRTL } from './chart-helpers.js';
 
@@ -84,12 +85,69 @@ export abstract class ChartBase extends FASTElement {
   @observable
   public liveRegionText: string = '';
 
+  /**
+   * Optional function to customize the tooltip content.
+   *
+   * When set, the function receives the current data point and a `defaultRender` callback.
+   * Return either an HTML string or a DOM Node to replace the default tooltip body.
+   *
+   * @example
+   * ```ts
+   * chart.tooltipRenderer = (point, defaultRender) =>
+   *   `<strong>${point.legend}</strong><br>${defaultRender(point)}`;
+   * ```
+   */
+  public tooltipRenderer?: TooltipRenderer<unknown>;
+
+  /** The data point for the tooltip that is currently visible (or was last visible). */
+  protected _currentTooltipDataPoint: unknown = null;
+
   protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void {
     if (newValue.isVisible && !this.hideTooltip) {
       this.liveRegionText = [newValue.legend, newValue.yValue].filter(Boolean).join(': ');
+      if (this.tooltipRenderer) {
+        requestAnimationFrame(() => {
+          const el = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-body');
+          if (!el) return;
+          const result = this.tooltipRenderer!(this._currentTooltipDataPoint, (p: unknown) =>
+            this._buildDefaultTooltipHTML(p),
+          );
+          el.innerHTML = '';
+          if (typeof result === 'string') {
+            el.innerHTML = result;
+          } else {
+            el.appendChild(result);
+          }
+        });
+      }
     } else {
       this.liveRegionText = '';
     }
+  }
+
+  /**
+   * Builds the default HTML string for the tooltip body.
+   * Subclasses with a richer tooltip structure should override this.
+   */
+  protected _buildDefaultTooltipHTML(_dataPoint: unknown): string {
+    const p = this.tooltipProps;
+    return [
+      `<div class="tooltip-inner" style="border-color: ${ChartBase._escapeHtml(p.color)};">`,
+      `<div class="tooltip-legend-text">${ChartBase._escapeHtml(p.legend)}</div>`,
+      `<div class="tooltip-content-y" style="color: ${ChartBase._escapeHtml(p.color)};">${ChartBase._escapeHtml(
+        p.yValue,
+      )}</div>`,
+      `</div>`,
+    ].join('');
+  }
+
+  private static _escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   // ── Public refs ──────────────────────────────────────────────────

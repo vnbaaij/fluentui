@@ -701,3 +701,30 @@ export const DateLocalizeOptions: Story<FluentGanttChart> = () => {
   container.appendChild(chart);
   return container;
 };
+
+export const TooltipRendererStory: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a bar — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart — custom tooltipRenderer';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+  chart.tooltipRenderer = (point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = `<strong>${point.legend ?? ''}</strong><br>${defaultRender(point)}`;
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '420px' } } };

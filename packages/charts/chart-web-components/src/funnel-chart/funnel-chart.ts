@@ -1,7 +1,7 @@
 import { attr, nullableNumberConverter } from '@microsoft/fast-element';
 import { ChartBase } from '../utils/chart-base.js';
 import { getColorFromToken, getNextColor, jsonConverter, SVG_NAMESPACE_URI } from '../utils/chart-helpers.js';
-import type { Legend } from '../utils/chart.options.js';
+import type { Legend, TooltipRenderer } from '../utils/chart.options.js';
 import type { FunnelDataPoint, FunnelSubValue } from './funnel-chart.options.js';
 import {
   buildStackedGeometryParams,
@@ -48,6 +48,9 @@ export class FunnelChart extends ChartBase {
 
   public svgElement!: SVGSVGElement;
   public group!: SVGGElement;
+
+  /** Narrows the inherited base tooltipRenderer type to funnel data point fields. */
+  public declare tooltipRenderer: TooltipRenderer<{ legend: string; yValue: string; color: string }> | undefined;
 
   private _segments: SVGPathElement[] = [];
   private _segmentTexts: SVGTextElement[] = [];
@@ -371,6 +374,7 @@ export class FunnelChart extends ChartBase {
 
   private _showTooltip(legend: string, yValue: string, color: string, event: MouseEvent) {
     const bounds = this.getBoundingClientRect();
+    this._currentTooltipDataPoint = { legend, yValue, color };
     this.tooltipProps = {
       isVisible: true,
       legend,
@@ -384,6 +388,7 @@ export class FunnelChart extends ChartBase {
   private _showTooltipForElement(legend: string, yValue: string, color: string, el: SVGPathElement) {
     const rootBounds = this.getBoundingClientRect();
     const elBounds = el.getBoundingClientRect();
+    this._currentTooltipDataPoint = { legend, yValue, color };
     this.tooltipProps = {
       isVisible: true,
       legend,
