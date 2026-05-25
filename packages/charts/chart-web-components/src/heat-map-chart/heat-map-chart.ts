@@ -283,6 +283,10 @@ export class HeatMapChart extends CartesianChartBase {
   // ── Legend interaction ────────────────────────────────────────────────────
 
   protected _applyActiveLegendState(): void {
+    if (!this._renderedCells) {
+      return;
+    }
+
     const highlighted = this._getHighlightedLegends();
     this._renderedCells.forEach(cell => {
       const legend = cell.dataset.legend ?? '';
