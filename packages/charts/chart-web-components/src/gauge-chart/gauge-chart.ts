@@ -273,6 +273,10 @@ export class GaugeChart extends ChartBase {
   }
 
   protected _applyActiveLegendState() {
+    if (!this._segmentEls) {
+      return;
+    }
+
     const highlighted = this._getHighlightedLegends();
 
     if (highlighted.length === 0) {
