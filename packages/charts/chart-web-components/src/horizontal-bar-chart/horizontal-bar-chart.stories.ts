@@ -1016,3 +1016,26 @@ export const BarHeight: Story<FluentHorizontalBarChart> = () => {
   return container;
 };
 BarHeight.parameters = { docs: { story: { height: '420px' } } };
+
+export const TooltipRendererStory: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a bar — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.data = data;
+  chart.tooltipRenderer = (point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = `<strong>${(point as any).legend ?? ''}</strong><br>${defaultRender(point)}`;
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };

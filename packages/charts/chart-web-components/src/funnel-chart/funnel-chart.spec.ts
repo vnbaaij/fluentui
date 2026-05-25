@@ -388,3 +388,49 @@ test.describe('FunnelChart - title-position', () => {
     await expect(element).toHaveAttribute('title-position', 'bottom');
   });
 });
+
+test.describe('FunnelChart - tooltipRenderer', () => {
+  test('Should inject custom renderer output into tooltip-body', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="tooltipRenderer test"
+          width="350"
+          height="400"
+          data='${JSON.stringify(simpleData)}'>
+        </fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+    const element = page.locator('fluent-funnel-chart');
+
+    await element.evaluate((el: any) => {
+      el.tooltipRenderer = (_point: any, defaultRender: any) =>
+        `<span class="custom-tip">${defaultRender(_point)}</span>`;
+    });
+
+    await element.locator('.funnel-segment').first().dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip-body .custom-tip')).toBeVisible();
+  });
+
+  test('Should show default tooltip-body when tooltipRenderer is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="default tooltip test"
+          width="350"
+          height="400"
+          data='${JSON.stringify(simpleData)}'>
+        </fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+    const element = page.locator('fluent-funnel-chart');
+
+    await element.locator('.funnel-segment').first().dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip')).toHaveCount(1);
+    await expect(element.locator('.tooltip-body')).toBeVisible();
+  });
+});

@@ -603,3 +603,45 @@ test.describe('GanttChart - date-localize-options', () => {
     expect(hasLongMonth).toBe(true);
   });
 });
+
+test.describe('GanttChart - tooltipRenderer', () => {
+  test('Should inject custom renderer output into tooltip-body', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="tooltipRenderer test"
+          data='${JSON.stringify(basicData)}'
+        ></fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+
+    await element.evaluate((el: any) => {
+      el.tooltipRenderer = (_point: any, defaultRender: any) =>
+        `<span class="custom-tip">${defaultRender(_point)}</span>`;
+    });
+
+    await element.locator('.bar').first().hover();
+    await expect(element.locator('.tooltip-body .custom-tip')).toBeVisible();
+  });
+
+  test('Should show default tooltip-body when tooltipRenderer is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="default tooltip test"
+          data='${JSON.stringify(basicData)}'
+        ></fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+
+    await element.locator('.bar').first().hover();
+    await expect(element.locator('.tooltip')).toHaveCount(1);
+    await expect(element.locator('.tooltip-body')).toBeVisible();
+  });
+});

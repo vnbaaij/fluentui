@@ -655,3 +655,29 @@ export const RoundedCorners: Story<FluentFunnelChart> = () => {
   return container;
 };
 RoundedCorners.parameters = { docs: { story: { height: '440px' } } };
+
+export const TooltipRendererStory: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a segment — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Funnel Chart — custom tooltipRenderer');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
+  (chart as any).tooltipRenderer = (_point: any, defaultRender: any) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
