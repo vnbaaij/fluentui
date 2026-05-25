@@ -336,10 +336,12 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     const p = this.tooltipProps;
     const esc = (s: string) =>
       s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const legendLine =
+      p.legend && p.legend !== p.yValue ? `<div class="tooltip-legend-text">${esc(p.legend)}</div>` : '';
     return [
       `<div class="tooltip-header">${esc(p.yValue)}</div>`,
       `<div class="tooltip-info" style="border-color: ${esc(p.color)};">`,
-      `<div class="tooltip-legend-text">${esc(p.legend)}</div>`,
+      legendLine,
       `<div class="tooltip-primary-value" style="color: ${esc(p.color)};">` +
         `${esc((p as HBCWATooltipProps).xValue)}</div>`,
       `</div>`,
@@ -1086,7 +1088,7 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
       isVisible: true,
       legend: point.legend || '',
       xLabel: X_AXIS_LABEL,
-      xValue: point.xAxisCalloutData || formatAxisNumber(point.x, this.culture),
+      xValue: point.xAxisCalloutData || formatCompactNumber(point.x, this.culture),
       yLabel: Y_AXIS_LABEL,
       yValue: point.yAxisCalloutData || String(point.y),
       color,

@@ -50,7 +50,8 @@ export class FunnelChart extends ChartBase {
   public group!: SVGGElement;
 
   /** Narrows the inherited base tooltipRenderer type to funnel data point fields. */
-  public declare tooltipRenderer: TooltipRenderer<{ legend: string; yValue: string; color: string }> | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public declare tooltipRenderer: TooltipRenderer<FunnelDataPoint> | undefined;
 
   private _segments: SVGPathElement[] = [];
   private _segmentTexts: SVGTextElement[] = [];
@@ -374,7 +375,10 @@ export class FunnelChart extends ChartBase {
 
   private _showTooltip(legend: string, yValue: string, color: string, event: MouseEvent) {
     const bounds = this.getBoundingClientRect();
-    this._currentTooltipDataPoint = { legend, yValue, color };
+    const current = this._currentTooltipDataPoint as { legend: string; yValue: string; color: string } | null;
+    if (!current || current.legend !== legend || current.yValue !== yValue || current.color !== color) {
+      this._currentTooltipDataPoint = { legend, yValue, color };
+    }
     this.tooltipProps = {
       isVisible: true,
       legend,

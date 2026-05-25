@@ -75,4 +75,4 @@ export interface TooltipProps {
  *
  * @public
  */
-export type TooltipRenderer<T> = (dataPoint: T, defaultRender: (point: T) => string) => string | Node;
+export type TooltipRenderer<T> = (dataPoint: T, defaultRender: (point: T) => string) => string | Node | Promise<string | Node>;
