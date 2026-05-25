@@ -634,3 +634,28 @@ export const TitleAndLegendPositions: Story<FluentDonutChart> = () => {
   return container;
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
+
+export const TooltipRendererStory: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a slice — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.data = data;
+  chart.chartTitle = 'Donut Chart — custom tooltipRenderer';
+  chart.innerRadius = 55;
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };

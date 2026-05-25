@@ -1680,3 +1680,41 @@ test.describe('Horizontal-bar-chart - bar-height', () => {
     await expect(firstBar).toHaveAttribute('height', '24');
   });
 });
+
+test.describe('HorizontalBarChart - tooltipRenderer', () => {
+  test('Should inject custom renderer output into tooltip-body', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+    const element = page.locator('fluent-horizontal-bar-chart');
+
+    await element.evaluate((el: any) => {
+      el.tooltipRenderer = (_point: any, defaultRender: any) =>
+        `<span class="custom-tip">${defaultRender(_point)}</span>`;
+    });
+
+    await element.locator('.bar').first().dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip-body .custom-tip')).toBeVisible();
+  });
+
+  test('Should show default tooltip-body when tooltipRenderer is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+    const element = page.locator('fluent-horizontal-bar-chart');
+
+    await element.locator('.bar').first().dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip')).toHaveCount(1);
+    await expect(element.locator('.tooltip-body')).toBeVisible();
+  });
+});

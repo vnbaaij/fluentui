@@ -1181,3 +1181,45 @@ test.describe('HorizontalBarChartWithAxis - show-x-axis-labels-tooltip', () => {
     expect(firstTitleCount).toBe(0);
   });
 });
+
+test.describe('HorizontalBarChartWithAxis - tooltipRenderer', () => {
+  test('Should inject custom renderer output into tooltip-body', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="tooltipRenderer test"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+
+    await element.evaluate((el: any) => {
+      el.tooltipRenderer = (_point: any, defaultRender: any) =>
+        `<span class="custom-tip">${defaultRender(_point)}</span>`;
+    });
+
+    await element.locator('.bar').first().hover();
+    await expect(element.locator('.tooltip-body .custom-tip')).toBeVisible();
+  });
+
+  test('Should show default tooltip-body when tooltipRenderer is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="default tooltip test"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+
+    await element.locator('.bar').first().hover();
+    await expect(element.locator('.tooltip')).toHaveCount(1);
+    await expect(element.locator('.tooltip-body')).toBeVisible();
+  });
+});
