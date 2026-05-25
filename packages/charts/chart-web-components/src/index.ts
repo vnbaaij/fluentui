@@ -1,5 +1,7 @@
 export { ChartLegend, ChartLegendDefinition, ChartLegendStyles, ChartLegendTemplate } from './chart-legend/index.js';
 export { DonutChart, DonutChartDefinition, DonutChartStyles, DonutChartTemplate } from './donut-chart/index.js';
+export { GaugeChart, GaugeChartDefinition, GaugeChartStyles, GaugeChartTemplate } from './gauge-chart/index.js';
+export type { GaugeChartSegment, GaugeChartVariant, GaugeValueFormat } from './gauge-chart/index.js';
 export {
   HorizontalBarChart,
   HorizontalBarChartDefinition,

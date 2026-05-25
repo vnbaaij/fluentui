@@ -9,92 +9,72 @@ import { ElementViewTemplate } from '@microsoft/fast-element';
 import { FASTElement } from '@microsoft/fast-element';
 import { FASTElementDefinition } from '@microsoft/fast-element';
 
+// @public
+export class ChartLegend extends FASTElement {
+    // (undocumented)
+    connectedCallback(): void;
+    _handleLegendKeydown(e: KeyboardEvent): boolean;
+    highlighted: string[];
+    // Warning: (ae-forgotten-export) The symbol "Legend" needs to be exported by the entry point index.d.ts
+    items: Legend[];
+    label?: string;
+    // Warning: (ae-forgotten-export) The symbol "ChartLegendPosition" needs to be exported by the entry point index.d.ts
+    position?: ChartLegendPosition;
+    selected: string[];
+}
+
+// @public (undocumented)
+export const ChartLegendDefinition: FASTElementDefinition<typeof ChartLegend>;
+
+// @public
+export const ChartLegendStyles: ElementStyles;
+
+// Warning: (ae-internal-missing-underscore) The name "ChartLegendTemplate" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal (undocumented)
+export const ChartLegendTemplate: ElementViewTemplate<ChartLegend>;
+
+// Warning: (ae-forgotten-export) The symbol "ChartBase" needs to be exported by the entry point index.d.ts
 // Warning: (ae-missing-release-tag) "DonutChart" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export class DonutChart extends FASTElement {
-    constructor();
+export class DonutChart extends ChartBase {
     // (undocumented)
-    activeLegend: string;
-    // (undocumented)
-    protected activeLegendChanged(oldValue: string, newValue: string): void;
-    // (undocumented)
-    chartContainer: HTMLDivElement;
-    // (undocumented)
-    chartTitle?: string;
-    // (undocumented)
-    protected chartTitleChanged(): void;
+    protected _applyActiveLegendState(): void;
     // (undocumented)
     connectedCallback(): void;
-    // (undocumented)
-    culture?: string;
-    // (undocumented)
-    protected cultureChanged(): void;
-    // Warning: (ae-forgotten-export) The symbol "ChartProps_2" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "DonutDataPoint" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    data: ChartProps_2;
+    data: DonutDataPoint[];
     // (undocumented)
-    protected dataChanged(_oldValue: ChartProps_2, newValue: ChartProps_2): void;
+    protected dataChanged(): void;
     // (undocumented)
     disconnectedCallback(): void;
     // (undocumented)
-    elementInternals: ElementInternals;
+    protected _getHostAriaLabel(): string;
     // (undocumented)
     group: SVGGElement;
-    // (undocumented)
-    handleLegendClick(legendTitle: string): void;
-    // (undocumented)
-    handleLegendMouseoutAndBlur(): void;
-    // (undocumented)
-    handleLegendMouseoverAndFocus(legendTitle: string): void;
     // (undocumented)
     height: number;
     // (undocumented)
     protected heightChanged(): void;
     // (undocumented)
-    hideLabels: boolean;
-    // (undocumented)
-    protected hideLabelsChanged(): void;
-    // (undocumented)
-    hideLegends: boolean;
-    // (undocumented)
-    hideTooltip: boolean;
-    // (undocumented)
     innerRadius: number;
     // (undocumented)
     protected innerRadiusChanged(): void;
-    // (undocumented)
-    isLegendSelected: boolean;
-    // (undocumented)
-    legendListLabel?: string;
-    // Warning: (ae-forgotten-export) The symbol "Legend" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    legends: Legend[];
     // (undocumented)
     order: 'default' | 'sorted';
     // (undocumented)
     protected orderChanged(): void;
     // (undocumented)
-    roundCorners: boolean;
-    // (undocumented)
-    protected roundCornersChanged(): void;
+    protected _performRender(): void;
     // (undocumented)
     showLabelsInPercent: boolean;
     // (undocumented)
     protected showLabelsInPercentChanged(): void;
     // (undocumented)
-    tooltipProps: {
-        isVisible: boolean;
-        legend: string;
-        yValue: string;
-        color: string;
-        xPos: number;
-        yPos: number;
-    };
-    // (undocumented)
-    protected tooltipPropsChanged(oldValue: any, newValue: any): void;
+    protected tooltipPropsChanged(_oldValue: any, _newValue: any): void;
     // (undocumented)
     valueInsideDonut?: string;
     // (undocumented)
@@ -117,75 +97,281 @@ export const DonutChartStyles: ElementStyles;
 export const DonutChartTemplate: ElementViewTemplate<DonutChart>;
 
 // @public
-export class HorizontalBarChart extends FASTElement {
-    constructor();
+export class FunnelChart extends ChartBase {
     // (undocumented)
-    activeLegend: string;
-    // (undocumented)
-    protected activeLegendChanged: (oldValue: string, newValue: string) => void;
-    // (undocumented)
-    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void;
-    // (undocumented)
-    chartContainer: HTMLDivElement;
-    // (undocumented)
-    chartDataMode: 'default' | 'fraction' | 'percentage';
-    // (undocumented)
-    chartTitle?: string;
-    // (undocumented)
-    protected chartTitleChanged(): void;
+    protected _applyActiveLegendState(): void;
     // (undocumented)
     connectedCallback(): void;
-    // Warning: (ae-forgotten-export) The symbol "ChartProps" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "FunnelDataPoint" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    data: ChartProps[];
+    data: FunnelDataPoint[];
     // (undocumented)
-    protected dataChanged(_oldValue: ChartProps[], newValue: ChartProps[]): void;
+    protected dataChanged(): void;
     // (undocumented)
-    elementInternals: ElementInternals;
+    disconnectedCallback(): void;
     // (undocumented)
-    handleLegendClick: (legendTitle: string) => void;
+    protected _getHostAriaLabel(): string;
     // (undocumented)
-    handleLegendMouseoutAndBlur: () => void;
+    group: SVGGElement;
     // (undocumented)
-    handleLegendMouseoverAndFocus: (legendTitle: string) => void;
+    height: number;
+    // (undocumented)
+    protected heightChanged(): void;
+    // (undocumented)
+    orientation: 'vertical' | 'horizontal';
+    // (undocumented)
+    protected orientationChanged(): void;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    svgElement: SVGSVGElement;
+    // (undocumented)
+    width: number;
+    // (undocumented)
+    protected widthChanged(): void;
+}
+
+// @public (undocumented)
+export const FunnelChartDefinition: FASTElementDefinition<typeof FunnelChart>;
+
+// @public
+export const FunnelChartStyles: ElementStyles;
+
+// Warning: (ae-internal-missing-underscore) The name "FunnelChartTemplate" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal (undocumented)
+export const FunnelChartTemplate: ElementViewTemplate<FunnelChart>;
+
+// Warning: (ae-forgotten-export) The symbol "CartesianChartBase" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "GanttChart" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export class GanttChart extends CartesianChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    protected _applyHostDimensions(): void;
+    // (undocumented)
+    barHeight?: number | string;
+    // (undocumented)
+    protected barHeightChanged(): void;
+    // (undocumented)
+    protected _clearTooltip(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // Warning: (ae-forgotten-export) The symbol "GanttChartDataPoint" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    data: GanttChartDataPoint[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
     // (undocumented)
     height?: number | string;
     // (undocumented)
     protected heightChanged(): void;
     // (undocumented)
-    hideLabels: boolean;
+    protected _performRender(): void;
     // (undocumented)
-    hideLegends: boolean;
+    showYAxisLabels: boolean;
+    // (undocumented)
+    protected showYAxisLabelsChanged(): void;
+    // (undocumented)
+    showYAxisLabelsTooltip: boolean;
+    // (undocumented)
+    protected showYAxisLabelsTooltipChanged(): void;
+    // (undocumented)
+    get tooltipInlineTransform(): "translateX(50%)" | "translateX(-50%)";
+    // Warning: (ae-forgotten-export) The symbol "GanttTooltipProps" needs to be exported by the entry point index.d.ts
+    tooltipProps: GanttTooltipProps;
+    // Warning: (ae-forgotten-export) The symbol "TooltipProps" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void;
+    // (undocumented)
+    width?: number | string;
+    // (undocumented)
+    protected widthChanged(): void;
+    // (undocumented)
+    xAxisTickCount?: number | string;
+    // (undocumented)
+    protected xAxisTickCountChanged(): void;
+    // Warning: (ae-forgotten-export) The symbol "AxisCategoryOrder" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    yAxisCategoryOrder: AxisCategoryOrder;
+    // (undocumented)
+    protected yAxisCategoryOrderChanged(): void;
+    // (undocumented)
+    yAxisPadding?: number | string;
+    // (undocumented)
+    protected yAxisPaddingChanged(): void;
+    // (undocumented)
+    yAxisTickCount?: number | string;
+    // (undocumented)
+    protected yAxisTickCountChanged(): void;
+}
+
+// @public (undocumented)
+export const GanttChartDefinition: FASTElementDefinition<typeof GanttChart>;
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const GanttChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const GanttChartTemplate: ElementViewTemplate<GanttChart>;
+
+// Warning: (ae-missing-release-tag) "GaugeChart" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export class GaugeChart extends ChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    chartValue: number;
+    // (undocumented)
+    protected chartValueChanged(): void;
+    // (undocumented)
+    chartValueFormat?: GaugeValueFormat;
+    // (undocumented)
+    protected chartValueFormatChanged(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    disconnectedCallback(): void;
+    // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // Warning: (ae-forgotten-export) The symbol "GaugeTooltipProps" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    gaugeTooltipProps: GaugeTooltipProps;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    group: SVGGElement;
+    // (undocumented)
+    height: number;
+    // (undocumented)
+    protected heightChanged(): void;
+    // (undocumented)
+    hideMinMax: boolean;
+    // (undocumented)
+    protected hideMinMaxChanged(): void;
+    // (undocumented)
+    maxValue?: number;
+    // (undocumented)
+    protected maxValueChanged(): void;
+    // (undocumented)
+    minValue: number;
+    // (undocumented)
+    protected minValueChanged(): void;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    segments: GaugeChartSegment[];
+    // (undocumented)
+    protected segmentsChanged(): void;
+    // (undocumented)
+    sublabel?: string;
+    // (undocumented)
+    protected sublabelChanged(): void;
+    // (undocumented)
+    svgDefsEl: SVGDefsElement;
+    // (undocumented)
+    variant?: GaugeChartVariant;
+    // (undocumented)
+    protected variantChanged(): void;
+    // (undocumented)
+    width: number;
+    // (undocumented)
+    protected widthChanged(): void;
+}
+
+// @public (undocumented)
+export const GaugeChartDefinition: FASTElementDefinition<typeof GaugeChart>;
+
+// @public
+export interface GaugeChartSegment {
+    color?: string;
+    gradient?: [string, string];
+    legend: string;
+    size: number;
+}
+
+// @public
+export const GaugeChartStyles: ElementStyles;
+
+// Warning: (ae-internal-missing-underscore) The name "GaugeChartTemplate" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal (undocumented)
+export const GaugeChartTemplate: ElementViewTemplate<GaugeChart>;
+
+// @public
+export type GaugeChartVariant = 'single-segment' | 'multiple-segments';
+
+// @public
+export type GaugeValueFormat = 'percentage' | 'fraction';
+
+// @public
+export class HorizontalBarChart extends ChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    protected _applyHostDimensions(): void;
+    // (undocumented)
+    barHeight: number;
+    // (undocumented)
+    protected barHeightChanged(): void;
+    // (undocumented)
+    chartDataMode: 'default' | 'fraction' | 'percentage';
+    // (undocumented)
+    protected chartDataModeChanged(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // Warning: (ae-forgotten-export) The symbol "HorizontalBarChartProps" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    data: HorizontalBarChartProps[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    height?: number | string;
+    // (undocumented)
+    protected heightChanged(): void;
     // (undocumented)
     hideRatio: boolean;
     // (undocumented)
-    hideTooltip: boolean;
+    protected hideRatioChanged(): void;
     // (undocumented)
-    isLegendSelected: boolean;
-    // (undocumented)
-    legendListLabel?: string;
-    // (undocumented)
-    roundCorners: boolean;
-    // (undocumented)
-    protected roundCornersChanged(): void;
-    // (undocumented)
-    tooltipProps: {
-        isVisible: boolean;
-        legend: string;
-        yValue: string;
-        color: string;
-        xPos: number;
-        yPos: number;
-    };
-    // Warning: (ae-forgotten-export) The symbol "ChartDataPoint" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    uniqueLegends: ChartDataPoint[];
+    protected _performRender(): void;
     // Warning: (ae-forgotten-export) The symbol "Variant" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
     variant?: Variant;
+    // (undocumented)
+    protected variantChanged(): void;
     // (undocumented)
     width?: number | string;
     // (undocumented)
@@ -206,31 +392,19 @@ export const HorizontalBarChartTemplate: ElementViewTemplate<HorizontalBarChart>
 // Warning: (ae-missing-release-tag) "HorizontalBarChartWithAxis" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export class HorizontalBarChartWithAxis extends FASTElement {
+export class HorizontalBarChartWithAxis extends CartesianChartBase {
     // (undocumented)
-    activeLegend: string;
+    protected _applyActiveLegendState(): void;
     // (undocumented)
-    protected activeLegendChanged(): void;
-    // (undocumented)
-    allowMultipleLegendSelection: boolean;
-    // (undocumented)
-    protected allowMultipleLegendSelectionChanged(): void;
-    // (undocumented)
-    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void;
+    protected _applyHostDimensions(): void;
     // (undocumented)
     barHeight?: number | string;
     // (undocumented)
     protected barHeightChanged(): void;
     // (undocumented)
-    chartContainer: HTMLDivElement;
-    // (undocumented)
-    chartTitle?: string;
-    // (undocumented)
-    protected chartTitleChanged(): void;
+    protected _clearTooltip(): void;
     // (undocumented)
     connectedCallback(): void;
-    // (undocumented)
-    culture?: string;
     // Warning: (ae-forgotten-export) The symbol "HorizontalBarChartWithAxisDataPoint" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -238,43 +412,19 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
-    disconnectedCallback(): void;
-    // (undocumented)
-    elementInternals: ElementInternals;
-    // (undocumented)
     enableGradient: boolean;
     // (undocumented)
     protected enableGradientChanged(): void;
     // (undocumented)
-    handleLegendClick: (legendTitle: string) => void;
+    protected _enableResizeObserver: boolean;
     // (undocumented)
-    handleLegendMouseoutAndBlur: () => void;
-    // (undocumented)
-    handleLegendMouseoverAndFocus: (legendTitle: string) => void;
+    protected _getHostAriaLabel(): string;
     // (undocumented)
     height?: number | string;
     // (undocumented)
-    hideLabels: boolean;
+    protected heightChanged(): void;
     // (undocumented)
-    protected hideLabelsChanged(): void;
-    // (undocumented)
-    hideLegends: boolean;
-    // (undocumented)
-    hideTooltip: boolean;
-    // (undocumented)
-    isLegendDimmed(legendTitle: string): boolean;
-    // (undocumented)
-    isLegendSelected(legendTitle: string): boolean;
-    // (undocumented)
-    legendListLabel?: string;
-    // (undocumented)
-    roundCorners: boolean;
-    // (undocumented)
-    protected roundCornersChanged(): void;
-    // (undocumented)
-    selectedLegends: string[];
-    // (undocumented)
-    protected selectedLegendsChanged(): void;
+    protected _performRender(): void;
     // (undocumented)
     showYAxisLabels: boolean;
     // (undocumented)
@@ -285,14 +435,10 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     protected showYAxisLabelsTooltipChanged(): void;
     // (undocumented)
     get tooltipInlineTransform(): "translateX(50%)" | "translateX(-50%)";
-    // Warning: (ae-forgotten-export) The symbol "TooltipProps" needs to be exported by the entry point index.d.ts
-    //
+    // Warning: (ae-forgotten-export) The symbol "HBCWATooltipProps" needs to be exported by the entry point index.d.ts
+    tooltipProps: HBCWATooltipProps;
     // (undocumented)
-    tooltipProps: TooltipProps;
-    // Warning: (ae-forgotten-export) The symbol "HorizontalBarChartWithAxisLegend" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    uniqueLegends: HorizontalBarChartWithAxisLegend[];
+    protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void;
     // (undocumented)
     useSingleColor: boolean;
     // (undocumented)
@@ -306,16 +452,6 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     // (undocumented)
     protected xAxisTickCountChanged(): void;
     // (undocumented)
-    xMaxValue?: number | string;
-    // (undocumented)
-    protected xMaxValueChanged(): void;
-    // (undocumented)
-    xMinValue?: number | string;
-    // (undocumented)
-    protected xMinValueChanged(): void;
-    // Warning: (ae-forgotten-export) The symbol "AxisCategoryOrder" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     yAxisCategoryOrder: AxisCategoryOrder;
     // (undocumented)
     protected yAxisCategoryOrderChanged(): void;
@@ -327,14 +463,6 @@ export class HorizontalBarChartWithAxis extends FASTElement {
     yAxisTickCount?: number | string;
     // (undocumented)
     protected yAxisTickCountChanged(): void;
-    // (undocumented)
-    yMaxValue?: number | string;
-    // (undocumented)
-    protected yMaxValueChanged(): void;
-    // (undocumented)
-    yMinValue?: number | string;
-    // (undocumented)
-    protected yMinValueChanged(): void;
 }
 
 // @public (undocumented)
