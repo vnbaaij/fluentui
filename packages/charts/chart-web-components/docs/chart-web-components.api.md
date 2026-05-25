@@ -327,6 +327,93 @@ export type GaugeChartVariant = 'single-segment' | 'multiple-segments';
 export type GaugeValueFormat = 'percentage' | 'fraction';
 
 // @public
+export class HeatMapChart extends CartesianChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: HeatMapChartData[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    disconnectedCallback(): void;
+    domainValuesForColorScale: number[];
+    // (undocumented)
+    protected domainValuesForColorScaleChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    height?: number | string;
+    // (undocumented)
+    protected heightChanged(): void;
+    // (undocumented)
+    protected _performRender(): void;
+    rangeValuesForColorScale: string[];
+    // (undocumented)
+    protected rangeValuesForColorScaleChanged(): void;
+    sortOrder: HeatMapSortOrder;
+    // (undocumented)
+    protected sortOrderChanged(): void;
+    // Warning: (ae-forgotten-export) The symbol "HeatMapTooltipProps" needs to be exported by the entry point index.d.ts
+    tooltipProps: HeatMapTooltipProps;
+    // (undocumented)
+    protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void;
+    // (undocumented)
+    width?: number | string;
+    // (undocumented)
+    protected widthChanged(): void;
+    xAxisDateFormatString?: string;
+    // (undocumented)
+    protected xAxisDateFormatStringChanged(): void;
+    xAxisNumberFormatString?: string;
+    // (undocumented)
+    protected xAxisNumberFormatStringChanged(): void;
+    yAxisDateFormatString?: string;
+    // (undocumented)
+    protected yAxisDateFormatStringChanged(): void;
+    yAxisNumberFormatString?: string;
+    // (undocumented)
+    protected yAxisNumberFormatStringChanged(): void;
+}
+
+// @public
+export interface HeatMapChartData {
+    data: HeatMapChartDataPoint[];
+    legend: string;
+    value: number;
+}
+
+// @public
+export interface HeatMapChartDataPoint {
+    // Warning: (ae-forgotten-export) The symbol "HeatMapAccessibilityData" needs to be exported by the entry point index.d.ts
+    callOutAccessibilityData?: HeatMapAccessibilityData;
+    descriptionMessage?: string;
+    onClick?: () => void;
+    ratio?: [number, number];
+    rectText?: string | number;
+    value: number;
+    x: string | Date | number;
+    y: string | Date | number;
+}
+
+// @public (undocumented)
+export const HeatMapChartDefinition: FASTElementDefinition<typeof HeatMapChart>;
+
+// @public
+export const HeatMapChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const HeatMapChartTemplate: ElementViewTemplate<HeatMapChart>;
+
+// @public
+export type HeatMapSortOrder = 'none' | 'alphabetical';
+
+// @public
 export class HorizontalBarChart extends ChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;

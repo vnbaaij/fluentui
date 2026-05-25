@@ -3,6 +3,13 @@ export { DonutChart, DonutChartDefinition, DonutChartStyles, DonutChartTemplate 
 export { GaugeChart, GaugeChartDefinition, GaugeChartStyles, GaugeChartTemplate } from './gauge-chart/index.js';
 export type { GaugeChartSegment, GaugeChartVariant, GaugeValueFormat } from './gauge-chart/index.js';
 export {
+  HeatMapChart,
+  HeatMapChartDefinition,
+  HeatMapChartStyles,
+  HeatMapChartTemplate,
+} from './heat-map-chart/index.js';
+export type { HeatMapChartData, HeatMapChartDataPoint, HeatMapSortOrder } from './heat-map-chart/index.js';
+export {
   HorizontalBarChart,
   HorizontalBarChartDefinition,
   HorizontalBarChartStyles,
