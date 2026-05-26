@@ -347,3 +347,59 @@ test.describe('GaugeChart - Reactive rerender', () => {
     await expect(element.locator('.chart-value')).toContainText('75%');
   });
 });
+
+test.describe('GaugeChart - width and height', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-gaugechart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:680px;height:400px;">
+        <fluent-gauge-chart
+          id="chart"
+          segments='${JSON.stringify(multiSegments)}'
+          chart-value="50"
+          max-value="100"
+        >
+        </fluent-gauge-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gauge-chart'));
+  });
+
+  test('Should reflect numeric width and height as SVG attributes', async ({ page }) => {
+    const element = page.locator('fluent-gauge-chart');
+    await element.evaluate(el => {
+      el.setAttribute('width', '480');
+      el.setAttribute('height', '280');
+    });
+    const svg = element.locator('svg.chart');
+    await expect(svg).toHaveAttribute('width', '480');
+    await expect(svg).toHaveAttribute('height', '280');
+  });
+
+  test('Should forward percentage strings to SVG attributes', async ({ page }) => {
+    const element = page.locator('fluent-gauge-chart');
+    await element.evaluate(el => {
+      el.setAttribute('width', '50%');
+      el.setAttribute('height', '50%');
+    });
+    const svg = element.locator('svg.chart');
+    await expect(svg).toHaveAttribute('width', '50%');
+    await expect(svg).toHaveAttribute('height', '50%');
+    // 50% of 680px container → bounding box width should be approximately 340px
+    const box = await svg.boundingBox();
+    expect(box?.width).toBeCloseTo(340, -1);
+  });
+
+  test('Should re-render geometry when width attribute changes', async ({ page }) => {
+    const element = page.locator('fluent-gauge-chart');
+    await element.evaluate(el => el.setAttribute('width', '340'));
+    const svgSmall = element.locator('svg.chart');
+    const transformSmall = await element.locator('g[ref]').getAttribute('transform');
+
+    await element.evaluate(el => el.setAttribute('width', '500'));
+    await expect(svgSmall).toHaveAttribute('width', '500');
+    const transformLarge = await element.locator('g[ref]').getAttribute('transform');
+
+    expect(transformSmall).not.toEqual(transformLarge);
+  });
+});

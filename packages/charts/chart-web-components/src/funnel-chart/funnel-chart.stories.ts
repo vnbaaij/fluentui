@@ -282,8 +282,7 @@ export const Basic: Story<FluentFunnelChart> = () => {
   let orientation: 'horizontal' | 'vertical' = 'horizontal';
 
   const renderChart = () => {
-    chart.width = width;
-    chart.height = height;
+    // width/height accept both pixel numbers and CSS length strings (e.g. "50%").
     chart.setAttribute('width', `${width}`);
     chart.setAttribute('height', `${height}`);
     chart.hideLegends = hideLegends;
@@ -366,8 +365,7 @@ export const Stacked: Story<FluentFunnelChart> = () => {
   let orientation: 'horizontal' | 'vertical' = 'horizontal';
 
   const renderChart = () => {
-    chart.width = width;
-    chart.height = height;
+    // width/height accept both pixel numbers and CSS length strings (e.g. "50%").
     chart.setAttribute('width', `${width}`);
     chart.setAttribute('height', `${height}`);
     chart.hideLegends = hideLegends;
@@ -681,3 +679,31 @@ export const TooltipRendererStory: Story<FluentFunnelChart> = () => {
 };
 TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
+
+export const ResponsiveWidth: Story<FluentFunnelChart> = () => {
+  const outer = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'The chart uses width="75%" and height="75%". Drag the handle to resize the container — the funnel re-renders automatically.';
+  outer.appendChild(info);
+
+  // A resizable wrapper so the story viewer can see the responsive behaviour.
+  const resizable = document.createElement('div');
+  resizable.setAttribute(
+    'style',
+    'resize:both;overflow:auto;border:1px dashed #999;padding:8px;width:600px;min-width:200px;max-width:900px;',
+  );
+  outer.appendChild(resizable);
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Responsive funnel chart');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '75%');
+  chart.setAttribute('height', '75%');
+
+  resizable.appendChild(chart);
+  return outer;
+};
+ResponsiveWidth.storyName = 'Responsive Width';
+ResponsiveWidth.parameters = { docs: { story: { height: '440px' } } };

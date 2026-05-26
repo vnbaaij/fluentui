@@ -265,7 +265,7 @@ export const Sizing: Story<FluentDonutChart> = () => {
   chartHost.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chartHost);
 
-  let width = 320;
+  let width = 620;
   let height = 320;
   let innerRadius = 55;
 
@@ -275,11 +275,9 @@ export const Sizing: Story<FluentDonutChart> = () => {
     chart.setAttribute('data', JSON.stringify(data));
     chart.setAttribute('value-inside-donut', '39,000');
     chart.setAttribute('inner-radius', `${innerRadius}`);
-    chart.width = width;
-    chart.height = height;
+    // width/height accept both pixel numbers and CSS length strings (e.g. "50%").
     chart.setAttribute('width', `${width}`);
     chart.setAttribute('height', `${height}`);
-    chart.setAttribute('style', `width:${width}px;height:${height}px`);
 
     chartHost.replaceChildren(chart);
   };
@@ -317,6 +315,36 @@ export const Sizing: Story<FluentDonutChart> = () => {
   return container;
 };
 Sizing.parameters = { docs: { story: { height: '460px' } } };
+
+export const ResponsiveWidth: Story<FluentDonutChart> = () => {
+  const outer = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'The chart uses width="75%" and height="75%". Drag the handle to resize the container — the donut re-centers automatically.';
+  outer.appendChild(info);
+
+  // A resizable wrapper so the story viewer can see the responsive behaviour.
+  const resizable = document.createElement('div');
+  resizable.setAttribute(
+    'style',
+    'resize:horizontal;overflow:auto;border:1px dashed #999;padding:8px;width:400px;min-width:200px;max-width:640px;',
+  );
+  outer.appendChild(resizable);
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Responsive donut chart');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('value-inside-donut', '39,000');
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('width', '75%');
+  chart.setAttribute('height', '75%');
+
+  resizable.appendChild(chart);
+  return outer;
+};
+ResponsiveWidth.storyName = 'Responsive Width';
+ResponsiveWidth.parameters = { docs: { story: { height: '420px' } } };
 
 export const RoundedCorners: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');

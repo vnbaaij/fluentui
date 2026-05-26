@@ -434,3 +434,100 @@ test.describe('FunnelChart - tooltipRenderer', () => {
     await expect(element.locator('.tooltip-body')).toBeVisible();
   });
 });
+
+test.describe('FunnelChart - width and height', () => {
+  test('Should reflect numeric width and height on SVG attributes', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="Test funnel"
+          width="350"
+          height="400"
+          data='${JSON.stringify(simpleData)}'
+        ></fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+
+    const svg = page.locator('fluent-funnel-chart svg.chart');
+    await expect(svg).toHaveAttribute('width', '350');
+    await expect(svg).toHaveAttribute('height', '400');
+  });
+
+  test('Should update SVG attributes when width and height change', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="Test funnel"
+          width="350"
+          height="400"
+          data='${JSON.stringify(simpleData)}'
+        ></fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+
+    const element = page.locator('fluent-funnel-chart');
+    const svg = element.locator('svg.chart');
+
+    await element.evaluate(el => {
+      el.setAttribute('width', '600');
+      el.setAttribute('height', '500');
+    });
+
+    await expect(svg).toHaveAttribute('width', '600');
+    await expect(svg).toHaveAttribute('height', '500');
+  });
+
+  test('Should accept percentage string values for width and height', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px;height:600px;">
+        <fluent-funnel-chart
+          chart-title="Test funnel"
+          width="50%"
+          height="50%"
+          data='${JSON.stringify(simpleData)}'
+        ></fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+
+    const svg = page.locator('fluent-funnel-chart svg.chart');
+    // Percentage values must be forwarded as-is to the SVG attribute.
+    await expect(svg).toHaveAttribute('width', '50%');
+    await expect(svg).toHaveAttribute('height', '50%');
+    // The SVG should resolve to ~400 px (50% of the 800 px container).
+    const box = await svg.boundingBox();
+    expect(box!.width).toBeGreaterThan(350);
+    expect(box!.width).toBeLessThan(450);
+  });
+
+  test('Should rerender segments with updated geometry when width changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-funnelchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-funnel-chart
+          chart-title="Test funnel"
+          width="350"
+          height="400"
+          data='${JSON.stringify(simpleData)}'
+        ></fluent-funnel-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-funnel-chart'));
+
+    const element = page.locator('fluent-funnel-chart');
+    const firstSegment = element.locator('.funnel-segment').first();
+    const originalPath = await firstSegment.getAttribute('d');
+
+    await element.evaluate(el => {
+      el.setAttribute('width', '700');
+      el.setAttribute('height', '600');
+    });
+
+    await expect(firstSegment).not.toHaveAttribute('d', originalPath ?? '');
+  });
+});

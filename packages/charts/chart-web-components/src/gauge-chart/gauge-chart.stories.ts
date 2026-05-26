@@ -451,3 +451,23 @@ export const Sublabel: Story<FluentGaugeChart> = () => {
   return container;
 };
 Sublabel.parameters = { docs: { story: { height: '460px' } } };
+
+export const ResponsiveWidth: Story<FluentGaugeChart> = () => {
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute(
+    'style',
+    'resize:horizontal;overflow:hidden;width:480px;min-width:280px;max-width:800px;border:1px solid #ccc;padding:8px;',
+  );
+
+  const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
+  chart.setAttribute('chart-title', 'Gauge chart responsive example');
+  chart.setAttribute('segments', JSON.stringify(multiSegments));
+  chart.setAttribute('chart-value', '50');
+  chart.setAttribute('max-value', '100');
+  chart.setAttribute('width', '100%');
+  chart.setAttribute('height', '200');
+  wrapper.appendChild(chart);
+
+  return wrapper;
+};
+ResponsiveWidth.parameters = { docs: { story: { height: '320px' } } };

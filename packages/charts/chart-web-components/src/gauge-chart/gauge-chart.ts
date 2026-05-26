@@ -97,12 +97,6 @@ export function getChartValueLabel(
 export class GaugeChart extends ChartBase {
   // ── Attrs ─────────────────────────────────────────────────────────────────
 
-  @attr({ converter: nullableNumberConverter })
-  public width: number = 340;
-
-  @attr({ converter: nullableNumberConverter })
-  public height: number = 200;
-
   @attr({ attribute: 'chart-value', converter: nullableNumberConverter })
   public chartValue: number = 0;
 
@@ -147,7 +141,7 @@ export class GaugeChart extends ChartBase {
   public svgDefsEl!: SVGDefsElement;
 
   // ── Private render state ──────────────────────────────────────────────────
-
+  protected override _enableResizeObserver = true;
   private _segmentEls: SVGPathElement[] = [];
   private _needle?: SVGPathElement;
   private _computedMinValue: number = 0;
@@ -163,8 +157,6 @@ export class GaugeChart extends ChartBase {
   connectedCallback() {
     const self = this as Record<string, unknown>;
     const attrFields = [
-      'width',
-      'height',
       'chartValue',
       'segments',
       'minValue',
@@ -209,14 +201,6 @@ export class GaugeChart extends ChartBase {
   }
 
   // ── Attr change handlers ──────────────────────────────────────────────────
-
-  protected widthChanged() {
-    this._requestRender();
-  }
-
-  protected heightChanged() {
-    this._requestRender();
-  }
 
   protected chartValueChanged() {
     this._requestRender();
@@ -356,8 +340,10 @@ export class GaugeChart extends ChartBase {
   }
 
   private _calculateGeometry() {
-    const w = this.width ?? 340;
-    const h = this.height ?? 200;
+    const svgEl = this.group.ownerSVGElement!;
+    const svgRect = svgEl.getBoundingClientRect();
+    const w = svgRect.width || (typeof this.width === 'number' ? this.width : parseFloat(String(this.width)) || 340);
+    const h = svgRect.height || (typeof this.height === 'number' ? this.height : parseFloat(String(this.height)) || 200);
 
     const marginLeft = (!this.hideMinMax ? LABEL_OFFSET + LABEL_WIDTH : 0) + GAUGE_MARGIN;
     const marginRight = (!this.hideMinMax ? LABEL_OFFSET + LABEL_WIDTH : 0) + GAUGE_MARGIN;
