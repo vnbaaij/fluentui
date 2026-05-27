@@ -251,8 +251,13 @@ export class GaugeChart extends ChartBase {
       return;
     }
 
+    this._applyHostDimensions();
     this._clearChart();
     this._initializeAndRender();
+  }
+
+  protected _applyHostDimensions() {
+    super._applyHostDimensions(this.width, this.height);
   }
 
   protected _applyActiveLegendState() {
@@ -341,9 +346,9 @@ export class GaugeChart extends ChartBase {
   private _calculateGeometry() {
     const svgEl = this.group.ownerSVGElement!;
     const svgRect = svgEl.getBoundingClientRect();
-    const w = svgRect.width || (typeof this.width === 'number' ? this.width : parseFloat(String(this.width)) || 252);
+    const w = svgRect.width || parseFloat(String(this.width)) || 252;
     const defaultHeight = this.sublabel ? 116 : 96;
-    const h = svgRect.height || (typeof this.height === 'number' ? this.height : parseFloat(String(this.height)) || defaultHeight);
+    const h = svgRect.height || parseFloat(String(this.height)) || defaultHeight;
 
     const marginLeft = (!this.hideMinMax ? LABEL_OFFSET + LABEL_WIDTH : 0) + GAUGE_MARGIN;
     const marginRight = (!this.hideMinMax ? LABEL_OFFSET + LABEL_WIDTH : 0) + GAUGE_MARGIN;

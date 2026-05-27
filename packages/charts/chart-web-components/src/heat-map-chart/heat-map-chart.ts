@@ -277,7 +277,12 @@ export class HeatMapChart extends CartesianChartBase {
   // ── Render (called by ChartBase._requestRender) ───────────────────────────
 
   protected _performRender(): void {
+    this._applyHostDimensions();
     this._renderChart();
+  }
+
+  protected _applyHostDimensions() {
+    super._applyHostDimensions(this.width, this.height);
   }
 
   // ── Legend interaction ────────────────────────────────────────────────────
@@ -483,8 +488,8 @@ export class HeatMapChart extends CartesianChartBase {
     const containerWidth =
       this.chartContainer.getBoundingClientRect().width || this.getBoundingClientRect().width || DEFAULT_WIDTH;
 
-    const w = Math.max(Number(this.width) || containerWidth, 200);
-    const h = Math.max(Number(this.height) || DEFAULT_HEIGHT, 100);
+    const w = Math.max(parseFloat(String(this.width)) || containerWidth, 200);
+    const h = Math.max(parseFloat(String(this.height)) || DEFAULT_HEIGHT, 100);
 
     const isRTL = this._isRTL;
     const marginLeft = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;

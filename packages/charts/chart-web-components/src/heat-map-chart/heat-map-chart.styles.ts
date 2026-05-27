@@ -2,21 +2,26 @@ import type { ElementStyles } from '@microsoft/fast-element';
 import { css } from '@microsoft/fast-element';
 import {
   borderRadiusMedium,
-  colorNeutralBackground1,
   colorNeutralForeground1,
   colorNeutralForeground2,
   colorNeutralShadowAmbient,
   colorNeutralShadowKey,
   colorNeutralStroke1,
+  colorNeutralStroke2,
   colorStrokeFocus1,
   colorStrokeFocus2,
+  colorTransparentStroke,
   display,
   spacingHorizontalS,
-  spacingVerticalXS,
+  spacingHorizontalSNudge,
+  spacingVerticalMNudge,
   strokeWidthThick,
   strokeWidthThickest,
   typographyBody1StrongStyles,
   typographyCaption1Styles,
+  typographyCaption2StrongStyles,
+  typographyCaption2Styles,
+  typographyTitle2Styles,
 } from '@fluentui/web-components';
 import { tooltipBaseStyles } from '../utils/tooltip.styles.js';
 
@@ -206,34 +211,50 @@ export const styles: ElementStyles = css`
   ${tooltipBaseStyles}
 
   .tooltip {
-    ${typographyCaption1Styles}
     z-index: 999;
-    box-shadow: 0 0 2px ${colorNeutralShadowAmbient}, 0 4px 8px ${colorNeutralShadowKey};
-    border: ${strokeWidthThick};
-    white-space: nowrap;
+    max-width: 220px;
+    background-blend-mode: normal, luminosity;
     border-radius: ${borderRadiusMedium};
-    background: ${colorNeutralBackground1};
-    color: ${colorNeutralForeground1};
-    padding: ${spacingVerticalXS} ${spacingHorizontalS};
+    border: 1px solid ${colorTransparentStroke};
+    filter: drop-shadow(0 0 2px ${colorNeutralShadowAmbient}) drop-shadow(0 8px 16px ${colorNeutralShadowKey});
   }
 
-  .tooltip-header {
+  .tooltip-inner {
+    display: flex;
+    align-items: flex-end;
+    padding-inline-start: ${spacingHorizontalS};
+    color: ${colorNeutralForeground1};
+    border-inline-start: 4px solid;
+  }
+
+  .tooltip-legend-text {
     ${typographyCaption1Styles}
     color: ${colorNeutralForeground2};
-    opacity: 0.8;
-    margin-bottom: 4px;
   }
 
-  .tooltip-value {
-    font-weight: bold;
+  .tooltip-content-y {
+    ${typographyTitle2Styles}
+  }
+
+  .tooltip-ratio {
+    ${typographyCaption2Styles}
+    margin-inline-start: ${spacingHorizontalSNudge};
     color: ${colorNeutralForeground1};
+    align-self: flex-end;
+    white-space: nowrap;
   }
 
-  .tooltip-ratio,
+  .tooltip-numerator,
+  .tooltip-denominator {
+    ${typographyCaption2StrongStyles}
+  }
+
   .tooltip-description {
     ${typographyCaption1Styles}
     color: ${colorNeutralForeground2};
-    margin-top: 2px;
+    margin-top: ${spacingVerticalMNudge};
+    padding-top: ${spacingVerticalMNudge};
+    border-top: 1px solid ${colorNeutralStroke2};
   }
 
   /* ── Forced-colors (Windows High Contrast) ─────────────────── */
@@ -256,6 +277,16 @@ export const styles: ElementStyles = css`
 
     .axis-domain {
       stroke: CanvasText;
+    }
+
+    .tooltip-body {
+      forced-color-adjust: none;
+    }
+
+    .tooltip-legend-text,
+    .tooltip-content-y {
+      forced-color-adjust: auto;
+      color: CanvasText;
     }
   }
 `;

@@ -27,15 +27,24 @@ export function heatMapChartTemplate<T extends HeatMapChart>(): ElementViewTempl
             style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x =>
               x.tooltipProps.yPos}px; transform: translateX(-50%)"
           >
-            <div class="tooltip-header">${x => x.tooltipProps.legend}</div>
             <div class="tooltip-body">
-              <div class="tooltip-value">${x => x.tooltipProps.rectText}</div>
-              ${when(
-                x => !!x.tooltipProps.ratio,
-                html<T>`<div class="tooltip-ratio">
-                  ${x => x.tooltipProps.ratio![0]}/${x => x.tooltipProps.ratio![1]}
-                </div>`,
-              )}
+              <div class="tooltip-inner" style="border-color: ${x => x.tooltipProps.color};">
+                <div class="tooltip-block">
+                  <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
+                  <div class="tooltip-content-y" style="color: ${x => x.tooltipProps.color};">
+                    ${x => x.tooltipProps.yValue}
+                  </div>
+                </div>
+                ${when(
+                  x => !!x.tooltipProps.ratio,
+                  html<T>`<div class="tooltip-ratio">
+                    <span class="tooltip-numerator">${x => x.tooltipProps.ratio![0]}</span>/<span
+                      class="tooltip-denominator"
+                      >${x => x.tooltipProps.ratio![1]}</span
+                    >
+                  </div>`,
+                )}
+              </div>
               ${when(
                 x => !!x.tooltipProps.descriptionMessage,
                 html<T>`<div class="tooltip-description">${x => x.tooltipProps.descriptionMessage}</div>`,

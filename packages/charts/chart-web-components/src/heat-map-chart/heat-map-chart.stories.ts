@@ -33,14 +33,7 @@ const toggleFieldStyle = 'min-width:220px;';
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 
-const yPointMapping: Record<string, string> = {
-  p1: 'Ohio',
-  p2: 'Alaska',
-  p3: 'Texas',
-  p4: 'DC',
-  p5: 'NYC',
-};
-const yPoints = ['p1', 'p2', 'p3', 'p4', 'p5'];
+const yPoints = ['Ohio', 'Alaska', 'Texas', 'DC', 'NYC'];
 
 const xPoints: Date[] = [
   new Date('2020-03-03'),
@@ -87,8 +80,22 @@ const airQualityData: HeatMapChartData[] = [
         ratio: [310, 2043],
         descriptionMessage: 'a sudden rise of 150 units in Ohio today',
       },
-      { x: xPoints[2], y: yPoints[0], value: 320, rectText: 320, ratio: [320, 2043] },
-      { x: xPoints[6], y: yPoints[2], value: 300, rectText: 300, ratio: [300, 2391] },
+      {
+        x: xPoints[2],
+        y: yPoints[0],
+        value: 320,
+        rectText: 320,
+        ratio: [320, 2043],
+        descriptionMessage: 'air quality seems to have decreased by only 15 units from yesterday',
+      },
+      {
+        x: xPoints[6],
+        y: yPoints[2],
+        value: 300,
+        rectText: 300,
+        ratio: [300, 2391],
+        descriptionMessage: 'air comes to control a little bit more than yesterday',
+      },
       {
         x: xPoints[0],
         y: yPoints[3],
@@ -97,46 +104,206 @@ const airQualityData: HeatMapChartData[] = [
         ratio: [290, 2462],
         descriptionMessage: '1st day in the week, DC witnesses good air quality',
       },
-      { x: xPoints[4], y: yPoints[4], value: 280, rectText: 280, ratio: [280, 2486] },
-      { x: xPoints[5], y: yPoints[3], value: 300, rectText: 300, ratio: [300, 2462] },
+      {
+        x: xPoints[4],
+        y: yPoints[4],
+        value: 280,
+        rectText: 280,
+        ratio: [280, 2486],
+        descriptionMessage: `Air quality index decreases by exactly 300 units,
+            giving the people of NYC good hope`,
+      },
+      {
+        x: xPoints[5],
+        y: yPoints[3],
+        value: 300,
+        rectText: 300,
+        ratio: [300, 2462],
+        descriptionMessage: '60 units decreased from yesterday.',
+      },
     ],
   },
   {
     value: 350,
     legend: 'Medium (301-400)',
     data: [
-      { x: xPoints[1], y: yPoints[1], value: 345, rectText: 345, ratio: [345, 2479] },
-      { x: xPoints[6], y: yPoints[1], value: 325, rectText: 325, ratio: [325, 2479] },
-      { x: xPoints[5], y: yPoints[2], value: 390, rectText: 390, ratio: [390, 2391] },
-      { x: xPoints[1], y: yPoints[3], value: 385, rectText: 385, ratio: [385, 2462] },
-      { x: xPoints[4], y: yPoints[3], value: 360, rectText: 360, ratio: [360, 2462] },
-      { x: xPoints[1], y: yPoints[2], value: 400, rectText: 400, ratio: [400, 2391] },
-      { x: xPoints[3], y: yPoints[0], value: 400, rectText: 400, ratio: [400, 2043] },
+      {
+        x: xPoints[1],
+        y: yPoints[1],
+        value: 345,
+        rectText: 345,
+        ratio: [345, 2479],
+        descriptionMessage: 'Alaska has just reported nearly 100 units hike in air quality',
+      },
+      {
+        x: xPoints[6],
+        y: yPoints[1],
+        value: 325,
+        rectText: 325,
+        ratio: [325, 2479],
+        descriptionMessage: 'Alaska to 300',
+      },
+      {
+        x: xPoints[5],
+        y: yPoints[2],
+        value: 390,
+        rectText: 390,
+        ratio: [390, 2391],
+        descriptionMessage: 'air comes to control a little bit',
+      },
+      {
+        x: xPoints[1],
+        y: yPoints[3],
+        value: 385,
+        rectText: 385,
+        ratio: [385, 2462],
+        descriptionMessage: 'Washington DC witnesses a hike of nearly 100 units in air quality',
+      },
+      {
+        x: xPoints[4],
+        y: yPoints[3],
+        value: 360,
+        rectText: 360,
+        ratio: [360, 2462],
+        descriptionMessage: 'a 200% hike in the air quality index',
+      },
+      {
+        x: xPoints[1],
+        y: yPoints[2],
+        value: 400,
+        rectText: 400,
+        ratio: [400, 2391],
+        descriptionMessage: 'a sudden spike in the badness of the air quality',
+      },
+      {
+        x: xPoints[3],
+        y: yPoints[0],
+        value: 400,
+        rectText: 400,
+        ratio: [400, 2043],
+        descriptionMessage: 'situation got worse in air quality due to industrial smoke',
+      },
     ],
   },
   {
     value: 450,
     legend: 'Danger (401-500)',
     data: [
-      { x: xPoints[4], y: yPoints[0], value: 423, rectText: 423, ratio: [423, 2043] },
-      { x: xPoints[2], y: yPoints[1], value: 463, rectText: 463, ratio: [463, 2479] },
-      { x: xPoints[3], y: yPoints[2], value: 480, rectText: 480, ratio: [480, 2391] },
-      { x: xPoints[2], y: yPoints[3], value: 491, rectText: 491, ratio: [491, 2462] },
-      { x: xPoints[1], y: yPoints[4], value: 433, rectText: 433, ratio: [433, 2486] },
-      { x: xPoints[5], y: yPoints[4], value: 473, rectText: 473, ratio: [473, 2486] },
+      {
+        x: xPoints[4],
+        y: yPoints[0],
+        value: 423,
+        rectText: 423,
+        ratio: [423, 2043],
+        descriptionMessage: 'we can see an increase of 23 units',
+      },
+      {
+        x: xPoints[2],
+        y: yPoints[1],
+        value: 463,
+        rectText: 463,
+        ratio: [463, 2479],
+        descriptionMessage: 'day by day, situation is getting worse in Alaska',
+      },
+      {
+        x: xPoints[3],
+        y: yPoints[2],
+        value: 480,
+        rectText: 480,
+        ratio: [480, 2391],
+        descriptionMessage: 'same story, today also air quality decreases. a bad day in Texas',
+      },
+      {
+        x: xPoints[2],
+        y: yPoints[3],
+        value: 491,
+        rectText: 491,
+        ratio: [491, 2462],
+        descriptionMessage: 'Day by day, 100 units are increasing in air quality',
+      },
+      {
+        x: xPoints[1],
+        y: yPoints[4],
+        value: 433,
+        rectText: 433,
+        ratio: [433, 2486],
+        descriptionMessage: `They say good things stay for a short time, today
+            this saying became reality. New York has witnessed nearly 300% bad air quality`,
+      },
+      {
+        x: xPoints[5],
+        y: yPoints[4],
+        value: 473,
+        rectText: 473,
+        ratio: [473, 2486],
+        descriptionMessage: `Today is the same fate as the 2nd day. still, air quality
+            stays above 400`,
+      },
     ],
   },
   {
     value: 550,
     legend: 'Very Danger (501-600)',
     data: [
-      { x: xPoints[5], y: yPoints[0], value: 600, rectText: 600, ratio: [600, 2043] },
-      { x: xPoints[5], y: yPoints[1], value: 536, rectText: 536, ratio: [536, 2479] },
-      { x: xPoints[3], y: yPoints[1], value: 520, rectText: 520, ratio: [520, 2479] },
-      { x: xPoints[4], y: yPoints[2], value: 525, rectText: 525, ratio: [525, 2391] },
-      { x: xPoints[6], y: yPoints[3], value: 560, rectText: 560, ratio: [560, 2462] },
-      { x: xPoints[3], y: yPoints[4], value: 580, rectText: 580, ratio: [580, 2486] },
-      { x: xPoints[6], y: yPoints[4], value: 590, rectText: 590, ratio: [590, 2486] },
+      {
+        x: xPoints[5],
+        y: yPoints[0],
+        value: 600,
+        rectText: 600,
+        ratio: [600, 2043],
+        descriptionMessage: 'looks like god has cursed us with poisonous air. worst air quality index',
+      },
+      {
+        x: xPoints[5],
+        y: yPoints[1],
+        value: 536,
+        rectText: 536,
+        ratio: [536, 2479],
+        descriptionMessage: `shh!, all the hopes were washed away in the rain yesterday,
+            with another hike of 400% in air quality`,
+      },
+      {
+        x: xPoints[3],
+        y: yPoints[1],
+        value: 520,
+        rectText: 520,
+        ratio: [520, 2479],
+        descriptionMessage: 'Alaska planning to build air purifier to control the air quality',
+      },
+      {
+        x: xPoints[4],
+        y: yPoints[2],
+        value: 525,
+        rectText: 525,
+        ratio: [525, 2391],
+        descriptionMessage: 'air worsens badly today due to farmers burning the harvest',
+      },
+      {
+        x: xPoints[6],
+        y: yPoints[3],
+        value: 560,
+        rectText: 560,
+        ratio: [560, 2462],
+        descriptionMessage: `Due to industrial pollution and the
+            burning of harvest, it resulted in bad air quality in Washington DC`,
+      },
+      {
+        x: xPoints[3],
+        y: yPoints[4],
+        value: 580,
+        rectText: 580,
+        ratio: [580, 2486],
+        descriptionMessage: `Air quality index is becoming worse day by day, leaving the
+            people of NYC in very bad medical conditions.`,
+      },
+      {
+        x: xPoints[6],
+        y: yPoints[4],
+        value: 590,
+        rectText: 590,
+        ratio: [590, 2486],
+        descriptionMessage: `finally, the weekend ends with very bad air quality in New York City`,
+      },
     ],
   },
 ];
@@ -266,10 +433,13 @@ export default {
 
 export const Default: Story<FluentHeatMapChart> = renderComponent(html<StoryArgs<FluentHeatMapChart>>`
   <fluent-heat-map-chart
+    width="450"
+    height="350"
     chart-title="Heat map chart basic example"
     data="${JSON.stringify(airQualityData)}"
     domain-values-for-color-scale="${JSON.stringify(domainValues)}"
     range-values-for-color-scale="${JSON.stringify(rangeColors)}"
+    sort-order="none"
   ></fluent-heat-map-chart>
 `);
 Default.storyName = 'Default';

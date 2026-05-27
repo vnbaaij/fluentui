@@ -109,8 +109,13 @@ export class FunnelChart extends ChartBase {
     if (!this.$fastController.isConnected || !this.data || !this.group) {
       return;
     }
+    this._applyHostDimensions();
     this._clearChart();
     this._initializeAndRender();
+  }
+
+  protected _applyHostDimensions() {
+    super._applyHostDimensions(this.width, this.height);
   }
 
   private _clearChart() {
