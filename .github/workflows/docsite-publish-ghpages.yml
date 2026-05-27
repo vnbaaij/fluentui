@@ -43,7 +43,7 @@ jobs:
       - name: Build affected storybooks
         if: steps.affected_storybooks_count.outputs.value > 0
         run: |
-          yarn nx run-many -t build-storybook:docsite --nxBail
+          yarn nx run-many -t build-storybook:docsite --nxBail --projects='*chart-web-components'
 
       - name: Prepare Artifact
         if: steps.affected_storybooks_count.outputs.value > 0
