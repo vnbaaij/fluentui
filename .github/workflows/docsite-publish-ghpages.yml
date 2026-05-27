@@ -49,7 +49,7 @@ jobs:
         if: steps.affected_storybooks_count.outputs.value > 0
         run: |
           rm -rf _pages
-          mkdir -p _pages/react _pages/charts _pages/web-components
+          mkdir -p _pages/chart-web-components
 
           cp -R packages/charts/chart-web-components/dist/storybook/* _pages/chart-web-components
 
