@@ -12,7 +12,7 @@ export function gaugeChartTemplate<T extends GaugeChart>(): ElementViewTemplate<
     <template>
       ${when(x => !!x.chartTitle, html<T>`<div class="chart-title">${x => x.chartTitle}</div>`)}
       <div class="chart-container" ${ref('chartContainer')}>
-        <svg class="chart" role="none" width="${x => x.width}" height="${x => x.height}">
+        <svg class="chart" role="none" width="${x => x.width ?? 252}" height="${x => x.height ?? (x.sublabel ? 116 : 96)}">
           <defs ${ref('svgDefsEl')}></defs>
           <g ${ref('group')}></g>
         </svg>

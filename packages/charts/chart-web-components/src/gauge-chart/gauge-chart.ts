@@ -10,7 +10,6 @@ import type { ExtendedSegment, GaugeChartSegment, GaugeChartVariant, GaugeValueF
 const GAUGE_MARGIN = 16;
 const LABEL_WIDTH = 36;
 const LABEL_OFFSET = 4;
-const TITLE_OFFSET = 11;
 const LABEL_HEIGHT = 16;
 const EXTRA_NEEDLE_LENGTH = 4;
 const ARC_PADDING = 2;
@@ -342,12 +341,15 @@ export class GaugeChart extends ChartBase {
   private _calculateGeometry() {
     const svgEl = this.group.ownerSVGElement!;
     const svgRect = svgEl.getBoundingClientRect();
-    const w = svgRect.width || (typeof this.width === 'number' ? this.width : parseFloat(String(this.width)) || 340);
-    const h = svgRect.height || (typeof this.height === 'number' ? this.height : parseFloat(String(this.height)) || 200);
+    const w = svgRect.width || (typeof this.width === 'number' ? this.width : parseFloat(String(this.width)) || 252);
+    const defaultHeight = this.sublabel ? 116 : 96;
+    const h = svgRect.height || (typeof this.height === 'number' ? this.height : parseFloat(String(this.height)) || defaultHeight);
 
     const marginLeft = (!this.hideMinMax ? LABEL_OFFSET + LABEL_WIDTH : 0) + GAUGE_MARGIN;
     const marginRight = (!this.hideMinMax ? LABEL_OFFSET + LABEL_WIDTH : 0) + GAUGE_MARGIN;
-    const marginTop = (this.chartTitle ? TITLE_OFFSET + LABEL_HEIGHT : EXTRA_NEEDLE_LENGTH / 2) + GAUGE_MARGIN;
+    // The chart title is rendered as an HTML element outside the SVG (not as SVG text inside),
+    // so no extra top margin is needed for it. Only reserve space for the needle overshoot.
+    const marginTop = EXTRA_NEEDLE_LENGTH / 2 + GAUGE_MARGIN;
     const marginBottom = (this.sublabel ? LABEL_OFFSET + LABEL_HEIGHT : 0) + GAUGE_MARGIN;
 
     const cx = w / 2;

@@ -145,7 +145,10 @@ const multiSegments: GaugeChartSegment[] = [
   { legend: 'High', size: 33, color: 'qualitative.2' },
 ];
 
-const singleSegment: GaugeChartSegment[] = [{ legend: 'Used', size: 55 }];
+const singleSegment: GaugeChartSegment[] = [
+  { legend: 'Used', size: 55 },
+  { legend: 'Available', size: 45, color: 'qualitative.5' },
+];
 
 const basicTitle = 'Gauge chart basic example';
 
@@ -167,10 +170,11 @@ export const Basic: Story<FluentGaugeChart> = renderComponent(storyTemplate).bin
 
 export const SingleSegment: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
-    chart-title="Gauge chart single-segment example"
+    chart-title="Storage capacity"
     segments="${JSON.stringify(singleSegment)}"
     chart-value="55"
-    max-value="100"
+    sublabel="used"
+    chart-value-format="fraction"
     variant="single-segment"
   >
   </fluent-gauge-chart>
@@ -202,6 +206,7 @@ export const WithSublabel: Story<FluentGaugeChart> = renderComponent(html<StoryA
   <fluent-gauge-chart
     chart-title="Gauge chart sublabel example"
     segments="${JSON.stringify(multiSegments)}"
+    height="116"
     chart-value="50"
     max-value="100"
     sublabel="out of 100"
@@ -240,8 +245,8 @@ export const Sizing: Story<FluentGaugeChart> = () => {
   chartHost.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chartHost);
 
-  let width = 340;
-  let height = 200;
+  let width = 252;
+  let height = 96;
 
   const renderChart = () => {
     const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
@@ -262,7 +267,7 @@ export const Sizing: Story<FluentGaugeChart> = () => {
   });
   controls.appendChild(widthControl.element);
 
-  const heightControl = createSliderField('Height', 'gauge-height', height, 100, 400, nextHeight => {
+  const heightControl = createSliderField('Height', 'gauge-height', height, 70, 400, nextHeight => {
     height = nextHeight;
     heightControl.setValue(nextHeight);
     renderChart();
@@ -465,7 +470,7 @@ export const ResponsiveWidth: Story<FluentGaugeChart> = () => {
   chart.setAttribute('chart-value', '50');
   chart.setAttribute('max-value', '100');
   chart.setAttribute('width', '100%');
-  chart.setAttribute('height', '200');
+  chart.setAttribute('height', '104');
   wrapper.appendChild(chart);
 
   return wrapper;
