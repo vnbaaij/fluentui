@@ -51,7 +51,7 @@ jobs:
           rm -rf _pages
           mkdir -p _pages/react _pages/charts _pages/web-components
 
-          cp -R packages/chart-web-components/dist/storybook/* _pages/chart-web-components
+          cp -R packages/charts/chart-web-components/dist/storybook/* _pages/chart-web-components
 
       - name: Upload Pages Artifact
         if: steps.affected_storybooks_count.outputs.value > 0
