@@ -24,8 +24,7 @@ export function heatMapChartTemplate<T extends HeatMapChart>(): ElementViewTempl
         html<T>`
           <div
             class="tooltip"
-            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x =>
-              x.tooltipProps.yPos}px; transform: translateX(-50%)"
+            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x => x.tooltipProps.yPos}px"
           >
             <div class="tooltip-body">
               <div class="tooltip-inner" style="border-color: ${x => x.tooltipProps.color};">

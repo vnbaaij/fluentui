@@ -212,7 +212,7 @@ export const styles: ElementStyles = css`
 
   .tooltip {
     z-index: 999;
-    max-width: 220px;
+    max-width: 238px;
     background-blend-mode: normal, luminosity;
     border-radius: ${borderRadiusMedium};
     border: 1px solid ${colorTransparentStroke};

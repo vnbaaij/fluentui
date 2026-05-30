@@ -20,12 +20,17 @@ type HeatMapTooltipProps = TooltipProps & {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MARGIN_TOP = 20;
-const MARGIN_BOTTOM = 50;
-const MARGIN_LEFT = 80;
+const MARGIN_BOTTOM = 35;
+const MARGIN_LEFT_MIN = 40;
+const MARGIN_LEFT_LABEL_GAP = 20;
 const MARGIN_RIGHT = 20;
 const DEFAULT_WIDTH = 640;
 const DEFAULT_HEIGHT = 420;
 const CELL_FONT_SIZE = 11;
+/** Height reserved for the legend row: fluent-chart-legend (32 px) + its margin-top (spacingVerticalS ≈ 8 px). */
+const LEGEND_HEIGHT = 40;
+/** Height reserved for the chart title: body1Strong line-height (20 px) + margin-bottom (8 px). */
+const TITLE_HEIGHT = 28;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -155,6 +160,10 @@ export class HeatMapChart extends CartesianChartBase {
   // ── Private state ─────────────────────────────────────────────────────────
 
   private _renderedCells: SVGGElement[] = [];
+  /** Width of the last rendered SVG — used to clamp tooltip position. */
+  private _lastSvgWidth: number = 0;
+  /** Height of the last rendered SVG — used to clamp tooltip position. */
+  private _lastSvgHeight: number = 0;
 
   connectedCallback(): void {
     const self = this as Record<string, unknown>;
@@ -333,6 +342,21 @@ export class HeatMapChart extends CartesianChartBase {
       clientY = rect.top + rect.height / 2;
     }
     const hostRect = this.getBoundingClientRect();
+    const relX = clientX - hostRect.left;
+    const relY = clientY - hostRect.top;
+
+    // Clamp against the SVG dimensions — the visible chart boundary —
+    // not the host width, which can be wider due to :host { width: 100% }.
+    const chartW = this._lastSvgWidth || hostRect.width;
+    const chartH = this._lastSvgHeight || hostRect.height;
+    const GAP = 12;
+
+    const TOOLTIP_W = 270;
+    const TOOLTIP_H = 130;
+
+    const xPos = Math.max(0, Math.min(relX - TOOLTIP_W / 2, chartW - TOOLTIP_W));
+    const yPos = relY + GAP + TOOLTIP_H <= chartH ? relY + GAP : Math.max(0, relY - GAP - TOOLTIP_H);
+
     const rectText =
       point.rectText !== undefined
         ? String(point.rectText)
@@ -345,8 +369,8 @@ export class HeatMapChart extends CartesianChartBase {
       legend: point.legend,
       yValue: rectText,
       color: cellColor,
-      xPos: clientX - hostRect.left,
-      yPos: clientY - hostRect.top,
+      xPos,
+      yPos,
       rectText,
       ratio: point.ratio,
       descriptionMessage: point.descriptionMessage,
@@ -489,11 +513,14 @@ export class HeatMapChart extends CartesianChartBase {
       this.chartContainer.getBoundingClientRect().width || this.getBoundingClientRect().width || DEFAULT_WIDTH;
 
     const w = Math.max(parseFloat(String(this.width)) || containerWidth, 200);
-    const h = Math.max(parseFloat(String(this.height)) || DEFAULT_HEIGHT, 100);
+    const legendOffset = this.hideLegends ? 0 : LEGEND_HEIGHT;
+    const titleOffset = this.chartTitle ? TITLE_HEIGHT : 0;
+    const h = Math.max((parseFloat(String(this.height)) || DEFAULT_HEIGHT) - legendOffset - titleOffset, 100);
 
     const isRTL = this._isRTL;
-    const marginLeft = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
-    const marginRight = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
+    const yLabelMargin = this._measureLongestYLabel(yLabels);
+    const marginLeft = isRTL ? MARGIN_RIGHT : yLabelMargin;
+    const marginRight = isRTL ? yLabelMargin : MARGIN_RIGHT;
     const innerWidth = w - marginLeft - marginRight;
     const innerHeight = h - MARGIN_TOP - MARGIN_BOTTOM;
 
@@ -518,6 +545,9 @@ export class HeatMapChart extends CartesianChartBase {
     svg.setAttribute('width', `${w}`);
     svg.setAttribute('height', `${h}`);
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    this._lastSvgWidth = w;
+    this._lastSvgHeight = h;
 
     const g = createSvgElement<SVGGElement>('g');
     g.setAttribute('transform', `translate(${marginLeft},${MARGIN_TOP})`);
@@ -714,6 +744,21 @@ export class HeatMapChart extends CartesianChartBase {
       text.textContent = label;
       g.appendChild(text);
     });
+  }
+
+  private _measureLongestYLabel(labels: string[]): number {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return MARGIN_LEFT_MIN + MARGIN_LEFT_LABEL_GAP;
+    }
+    ctx.font =
+      '600 10px "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif';
+    let max = 0;
+    for (const label of labels) {
+      max = Math.max(max, ctx.measureText(label).width);
+    }
+    return Math.max(MARGIN_LEFT_MIN, Math.ceil(max) + MARGIN_LEFT_LABEL_GAP);
   }
 
   private _clearChart(): void {

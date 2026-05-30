@@ -260,3 +260,39 @@ export const PositionEnd: Story<FluentChartLegend> = () => {
   container.appendChild(note('Legend positioned at the end (position="end"). Renders in a column.'));
   return container;
 };
+
+const manyItems = [
+  { legend: 'Apples', color: DataVizPalette.color1 },
+  { legend: 'Oranges', color: DataVizPalette.color2 },
+  { legend: 'Bananas', color: DataVizPalette.color3 },
+  { legend: 'Grapes', color: DataVizPalette.color4 },
+  { legend: 'Strawberries', color: DataVizPalette.color5 },
+  { legend: 'Blueberries', color: DataVizPalette.color6 },
+  { legend: 'Watermelon', color: DataVizPalette.color7 },
+  { legend: 'Pineapple', color: DataVizPalette.color8 },
+];
+
+export const Overflow: Story<FluentChartLegend> = () => {
+  const container = document.createElement('div');
+  container.style.cssText = 'border:1px dashed #ccc;padding:8px;';
+
+  // Constrain to 400px so the legend overflows at typical font sizes.
+  const constrainedWrapper = document.createElement('div');
+  constrainedWrapper.style.cssText = 'width:400px;';
+
+  const el = document.createElement('fluent-chart-legend') as FluentChartLegend;
+  el.items = manyItems;
+  el.label = 'Overflow legend';
+  wireInteractivity(el);
+
+  constrainedWrapper.appendChild(el);
+  container.appendChild(mockTitle('Legend overflow (\u201c+N more\u201d button)'));
+  container.appendChild(constrainedWrapper);
+  container.appendChild(
+    note(
+      'Legend is constrained to 400 px. Items that do not fit are listed in the \u201c+N more\u201d popup. ' +
+        'Click the button to open/close; click an item inside the popup to select it.',
+    ),
+  );
+  return container;
+};

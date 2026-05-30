@@ -1,141 +1,15 @@
 import { html } from '@microsoft/fast-element';
-import {
-  FieldDefinition,
-  FluentDesignSystem,
-  LabelDefinition,
-  SliderDefinition,
-  SwitchDefinition,
-  TextInputDefinition,
-} from '@fluentui/web-components';
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
-import { renderComponent } from '../helpers.stories.js';
+import {
+  controlsRowStyle,
+  createDropdownField,
+  createSliderField,
+  createSwitchField,
+  createTextInputField,
+  renderComponent,
+} from '../helpers.stories.js';
 import { GaugeChart as FluentGaugeChart } from './gauge-chart.js';
 import type { GaugeChartSegment } from './gauge-chart.options.js';
-
-type FluentSliderElement = HTMLElement & { value: string };
-type FluentSwitchElement = HTMLElement & { checked: boolean };
-type FluentTextInputElement = HTMLElement & { value: string };
-
-const ensureDefinition = (tagName: string, define: () => void) => {
-  if (!customElements.get(tagName)) {
-    define();
-  }
-};
-
-ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-text-input', () => TextInputDefinition.define(FluentDesignSystem.registry));
-
-const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
-const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
-const toggleFieldStyle = 'min-width:220px;';
-
-const createSliderField = (
-  labelText: string,
-  id: string,
-  value: number,
-  min: number,
-  max: number,
-  onChange: (nextValue: number) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', sliderFieldStyle);
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const slider = document.createElement('fluent-slider') as FluentSliderElement;
-  slider.slot = 'input';
-  slider.id = id;
-  slider.setAttribute('min', `${min}`);
-  slider.setAttribute('max', `${max}`);
-  slider.value = `${value}`;
-  slider.setAttribute('value', `${value}`);
-  field.appendChild(slider);
-
-  const message = document.createElement('fluent-label');
-  message.slot = 'message';
-  message.textContent = `${value}`;
-  field.appendChild(message);
-
-  slider.addEventListener('change', () => onChange(Number(slider.value)));
-
-  return {
-    element: field,
-    setValue: (nextValue: number) => {
-      slider.value = `${nextValue}`;
-      slider.setAttribute('value', `${nextValue}`);
-      message.textContent = `${nextValue}`;
-    },
-  };
-};
-
-const createSwitchField = (
-  labelText: string,
-  id: string,
-  checked: boolean,
-  onChange: (nextChecked: boolean) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'after');
-  field.setAttribute('style', toggleFieldStyle);
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const control = document.createElement('fluent-switch') as FluentSwitchElement;
-  control.slot = 'input';
-  control.id = id;
-  control.checked = checked;
-  control.toggleAttribute('checked', checked);
-  control.addEventListener('change', () => onChange(control.checked));
-  field.appendChild(control);
-
-  return {
-    element: field,
-    setValue: (nextChecked: boolean) => {
-      control.checked = nextChecked;
-      control.toggleAttribute('checked', nextChecked);
-    },
-  };
-};
-
-const createTextInputField = (
-  labelText: string,
-  id: string,
-  value: string,
-  onChange: (nextValue: string | undefined) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', 'min-width:220px;flex:1 1 220px;');
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const input = document.createElement('fluent-text-input') as FluentTextInputElement;
-  input.slot = 'input';
-  input.id = id;
-  input.setAttribute('value', value);
-  input.addEventListener('input', () => {
-    onChange(input.value || undefined);
-  });
-  field.appendChild(input);
-
-  return { element: field };
-};
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 
@@ -167,6 +41,79 @@ export default {
 } as Meta<FluentGaugeChart>;
 
 export const Basic: Story<FluentGaugeChart> = renderComponent(storyTemplate).bind({});
+
+export const StandardAttributes: Story<FluentGaugeChart> = () => {
+  const container = document.createElement('div');
+
+  let width = 252;
+  let height = 173;
+
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  container.appendChild(sliderControls);
+
+  const toggleControls = document.createElement('div');
+  toggleControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(toggleControls);
+
+  const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
+  chart.setAttribute('chart-title', basicTitle);
+  chart.setAttribute('segments', JSON.stringify(multiSegments));
+  chart.setAttribute('chart-value', '50');
+  chart.setAttribute('max-value', '100');
+  chart.setAttribute('width', `${width}`);
+  chart.setAttribute('height', `${height}`);
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const widthControl = createSliderField('Width', 'gauge-sa-width', width, 100, 600, nextValue => {
+    width = nextValue;
+    widthControl.setValue(nextValue);
+    chart.setAttribute('width', `${nextValue}`);
+  });
+  sliderControls.appendChild(widthControl.element);
+
+  const heightControl = createSliderField('Height', 'gauge-sa-height', height, 100, 400, nextValue => {
+    height = nextValue;
+    heightControl.setValue(nextValue);
+    chart.setAttribute('height', `${nextValue}`);
+  });
+  sliderControls.appendChild(heightControl.element);
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Legends', 'gauge-sa-hide-legends', false, checked => {
+      chart.toggleAttribute('hide-legends', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Labels', 'gauge-sa-hide-labels', false, checked => {
+      chart.toggleAttribute('hide-labels', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Tooltip', 'gauge-sa-hide-tooltip', false, checked => {
+      chart.toggleAttribute('hide-tooltip', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Rounded Corners', 'gauge-sa-round-corners', false, checked => {
+      chart.toggleAttribute('round-corners', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Multiple Legend Selection', 'gauge-sa-multi-select', false, checked => {
+      chart.toggleAttribute('allow-multiple-legend-selection', checked);
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+StandardAttributes.storyName = 'Standard Attributes';
+StandardAttributes.parameters = { docs: { story: { height: '420px' } } };
 
 export const SingleSegment: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
@@ -367,18 +314,6 @@ export const HideTooltip: Story<FluentGaugeChart> = () => {
 };
 HideTooltip.parameters = { docs: { story: { height: '440px' } } };
 
-export const RTL: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
-  <div dir="rtl">
-    <fluent-gauge-chart
-      chart-title="Gauge chart RTL example"
-      segments="${JSON.stringify(multiSegments)}"
-      chart-value="50"
-      max-value="100"
-    >
-    </fluent-gauge-chart>
-  </div>
-`);
-
 export const WithSublabelAndTitle: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
     chart-title="Gauge chart full example"
@@ -476,3 +411,104 @@ export const ResponsiveWidth: Story<FluentGaugeChart> = () => {
   return wrapper;
 };
 ResponsiveWidth.parameters = { docs: { story: { height: '320px' } } };
+
+export const TitleAlign: Story<FluentGaugeChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const alignments = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof alignments)[number] = 'start';
+
+  const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
+  chart.setAttribute('chart-title', 'Gauge chart title alignment example');
+  chart.setAttribute('segments', JSON.stringify(multiSegments));
+  chart.setAttribute('chart-value', '50');
+  chart.setAttribute('max-value', '100');
+  chart.setAttribute('title-align', currentAlign);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const alignControl = createDropdownField(
+    'Title align',
+    'gauge-title-align',
+    [...alignments],
+    currentAlign,
+    nextAlign => {
+      currentAlign = nextAlign as (typeof alignments)[number];
+      chart.setAttribute('title-align', currentAlign);
+    },
+  );
+  controls.appendChild(alignControl.element);
+
+  return container;
+};
+TitleAlign.parameters = { docs: { story: { height: '320px' } } };
+
+export const TitleAndLegendPositions: Story<FluentGaugeChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const positions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentPosition: (typeof positions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
+  chart.setAttribute('chart-title', 'Title and legend position example');
+  chart.setAttribute('segments', JSON.stringify(multiSegments));
+  chart.setAttribute('chart-value', '50');
+  chart.setAttribute('max-value', '100');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const posControl = createDropdownField(
+    'Legend position',
+    'gauge-legend-position',
+    [...positions],
+    currentPosition,
+    nextPosition => {
+      currentPosition = nextPosition as (typeof positions)[number];
+      if (currentPosition === 'bottom') {
+        chart.removeAttribute('legend-position');
+      } else {
+        chart.setAttribute('legend-position', currentPosition);
+      }
+    },
+  );
+
+  const titlePosControl = createDropdownField(
+    'Title position',
+    'gauge-title-position',
+    [...titlePositions],
+    currentTitlePosition,
+    nextTitlePosition => {
+      currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+      if (currentTitlePosition === 'top') {
+        chart.removeAttribute('title-position');
+      } else {
+        chart.setAttribute('title-position', currentTitlePosition);
+      }
+    },
+  );
+  controls.appendChild(titlePosControl.element);
+  controls.appendChild(posControl.element);
+
+  return container;
+};
+TitleAndLegendPositions.parameters = { docs: { story: { height: '320px' } } };
+
+export const RTL: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
+  <div dir="rtl">
+    <fluent-gauge-chart
+      chart-title="Gauge chart RTL example"
+      segments="${JSON.stringify(multiSegments)}"
+      chart-value="50"
+      max-value="100"
+    >
+    </fluent-gauge-chart>
+  </div>
+`);

@@ -1,197 +1,15 @@
 import { html } from '@microsoft/fast-element';
-import {
-  DropdownDefinition,
-  DropdownOptionDefinition,
-  FieldDefinition,
-  FluentDesignSystem,
-  LabelDefinition,
-  ListboxDefinition,
-  SliderDefinition,
-  SwitchDefinition,
-  TextInputDefinition,
-} from '@fluentui/web-components';
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
-import { renderComponent } from '../helpers.stories.js';
+import {
+  controlsRowStyle,
+  createDropdownField,
+  createSliderField,
+  createSwitchField,
+  createTextInputField,
+  renderComponent,
+} from '../helpers.stories.js';
 import { DonutChart as FluentDonutChart } from './donut-chart.js';
 import type { DonutDataPoint } from './donut-chart.options.js';
-
-type FluentSliderElement = HTMLElement & { value: string };
-type FluentSwitchElement = HTMLElement & { checked: boolean };
-type FluentDropdownElement = HTMLElement & { value: string };
-type FluentTextInputElement = HTMLElement & { value: string };
-
-const ensureDefinition = (tagName: string, define: () => void) => {
-  if (!customElements.get(tagName)) {
-    define();
-  }
-};
-
-ensureDefinition('fluent-dropdown', () => DropdownDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-listbox', () => ListboxDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-option', () => DropdownOptionDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-text-input', () => TextInputDefinition.define(FluentDesignSystem.registry));
-
-const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
-const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
-const toggleFieldStyle = 'min-width:220px;';
-
-const createSliderField = (
-  labelText: string,
-  id: string,
-  value: number,
-  min: number,
-  max: number,
-  onChange: (nextValue: number) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', sliderFieldStyle);
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const slider = document.createElement('fluent-slider') as FluentSliderElement;
-  slider.slot = 'input';
-  slider.id = id;
-  slider.setAttribute('min', `${min}`);
-  slider.setAttribute('max', `${max}`);
-  slider.value = `${value}`;
-  slider.setAttribute('value', `${value}`);
-  field.appendChild(slider);
-
-  const message = document.createElement('fluent-label');
-  message.slot = 'message';
-  message.textContent = `${value}`;
-  field.appendChild(message);
-
-  slider.addEventListener('change', () => onChange(Number(slider.value)));
-
-  return {
-    element: field,
-    setValue: (nextValue: number) => {
-      slider.value = `${nextValue}`;
-      slider.setAttribute('value', `${nextValue}`);
-      message.textContent = `${nextValue}`;
-    },
-  };
-};
-
-const createSwitchField = (
-  labelText: string,
-  id: string,
-  checked: boolean,
-  onChange: (nextChecked: boolean) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'after');
-  field.setAttribute('style', toggleFieldStyle);
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const control = document.createElement('fluent-switch') as FluentSwitchElement;
-  control.slot = 'input';
-  control.id = id;
-  control.checked = checked;
-  control.toggleAttribute('checked', checked);
-  control.addEventListener('change', () => onChange(control.checked));
-  field.appendChild(control);
-
-  return {
-    element: field,
-    setValue: (nextChecked: boolean) => {
-      control.checked = nextChecked;
-      control.toggleAttribute('checked', nextChecked);
-    },
-  };
-};
-
-const createDropdownField = (
-  labelText: string,
-  id: string,
-  options: string[],
-  value: string,
-  onChange: (nextValue: string) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', 'min-width:180px;');
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const dropdown = document.createElement('fluent-dropdown') as FluentDropdownElement;
-  dropdown.slot = 'input';
-  dropdown.id = id;
-  dropdown.setAttribute('value', value);
-
-  const listbox = document.createElement('fluent-listbox');
-  options.forEach(optionValue => {
-    const option = document.createElement('fluent-option');
-    option.setAttribute('value', optionValue);
-    if (optionValue === value) {
-      option.toggleAttribute('selected', true);
-    }
-    option.textContent = optionValue;
-    listbox.appendChild(option);
-  });
-
-  dropdown.appendChild(listbox);
-  dropdown.addEventListener('change', () => onChange(dropdown.value));
-  field.appendChild(dropdown);
-
-  return {
-    element: field,
-    setValue: (nextValue: string) => {
-      dropdown.setAttribute('value', nextValue);
-      dropdown.value = nextValue;
-      listbox.querySelectorAll('fluent-option').forEach(option => {
-        option.toggleAttribute('selected', option.getAttribute('value') === nextValue);
-      });
-    },
-  };
-};
-
-const createTextInputField = (
-  labelText: string,
-  id: string,
-  value: string,
-  onChange: (nextValue: string | undefined) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', 'min-width:220px;flex:1 1 220px;');
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const input = document.createElement('fluent-text-input') as FluentTextInputElement;
-  input.slot = 'input';
-  input.id = id;
-  input.setAttribute('value', value);
-  input.addEventListener('input', () => {
-    onChange(input.value || undefined);
-  });
-  field.appendChild(input);
-
-  return { element: field };
-};
 
 const basicTitle = 'Donut chart basic example';
 const sortedTitle = 'Sorted donut chart example';
@@ -242,19 +60,78 @@ export default {
 
 export const Basic: Story<FluentDonutChart> = renderComponent(storyTemplate).bind({});
 
-export const OutsideLabels: Story<FluentDonutChart> = () => {
+export const StandardAttributes: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+
+  let width = 200;
+  let height = 200;
+
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  container.appendChild(sliderControls);
+
+  const toggleControls = document.createElement('div');
+  toggleControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(toggleControls);
+
   const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
-  chart.setAttribute('chart-title', 'Donut chart outside labels example');
+  chart.setAttribute('chart-title', basicTitle);
   chart.setAttribute('data', JSON.stringify(data));
   chart.setAttribute('value-inside-donut', '39,000');
-  chart.setAttribute('inner-radius', '85');
-  chart.setAttribute('width', '320');
-  chart.setAttribute('height', '320');
-  chart.setAttribute('style', 'width:320px;height:320px');
-  chart.hideLabels = false;
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('width', `${width}`);
+  chart.setAttribute('height', `${height}`);
+  chart.setAttribute('style', 'margin-top:20px;');
 
-  return chart;
+  const widthControl = createSliderField('Width', 'donut-sa-width', width, 100, 500, nextValue => {
+    width = nextValue;
+    widthControl.setValue(nextValue);
+    chart.setAttribute('width', `${nextValue}`);
+  });
+  sliderControls.appendChild(widthControl.element);
+
+  const heightControl = createSliderField('Height', 'donut-sa-height', height, 100, 500, nextValue => {
+    height = nextValue;
+    heightControl.setValue(nextValue);
+    chart.setAttribute('height', `${nextValue}`);
+  });
+  sliderControls.appendChild(heightControl.element);
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Legends', 'donut-sa-hide-legends', false, checked => {
+      chart.toggleAttribute('hide-legends', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Labels', 'donut-sa-hide-labels', false, checked => {
+      chart.toggleAttribute('hide-labels', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Tooltip', 'donut-sa-hide-tooltip', false, checked => {
+      chart.toggleAttribute('hide-tooltip', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Rounded Corners', 'donut-sa-round-corners', false, checked => {
+      chart.toggleAttribute('round-corners', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Multiple Legend Selection', 'donut-sa-multi-select', false, checked => {
+      chart.toggleAttribute('allow-multiple-legend-selection', checked);
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
 };
+StandardAttributes.storyName = 'Standard Attributes';
+StandardAttributes.parameters = { docs: { story: { height: '480px' } } };
 
 export const Sizing: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -265,9 +142,9 @@ export const Sizing: Story<FluentDonutChart> = () => {
   chartHost.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chartHost);
 
-  let width = 620;
-  let height = 320;
-  let innerRadius = 55;
+  let width = 300;
+  let height = 300;
+  let innerRadius = 100;
 
   const renderChart = () => {
     const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
@@ -282,14 +159,14 @@ export const Sizing: Story<FluentDonutChart> = () => {
     chartHost.replaceChildren(chart);
   };
 
-  const widthControl = createSliderField('Width', 'donut-width', width, 200, 640, nextWidth => {
+  const widthControl = createSliderField('Width', 'donut-width', width, 100, 500, nextWidth => {
     width = nextWidth;
     widthControl.setValue(nextWidth);
     renderChart();
   });
   controls.appendChild(widthControl.element);
 
-  const heightControl = createSliderField('Height', 'donut-height', height, 200, 640, nextHeight => {
+  const heightControl = createSliderField('Height', 'donut-height', height, 100, 500 , nextHeight => {
     height = nextHeight;
     heightControl.setValue(nextHeight);
     renderChart();
@@ -346,69 +223,6 @@ export const ResponsiveWidth: Story<FluentDonutChart> = () => {
 ResponsiveWidth.storyName = 'Responsive Width';
 ResponsiveWidth.parameters = { docs: { story: { height: '420px' } } };
 
-export const RoundedCorners: Story<FluentDonutChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  let roundCorners = false;
-  let hideLabels = false;
-
-  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
-  chart.setAttribute('chart-title', 'Donut chart rounded corners example');
-  chart.setAttribute('data', JSON.stringify(data));
-  chart.setAttribute('value-inside-donut', '39,000');
-  chart.setAttribute('inner-radius', '55');
-  chart.setAttribute('style', 'width:320px;height:320px;margin-top:20px;');
-
-  const renderChart = () => {
-    chart.hideLabels = hideLabels;
-    chart.roundCorners = roundCorners;
-    chart.toggleAttribute('hide-labels', hideLabels);
-    chart.toggleAttribute('round-corners', roundCorners);
-
-    if (!chart.isConnected) {
-      container.appendChild(chart);
-    }
-  };
-
-  const roundedCornersControl = createSwitchField(
-    'Rounded corners',
-    'donut-rounded-corners',
-    roundCorners,
-    nextChecked => {
-      roundCorners = nextChecked;
-      roundedCornersControl.setValue(nextChecked);
-      renderChart();
-    },
-  );
-  controls.appendChild(roundedCornersControl.element);
-
-  const hideLabelsControl = createSwitchField('Hide labels', 'donut-rounded-hide-labels', hideLabels, nextChecked => {
-    hideLabels = nextChecked;
-    hideLabelsControl.setValue(nextChecked);
-    renderChart();
-  });
-  controls.appendChild(hideLabelsControl.element);
-
-  renderChart();
-
-  return container;
-};
-RoundedCorners.parameters = { docs: { story: { height: '440px' } } };
-
-export const HideLegends: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
-  <fluent-donut-chart
-    chart-title="Donut chart hide legends example"
-    data="${JSON.stringify(data)}"
-    value-inside-donut="39,000"
-    inner-radius="55"
-    hide-legends
-  >
-  </fluent-donut-chart>
-`);
-
 export const ShowLabelsInPercent: Story<FluentDonutChart> = () => {
   const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
   chart.setAttribute('chart-title', 'Donut chart percent labels example');
@@ -420,17 +234,35 @@ export const ShowLabelsInPercent: Story<FluentDonutChart> = () => {
   return chart;
 };
 
-export const RTL: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
-  <div dir="rtl">
-    <fluent-donut-chart
-      chart-title="Donut chart RTL example"
-      data="${JSON.stringify(data)}"
-      value-inside-donut="39,000"
-      inner-radius="55"
-    >
-    </fluent-donut-chart>
-  </div>
-`);
+
+export const ValueInsideDonut: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Donut chart value inside donut example');
+  chart.setAttribute('data', JSON.stringify(sortedData));
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('value-inside-donut', '39,000');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const inputField = createTextInputField('Value inside donut', 'donut-value-inside', '39,000', nextValue => {
+    if (nextValue) {
+      chart.valueInsideDonut = nextValue;
+      chart.setAttribute('value-inside-donut', nextValue);
+    } else {
+      chart.valueInsideDonut = undefined;
+      chart.removeAttribute('value-inside-donut');
+    }
+  });
+  controls.appendChild(inputField.element);
+
+  return container;
+};
+ValueInsideDonut.parameters = { docs: { story: { height: '440px' } } };
 
 export const Sorted: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
   <fluent-donut-chart
@@ -438,46 +270,6 @@ export const Sorted: Story<FluentDonutChart> = renderComponent(html<StoryArgs<Fl
     data="${JSON.stringify(sortedData)}"
     inner-radius="55"
     order="sorted"
-  >
-  </fluent-donut-chart>
-`);
-
-export const HideTooltip: Story<FluentDonutChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  let hideTooltip = true;
-
-  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
-  chart.setAttribute('chart-title', 'Donut chart hide tooltip example');
-  chart.setAttribute('data', JSON.stringify(data));
-  chart.setAttribute('value-inside-donut', '39,000');
-  chart.setAttribute('inner-radius', '55');
-  chart.setAttribute('style', 'margin-top:20px;');
-  chart.toggleAttribute('hide-tooltip', hideTooltip);
-  container.appendChild(chart);
-
-  const hideTooltipControl = createSwitchField('Hide tooltip', 'donut-hide-tooltip', hideTooltip, nextChecked => {
-    hideTooltip = nextChecked;
-    hideTooltipControl.setValue(nextChecked);
-    chart.hideTooltip = nextChecked;
-    chart.toggleAttribute('hide-tooltip', nextChecked);
-  });
-  controls.appendChild(hideTooltipControl.element);
-
-  return container;
-};
-HideTooltip.parameters = { docs: { story: { height: '440px' } } };
-
-export const LegendListLabel: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
-  <fluent-donut-chart
-    chart-title="Donut chart legend list label example"
-    data="${JSON.stringify(data)}"
-    value-inside-donut="39,000"
-    inner-radius="55"
-    legend-list-label="Chart segments"
   >
   </fluent-donut-chart>
 `);
@@ -510,69 +302,6 @@ export const Culture: Story<FluentDonutChart> = () => {
   return container;
 };
 Culture.parameters = { docs: { story: { height: '440px' } } };
-
-export const MultipleLegendSelection: Story<FluentDonutChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  let allowMultiple = true;
-
-  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
-  chart.setAttribute('chart-title', 'Donut chart multiple legend selection example');
-  chart.setAttribute('data', JSON.stringify(sortedData));
-  chart.setAttribute('inner-radius', '55');
-  chart.setAttribute('style', 'margin-top:20px;');
-  chart.allowMultipleLegendSelection = allowMultiple;
-  chart.toggleAttribute('allow-multiple-legend-selection', allowMultiple);
-  container.appendChild(chart);
-
-  const multipleControl = createSwitchField(
-    'Allow multiple legend selection',
-    'donut-multiple-legend',
-    allowMultiple,
-    nextChecked => {
-      allowMultiple = nextChecked;
-      multipleControl.setValue(nextChecked);
-      chart.allowMultipleLegendSelection = nextChecked;
-      chart.toggleAttribute('allow-multiple-legend-selection', nextChecked);
-    },
-  );
-  controls.appendChild(multipleControl.element);
-
-  return container;
-};
-MultipleLegendSelection.parameters = { docs: { story: { height: '440px' } } };
-
-export const ValueInsideDonut: Story<FluentDonutChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
-  chart.setAttribute('chart-title', 'Donut chart value inside donut example');
-  chart.setAttribute('data', JSON.stringify(sortedData));
-  chart.setAttribute('inner-radius', '55');
-  chart.setAttribute('value-inside-donut', '39,000');
-  chart.setAttribute('style', 'margin-top:20px;');
-  container.appendChild(chart);
-
-  const inputField = createTextInputField('Value inside donut', 'donut-value-inside', '39,000', nextValue => {
-    if (nextValue) {
-      chart.valueInsideDonut = nextValue;
-      chart.setAttribute('value-inside-donut', nextValue);
-    } else {
-      chart.valueInsideDonut = undefined;
-      chart.removeAttribute('value-inside-donut');
-    }
-  });
-  controls.appendChild(inputField.element);
-
-  return container;
-};
-ValueInsideDonut.parameters = { docs: { story: { height: '440px' } } };
 
 export const TitleAlign: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -687,3 +416,15 @@ export const TooltipRendererStory: Story<FluentDonutChart> = () => {
 };
 TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
+
+export const RTL: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
+  <div dir="rtl">
+    <fluent-donut-chart
+      chart-title="Donut chart RTL example"
+      data="${JSON.stringify(data)}"
+      value-inside-donut="39,000"
+      inner-radius="55"
+    >
+    </fluent-donut-chart>
+  </div>
+`);

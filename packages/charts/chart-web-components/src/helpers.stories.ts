@@ -1,4 +1,19 @@
 import type { ElementViewTemplate, FASTElement, ViewTemplate } from '@microsoft/fast-element';
+import {
+  ButtonDefinition,
+  CheckboxDefinition,
+  DropdownDefinition,
+  DropdownOptionDefinition,
+  FieldDefinition,
+  FluentDesignSystem,
+  LabelDefinition,
+  ListboxDefinition,
+  RadioDefinition,
+  RadioGroupDefinition,
+  SliderDefinition,
+  SwitchDefinition,
+  TextInputDefinition,
+} from '@fluentui/web-components';
 import type { AnnotatedStoryFn, Args, ComponentAnnotations, Renderer, StoryAnnotations } from 'storybook/internal/csf';
 
 /**
@@ -99,3 +114,282 @@ export function generateImage({
 
   return canvas.toDataURL('image/png');
 }
+
+// ── Shared story control infrastructure ──────────────────────────────────────
+
+export const ensureDefinition = (tagName: string, define: () => void) => {
+  if (!customElements.get(tagName)) {
+    define();
+  }
+};
+
+ensureDefinition('fluent-button', () => ButtonDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-checkbox', () => CheckboxDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-dropdown', () => DropdownDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-listbox', () => ListboxDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-option', () => DropdownOptionDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-radio', () => RadioDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-radio-group', () => RadioGroupDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-text-input', () => TextInputDefinition.define(FluentDesignSystem.registry));
+
+// Shared element types
+export type FluentSliderElement = HTMLElement & { value: string };
+export type FluentSwitchElement = HTMLElement & { checked: boolean };
+export type FluentDropdownElement = HTMLElement & { value: string };
+export type FluentTextInputElement = HTMLElement & { value: string };
+export type FluentCheckboxElement = HTMLElement & { checked: boolean };
+
+// Shared layout styles
+export const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
+export const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
+export const toggleFieldStyle = 'min-width:220px;';
+export const visuallyHiddenStyle =
+  'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;';
+
+export const createSliderField = (
+  labelText: string,
+  id: string,
+  value: number,
+  min: number,
+  max: number,
+  onChange: (nextValue: number) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'above');
+  field.setAttribute('style', sliderFieldStyle);
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const slider = document.createElement('fluent-slider') as FluentSliderElement;
+  slider.slot = 'input';
+  slider.id = id;
+  slider.setAttribute('min', `${min}`);
+  slider.setAttribute('max', `${max}`);
+  slider.value = `${value}`;
+  slider.setAttribute('value', `${value}`);
+  field.appendChild(slider);
+
+  const message = document.createElement('fluent-label');
+  message.slot = 'message';
+  message.textContent = `${value}`;
+  field.appendChild(message);
+
+  slider.addEventListener('change', () => onChange(Number(slider.value)));
+
+  return {
+    element: field,
+    setValue: (nextValue: number) => {
+      slider.value = `${nextValue}`;
+      slider.setAttribute('value', `${nextValue}`);
+      message.textContent = `${nextValue}`;
+    },
+  };
+};
+
+export const createSwitchField = (
+  labelText: string,
+  id: string,
+  checked: boolean,
+  onChange: (nextChecked: boolean) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'after');
+  field.setAttribute('style', toggleFieldStyle);
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const control = document.createElement('fluent-switch') as FluentSwitchElement;
+  control.slot = 'input';
+  control.id = id;
+  control.checked = checked;
+  control.toggleAttribute('checked', checked);
+  control.addEventListener('change', () => onChange(control.checked));
+  field.appendChild(control);
+
+  return {
+    element: field,
+    setValue: (nextChecked: boolean) => {
+      control.checked = nextChecked;
+      control.toggleAttribute('checked', nextChecked);
+    },
+  };
+};
+
+export const createCheckboxField = (
+  labelText: string,
+  id: string,
+  checked: boolean,
+  onChange: (nextChecked: boolean) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'after');
+  field.setAttribute('style', toggleFieldStyle);
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const checkbox = document.createElement('fluent-checkbox') as FluentCheckboxElement;
+  checkbox.slot = 'input';
+  checkbox.id = id;
+  checkbox.checked = checked;
+  checkbox.toggleAttribute('checked', checked);
+  checkbox.addEventListener('change', () => onChange(checkbox.checked));
+  field.appendChild(checkbox);
+
+  return {
+    element: field,
+    setValue: (nextChecked: boolean) => {
+      checkbox.checked = nextChecked;
+      checkbox.toggleAttribute('checked', nextChecked);
+    },
+  };
+};
+
+export const createDropdownField = (
+  labelText: string,
+  id: string,
+  options: string[],
+  value: string,
+  onChange: (nextValue: string) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'above');
+  field.setAttribute('style', 'min-width:180px;');
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const dropdown = document.createElement('fluent-dropdown') as FluentDropdownElement;
+  dropdown.slot = 'input';
+  dropdown.id = id;
+  dropdown.setAttribute('value', value);
+
+  const listbox = document.createElement('fluent-listbox');
+  options.forEach(optionValue => {
+    const option = document.createElement('fluent-option');
+    option.setAttribute('value', optionValue);
+    if (optionValue === value) {
+      option.toggleAttribute('selected', true);
+    }
+    option.textContent = optionValue;
+    listbox.appendChild(option);
+  });
+
+  dropdown.appendChild(listbox);
+  dropdown.addEventListener('change', () => onChange(dropdown.value));
+  field.appendChild(dropdown);
+
+  return {
+    element: field,
+    setValue: (nextValue: string) => {
+      dropdown.setAttribute('value', nextValue);
+      dropdown.value = nextValue;
+      listbox.querySelectorAll('fluent-option').forEach(option => {
+        option.toggleAttribute('selected', option.getAttribute('value') === nextValue);
+      });
+    },
+  };
+};
+
+export const createTextInputField = (
+  labelText: string,
+  id: string,
+  value: string,
+  onChange: (nextValue: string | undefined) => void,
+) => {
+  const field = document.createElement('fluent-field');
+  field.setAttribute('label-position', 'above');
+  field.setAttribute('style', sliderFieldStyle);
+
+  const label = document.createElement('label');
+  label.slot = 'label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  field.appendChild(label);
+
+  const input = document.createElement('fluent-text-input') as FluentTextInputElement;
+  input.slot = 'input';
+  input.id = id;
+  input.setAttribute('value', value);
+  input.addEventListener('input', () => {
+    onChange(input.value || undefined);
+  });
+  field.appendChild(input);
+
+  return { element: field };
+};
+
+export const createRadioGroupField = (
+  labelText: string,
+  name: string,
+  options: Array<{ label: string; value: string }>,
+  currentValue: string,
+  onChange: (value: string) => void,
+) => {
+  const outerField = document.createElement('fluent-field');
+  outerField.setAttribute('label-position', 'above');
+
+  const groupLabel = document.createElement('label');
+  groupLabel.slot = 'label';
+  groupLabel.textContent = labelText;
+  outerField.appendChild(groupLabel);
+
+  const radioGroup = document.createElement('fluent-radio-group');
+  radioGroup.slot = 'input';
+  radioGroup.setAttribute('name', name);
+  radioGroup.setAttribute('value', currentValue);
+  outerField.appendChild(radioGroup);
+
+  for (const option of options) {
+    const itemField = document.createElement('fluent-field');
+    itemField.setAttribute('label-position', 'after');
+
+    const radio = document.createElement('fluent-radio') as HTMLInputElement;
+    radio.slot = 'input';
+    radio.setAttribute('value', option.value);
+    if (option.value === currentValue) {
+      radio.toggleAttribute('checked', true);
+    }
+    radio.addEventListener('change', () => onChange(option.value));
+    itemField.appendChild(radio);
+
+    const itemLabel = document.createElement('label');
+    itemLabel.slot = 'label';
+    itemLabel.textContent = option.label;
+    itemField.appendChild(itemLabel);
+
+    radioGroup.appendChild(itemField);
+  }
+
+  return {
+    element: outerField,
+    setValue: (newValue: string) => {
+      radioGroup.setAttribute('value', newValue);
+    },
+  };
+};
+
+export const createFluentButton = (text: string, onClick: () => void) => {
+  const button = document.createElement('fluent-button');
+  button.textContent = text;
+  button.addEventListener('click', onClick);
+  return button;
+};

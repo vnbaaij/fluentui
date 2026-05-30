@@ -1,168 +1,16 @@
 import { html } from '@microsoft/fast-element';
-import {
-  DropdownDefinition,
-  DropdownOptionDefinition,
-  FieldDefinition,
-  FluentDesignSystem,
-  LabelDefinition,
-  ListboxDefinition,
-  SliderDefinition,
-  SwitchDefinition,
-} from '@fluentui/web-components';
 import type { Meta, Story, StoryArgs } from '../helpers.stories.js';
-import { renderComponent } from '../helpers.stories.js';
+import {
+  controlsRowStyle,
+  createDropdownField,
+  createSliderField,
+  createSwitchField,
+  renderComponent,
+} from '../helpers.stories.js';
 import { HorizontalBarChart as FluentHorizontalBarChart } from './horizontal-bar-chart.js';
 import type { HorizontalBarChartDataPoint, HorizontalBarChartProps } from './horizontal-bar-chart.options.js';
 import { Variant } from './horizontal-bar-chart.options.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
-
-type FluentSliderElement = HTMLElement & { value: string };
-type FluentSwitchElement = HTMLElement & { checked: boolean };
-type FluentDropdownElement = HTMLElement & { value: string };
-
-const ensureDefinition = (tagName: string, define: () => void) => {
-  if (!customElements.get(tagName)) {
-    define();
-  }
-};
-
-ensureDefinition('fluent-dropdown', () => DropdownDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-listbox', () => ListboxDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-option', () => DropdownOptionDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
-
-const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
-const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
-const toggleFieldStyle = 'min-width:220px;';
-
-const createSliderField = (
-  labelText: string,
-  id: string,
-  value: number,
-  min: number,
-  max: number,
-  onChange: (nextValue: number) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', sliderFieldStyle);
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const slider = document.createElement('fluent-slider') as FluentSliderElement;
-  slider.slot = 'input';
-  slider.id = id;
-  slider.setAttribute('min', `${min}`);
-  slider.setAttribute('max', `${max}`);
-  slider.value = `${value}`;
-  slider.setAttribute('value', `${value}`);
-  field.appendChild(slider);
-
-  const message = document.createElement('fluent-label');
-  message.slot = 'message';
-  message.textContent = `${value}`;
-  field.appendChild(message);
-
-  slider.addEventListener('change', () => onChange(Number(slider.value)));
-
-  return {
-    element: field,
-    setValue: (nextValue: number) => {
-      slider.value = `${nextValue}`;
-      slider.setAttribute('value', `${nextValue}`);
-      message.textContent = `${nextValue}`;
-    },
-  };
-};
-
-const createSwitchField = (
-  labelText: string,
-  id: string,
-  checked: boolean,
-  onChange: (nextChecked: boolean) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'after');
-  field.setAttribute('style', toggleFieldStyle);
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const control = document.createElement('fluent-switch') as FluentSwitchElement;
-  control.slot = 'input';
-  control.id = id;
-  control.checked = checked;
-  control.toggleAttribute('checked', checked);
-  control.addEventListener('change', () => onChange(control.checked));
-  field.appendChild(control);
-
-  return {
-    element: field,
-    setValue: (nextChecked: boolean) => {
-      control.checked = nextChecked;
-      control.toggleAttribute('checked', nextChecked);
-    },
-  };
-};
-
-const createDropdownField = (
-  labelText: string,
-  id: string,
-  options: string[],
-  value: string,
-  onChange: (nextValue: string) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', 'min-width:180px;');
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const dropdown = document.createElement('fluent-dropdown') as FluentDropdownElement;
-  dropdown.slot = 'input';
-  dropdown.id = id;
-  dropdown.setAttribute('value', value);
-
-  const listbox = document.createElement('fluent-listbox');
-  options.forEach(optionValue => {
-    const option = document.createElement('fluent-option');
-    option.setAttribute('value', optionValue);
-    if (optionValue === value) {
-      option.toggleAttribute('selected', true);
-    }
-    option.textContent = optionValue;
-    listbox.appendChild(option);
-  });
-
-  dropdown.appendChild(listbox);
-  dropdown.addEventListener('change', () => onChange(dropdown.value));
-  field.appendChild(dropdown);
-
-  return {
-    element: field,
-    setValue: (nextValue: string) => {
-      dropdown.setAttribute('value', nextValue);
-      dropdown.value = nextValue;
-      listbox.querySelectorAll('fluent-option').forEach(option => {
-        option.toggleAttribute('selected', option.getAttribute('value') === nextValue);
-      });
-    },
-  };
-};
 
 const singleBarHBCData = [
   {
@@ -506,6 +354,79 @@ export default {
 
 export const Basic: Story<FluentHorizontalBarChart> = renderComponent(storyTemplate).bind({});
 
+export const StandardAttributes: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+
+  let width = 720;
+  let height = 320;
+
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  container.appendChild(sliderControls);
+
+  const toggleControls = document.createElement('div');
+  toggleControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(toggleControls);
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart basic example');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('width', `${width}`);
+  chart.setAttribute('height', `${height}`);
+  chart.setAttribute('style', `width:${width}px;height:${height}px;margin-top:20px;`);
+
+  const widthControl = createSliderField('Width', 'hbc-sa-width', width, 320, 1000, nextValue => {
+    width = nextValue;
+    widthControl.setValue(nextValue);
+    chart.setAttribute('width', `${nextValue}`);
+    chart.setAttribute('style', `width:${nextValue}px;height:${height}px;margin-top:20px;`);
+  });
+  sliderControls.appendChild(widthControl.element);
+
+  const heightControl = createSliderField('Height', 'hbc-sa-height', height, 220, 640, nextValue => {
+    height = nextValue;
+    heightControl.setValue(nextValue);
+    chart.setAttribute('height', `${nextValue}`);
+    chart.setAttribute('style', `width:${width}px;height:${nextValue}px;margin-top:20px;`);
+  });
+  sliderControls.appendChild(heightControl.element);
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Legends', 'hbc-sa-hide-legends', false, checked => {
+      chart.toggleAttribute('hide-legends', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Labels', 'hbc-sa-hide-labels', false, checked => {
+      chart.toggleAttribute('hide-labels', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Tooltip', 'hbc-sa-hide-tooltip', false, checked => {
+      chart.toggleAttribute('hide-tooltip', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Rounded Corners', 'hbc-sa-round-corners', false, checked => {
+      chart.toggleAttribute('round-corners', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Multiple Legend Selection', 'hbc-sa-multi-select', false, checked => {
+      chart.toggleAttribute('allow-multiple-legend-selection', checked);
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+StandardAttributes.storyName = 'Standard Attributes';
+StandardAttributes.parameters = { docs: { story: { height: '500px' } } };
+
 export const Sizing: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -687,19 +608,6 @@ export const HideRatio: Story<FluentHorizontalBarChart> = renderComponent(html<S
     data="${JSON.stringify(singleBarHBCData)}"
   >
   </fluent-horizontal-bar-chart>
-`);
-
-export const RTL: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
-  <div dir="rtl">
-    <div>
-      <fluent-horizontal-bar-chart
-        style="width: 100%"
-        chart-title="Horizontal bar chart RTL example"
-        data="${JSON.stringify(data)}"
-      >
-      </fluent-horizontal-bar-chart>
-    </div>
-  </div>
 `);
 
 export const HideLegends: Story<FluentHorizontalBarChart> = () => {
@@ -1039,3 +947,16 @@ export const TooltipRendererStory: Story<FluentHorizontalBarChart> = () => {
 };
 TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
+
+export const RTL: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+  <div dir="rtl">
+    <div>
+      <fluent-horizontal-bar-chart
+        style="width: 100%"
+        chart-title="Horizontal bar chart RTL example"
+        data="${JSON.stringify(data)}"
+      >
+      </fluent-horizontal-bar-chart>
+    </div>
+  </div>
+`);

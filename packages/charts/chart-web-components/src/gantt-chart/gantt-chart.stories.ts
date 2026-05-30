@@ -1,41 +1,15 @@
-import {
-  ButtonDefinition,
-  CheckboxDefinition,
-  DropdownDefinition,
-  DropdownOptionDefinition,
-  FieldDefinition,
-  FluentDesignSystem,
-  LabelDefinition,
-  ListboxDefinition,
-  SliderDefinition,
-  SwitchDefinition,
-} from '@fluentui/web-components';
 import type { Meta, Story } from '../helpers.stories.js';
+import {
+  controlsRowStyle,
+  createDropdownField,
+  createSliderField,
+  createSwitchField,
+  visuallyHiddenStyle,
+} from '../helpers.stories.js';
 import { GanttChart as FluentGanttChart } from './gantt-chart.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
 import type { GanttChartDataPoint } from './gantt-chart.options.js';
 import type { AxisCategoryOrder } from '../utils/chart.options.js';
-
-type FluentSliderElement = HTMLElement & { value: string };
-type FluentCheckboxElement = HTMLElement & { checked: boolean };
-type FluentSwitchElement = HTMLElement & { checked: boolean };
-type FluentDropdownElement = HTMLElement & { value: string };
-
-const ensureDefinition = (tagName: string, define: () => void) => {
-  if (!customElements.get(tagName)) {
-    define();
-  }
-};
-
-ensureDefinition('fluent-button', () => ButtonDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-checkbox', () => CheckboxDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-dropdown', () => DropdownDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-listbox', () => ListboxDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-option', () => DropdownOptionDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
 
 // ── Sample data: Basic (mirrors GanttChartBasic React story) ─────────────────
 
@@ -144,141 +118,6 @@ const categoryOrderOptions: AxisCategoryOrder[] = [
   'median descending',
 ];
 
-// ── Helper UI builders ────────────────────────────────────────────────────────
-
-const visuallyHiddenStyle =
-  'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;';
-
-const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
-const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
-const toggleFieldStyle = 'min-width:220px;';
-
-const createSliderField = (
-  labelText: string,
-  id: string,
-  value: number,
-  min: number,
-  max: number,
-  onInput: (nextValue: number) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', sliderFieldStyle);
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const slider = document.createElement('fluent-slider') as FluentSliderElement;
-  slider.slot = 'input';
-  slider.id = id;
-  slider.setAttribute('min', `${min}`);
-  slider.setAttribute('max', `${max}`);
-  slider.value = `${value}`;
-  slider.setAttribute('value', `${value}`);
-  field.appendChild(slider);
-
-  const message = document.createElement('fluent-label');
-  message.slot = 'message';
-  message.textContent = `${value}`;
-  field.appendChild(message);
-
-  slider.addEventListener('change', () => onInput(Number(slider.value)));
-
-  return {
-    element: field,
-    setValue: (nextValue: number) => {
-      slider.value = `${nextValue}`;
-      slider.setAttribute('value', `${nextValue}`);
-      message.textContent = `${nextValue}`;
-    },
-  };
-};
-
-const createSwitchField = (
-  labelText: string,
-  id: string,
-  checked: boolean,
-  onChange: (nextChecked: boolean) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'after');
-  field.setAttribute('style', toggleFieldStyle);
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const control = document.createElement('fluent-switch') as FluentSwitchElement;
-  control.slot = 'input';
-  control.id = id;
-  control.checked = checked;
-  control.toggleAttribute('checked', checked);
-  control.addEventListener('change', () => onChange(control.checked));
-  field.appendChild(control);
-
-  return {
-    element: field,
-    setValue: (nextChecked: boolean) => {
-      control.checked = nextChecked;
-      control.toggleAttribute('checked', nextChecked);
-    },
-  };
-};
-
-const createDropdownField = (
-  labelText: string,
-  id: string,
-  options: string[],
-  selected: string,
-  onChange: (nextValue: string) => void,
-) => {
-  const field = document.createElement('fluent-field');
-  field.setAttribute('label-position', 'above');
-  field.setAttribute('style', 'min-width:260px;');
-
-  const label = document.createElement('label');
-  label.slot = 'label';
-  label.htmlFor = id;
-  label.textContent = labelText;
-  field.appendChild(label);
-
-  const dropdown = document.createElement('fluent-dropdown') as FluentDropdownElement;
-  dropdown.slot = 'input';
-  dropdown.id = id;
-  dropdown.setAttribute('value', selected);
-
-  const listbox = document.createElement('fluent-listbox');
-  options.forEach(optionValue => {
-    const option = document.createElement('fluent-option');
-    option.setAttribute('value', optionValue);
-    if (optionValue === selected) {
-      option.toggleAttribute('selected', true);
-    }
-    option.textContent = optionValue;
-    listbox.appendChild(option);
-  });
-
-  dropdown.appendChild(listbox);
-  dropdown.addEventListener('change', () => onChange(dropdown.value));
-  field.appendChild(dropdown);
-
-  return {
-    element: field,
-    setValue: (nextValue: string) => {
-      dropdown.setAttribute('value', nextValue);
-      dropdown.value = nextValue;
-      listbox.querySelectorAll('fluent-option').forEach(option => {
-        option.toggleAttribute('selected', option.getAttribute('value') === nextValue);
-      });
-    },
-  };
-};
-
 // ── Story meta ────────────────────────────────────────────────────────────────
 
 export default {
@@ -287,22 +126,30 @@ export default {
 
 // ── Stories ───────────────────────────────────────────────────────────────────
 
-export const Default: Story<FluentGanttChart> = () => {
+export const Basic: Story<FluentGanttChart> = () => {
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+  return chart;
+};
+Basic.parameters = { docs: { story: { height: '420px' } } };
+
+export const StandardAttributes: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
-
-  const controls = document.createElement('div');
-  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
-  container.appendChild(controls);
-
-  const srLabel = document.createElement('span');
-  srLabel.setAttribute('style', visuallyHiddenStyle);
-  srLabel.textContent = 'Chart controls';
-  controls.appendChild(srLabel);
 
   let width = 600;
   let height = 350;
-  let enableGradient = false;
-  let roundCorners = false;
+
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  container.appendChild(sliderControls);
+
+  const toggleControls = document.createElement('div');
+  toggleControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(toggleControls);
 
   const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
   chart.data = basicData;
@@ -311,43 +158,86 @@ export const Default: Story<FluentGanttChart> = () => {
   chart.setAttribute('width', `${width}`);
   chart.setAttribute('height', `${height}`);
 
-  const widthControl = createSliderField('Width', 'gantt-default-width', width, 0, 1000, nextValue => {
+  const widthControl = createSliderField('Width', 'gantt-sa-width', width, 0, 1000, nextValue => {
     width = nextValue;
     widthControl.setValue(nextValue);
     chart.setAttribute('width', `${nextValue}`);
   });
-  controls.appendChild(widthControl.element);
+  sliderControls.appendChild(widthControl.element);
 
-  const heightControl = createSliderField('Height', 'gantt-default-height', height, 0, 1000, nextValue => {
+  const heightControl = createSliderField('Height', 'gantt-sa-height', height, 0, 1000, nextValue => {
     height = nextValue;
     heightControl.setValue(nextValue);
     chart.setAttribute('height', `${nextValue}`);
   });
-  controls.appendChild(heightControl.element);
+  sliderControls.appendChild(heightControl.element);
 
-  const switchRow = document.createElement('div');
-  switchRow.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
-  container.appendChild(switchRow);
+  toggleControls.appendChild(
+    createSwitchField('Hide Legends', 'gantt-sa-hide-legends', false, checked => {
+      chart.toggleAttribute('hide-legends', checked);
+    }).element,
+  );
 
-  const gradientControl = createSwitchField('Enable Gradient', 'gantt-default-gradient', enableGradient, checked => {
-    enableGradient = checked;
-    chart.toggleAttribute('enable-gradient', checked);
-  });
-  switchRow.appendChild(gradientControl.element);
+  toggleControls.appendChild(
+    createSwitchField('Hide Labels', 'gantt-sa-hide-labels', false, checked => {
+      chart.toggleAttribute('hide-labels', checked);
+    }).element,
+  );
 
-  const cornersControl = createSwitchField('Rounded Corners', 'gantt-default-corners', roundCorners, checked => {
-    roundCorners = checked;
-    chart.toggleAttribute('round-corners', checked);
-  });
-  switchRow.appendChild(cornersControl.element);
+  toggleControls.appendChild(
+    createSwitchField('Hide Tooltip', 'gantt-sa-hide-tooltip', false, checked => {
+      chart.toggleAttribute('hide-tooltip', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Rounded Corners', 'gantt-sa-round-corners', false, checked => {
+      chart.toggleAttribute('round-corners', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Multiple Legend Selection', 'gantt-sa-multi-select', false, checked => {
+      chart.toggleAttribute('allow-multiple-legend-selection', checked);
+    }).element,
+  );
 
   container.appendChild(chart);
   return container;
 };
-
-Default.parameters = {
+StandardAttributes.storyName = 'Standard Attributes';
+StandardAttributes.parameters = {
   docs: {
-    story: { height: '620px' },
+    story: { height: '580px' },
+  },
+};
+
+export const ChartAttributes: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+
+  controls.appendChild(
+    createSwitchField('Enable Gradient', 'gantt-ca-gradient', false, checked => {
+      chart.toggleAttribute('enable-gradient', checked);
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+ChartAttributes.storyName = 'Chart Attributes';
+ChartAttributes.parameters = {
+  docs: {
+    story: { height: '480px' },
   },
 };
 
@@ -728,3 +618,94 @@ export const TooltipRendererStory: Story<FluentGanttChart> = () => {
 };
 TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '420px' } } };
+
+export const TitleAlign: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const alignments = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof alignments)[number] = 'start';
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt chart title alignment example';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('title-align', currentAlign);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const alignControl = createDropdownField(
+    'Title align',
+    'gantt-title-align',
+    [...alignments],
+    currentAlign,
+    nextAlign => {
+      currentAlign = nextAlign as (typeof alignments)[number];
+      chart.setAttribute('title-align', currentAlign);
+    },
+  );
+  controls.appendChild(alignControl.element);
+
+  return container;
+};
+TitleAlign.parameters = { docs: { story: { height: '440px' } } };
+
+export const TitleAndLegendPositions: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const positions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentPosition: (typeof positions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Title and legend position example';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const posControl = createDropdownField(
+    'Legend position',
+    'gantt-legend-position',
+    [...positions],
+    currentPosition,
+    nextPosition => {
+      currentPosition = nextPosition as (typeof positions)[number];
+      if (currentPosition === 'bottom') {
+        chart.removeAttribute('legend-position');
+      } else {
+        chart.setAttribute('legend-position', currentPosition);
+      }
+    },
+  );
+
+  const titlePosControl = createDropdownField(
+    'Title position',
+    'gantt-title-position',
+    [...titlePositions],
+    currentTitlePosition,
+    nextTitlePosition => {
+      currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+      if (currentTitlePosition === 'top') {
+        chart.removeAttribute('title-position');
+      } else {
+        chart.setAttribute('title-position', currentTitlePosition);
+      }
+    },
+  );
+  controls.appendChild(titlePosControl.element);
+  controls.appendChild(posControl.element);
+
+  return container;
+};
+TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
