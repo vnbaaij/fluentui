@@ -943,6 +943,23 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
       axisLayer.appendChild(text);
     });
 
+    // Hide overlapping x-axis tick labels when hideTickOverlap is true.
+    if (this.hideTickOverlap) {
+      const textEls = Array.from(axisLayer.querySelectorAll<SVGTextElement>('text.axis-text'));
+      let prevRight = -Infinity;
+      textEls.forEach(el => {
+        const bbox = (el as SVGTextElement).getBBox?.();
+        if (!bbox) return;
+        const left = bbox.x;
+        const right = bbox.x + bbox.width;
+        if (left < prevRight + 4) {
+          el.style.display = 'none';
+        } else {
+          prevRight = right;
+        }
+      });
+    }
+
     if (this.xAxisTitle) {
       const titleX = (rangeStart + rangeEnd) / 2;
       const titleY = height - 4;
@@ -970,8 +987,9 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     if (numericYAxis) {
       const [min, max] = this._getNumericYDomain(yValues);
       const yAxisScale = getNiceDomainAndTicks(min, max, toNumber(this.yAxisTickCount, DEFAULT_Y_TICK_COUNT));
+      const effectiveTicks = this.yAxisTickValues ?? yAxisScale.ticks;
       const safeSpan = yAxisScale.domain[1] - yAxisScale.domain[0] || 1;
-      yAxisScale.ticks.forEach(tick => {
+      effectiveTicks.forEach(tick => {
         const ratio = (tick - yAxisScale.domain[0]) / safeSpan;
         const y = height - margins.bottom - ratio * (height - margins.top - margins.bottom);
         const label = this.yAxisTickFormat

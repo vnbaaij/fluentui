@@ -76,6 +76,8 @@ export function getChartValueLabel(
   maxValue: number,
   chartValueFormat?: GaugeValueFormat,
   forCallout: boolean = false,
+  chartValueFormatFn?: (sweepFraction: [number, number]) => string,
+  chartValueFormatTemplate?: string,
 ): string {
   if (forCallout) {
     return minValue !== 0
@@ -116,6 +118,22 @@ export class GaugeChart extends ChartBase {
 
   @attr({ attribute: 'chart-value-format' })
   public chartValueFormat?: GaugeValueFormat;
+
+  /**
+   * Optional JS function for custom center-value label formatting.
+   * Receives `[currentValue, maxValue]` and returns a string.
+   * When set, takes precedence over `chartValueFormat` and `chartValueFormatTemplate`.
+   * Cannot be set via HTML attribute — assign directly on the element.
+   */
+  public chartValueFormatFn?: (sweepFraction: [number, number]) => string;
+
+  /**
+   * Template string for the center-value label. Tokens replaced at render time:
+   * `{value}` → current value, `{max}` → max value, `{min}` → min value, `{percent}` → percentage.
+   * Used by Blazor (where JS functions cannot be passed as attributes).
+   */
+  @attr({ attribute: 'chart-value-format-template' })
+  public chartValueFormatTemplate?: string;
 
   @attr
   public variant?: GaugeChartVariant;
@@ -226,6 +244,10 @@ export class GaugeChart extends ChartBase {
   }
 
   protected chartValueFormatChanged() {
+    this._requestRender();
+  }
+
+  protected chartValueFormatTemplateChanged() {
     this._requestRender();
   }
 
@@ -469,7 +491,7 @@ export class GaugeChart extends ChartBase {
       path.setAttribute('id', arcId);
       path.setAttribute('data-id', segment.legend);
       path.setAttribute('role', 'img');
-      path.setAttribute('aria-label', getSegmentLabel(segment, minValue, maxValue, this.variant, true));
+      path.setAttribute('aria-label', segment.ariaLabel ?? getSegmentLabel(segment, minValue, maxValue, this.variant, true));
       path.setAttribute('tabindex', this._segmentEls.length === 1 ? '0' : '-1');
       path.classList.add('segment');
 
@@ -698,7 +720,15 @@ export class GaugeChart extends ChartBase {
   private _buildHeaderValue(): string {
     return (
       'Current value: ' +
-      getChartValueLabel(this.chartValue, this._computedMinValue, this._computedMaxValue, this.chartValueFormat, true)
+      getChartValueLabel(
+      this.chartValue,
+      this._computedMinValue,
+      this._computedMaxValue,
+      this.chartValueFormat,
+      true,
+      this.chartValueFormatFn,
+      this.chartValueFormatTemplate,
+    )
     );
   }
 

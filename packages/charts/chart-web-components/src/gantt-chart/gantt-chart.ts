@@ -1,6 +1,6 @@
 import { attr } from '@microsoft/fast-element';
 import { scaleTime } from 'd3-scale';
-import { timeFormat } from 'd3-time-format';
+import { timeFormat, utcFormat } from 'd3-time-format';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
   createNumberFormat,
@@ -817,8 +817,11 @@ export class GanttChart extends CartesianChartBase {
 
   private _formatDateTick(ms: number, rangeMs: number): string {
     const date = new Date(ms);
+    if (this.customDateTimeFormatter) {
+      return this.customDateTimeFormatter(date);
+    }
     if (this.tickFormat) {
-      return timeFormat(this.tickFormat)(date);
+      return (this.useUTC ? utcFormat : timeFormat)(this.tickFormat)(date);
     }
     const options: Intl.DateTimeFormatOptions =
       this.dateLocalizeOptions ??
@@ -827,7 +830,9 @@ export class GanttChart extends CartesianChartBase {
         : rangeMs < 365 * 86_400_000
         ? { month: 'short', day: 'numeric' }
         : { year: 'numeric', month: 'short' });
-    return new Intl.DateTimeFormat(this.culture || undefined, options).format(date);
+    const locale = this.culture || undefined;
+    const resolvedOptions = this.useUTC ? { ...options, timeZone: 'UTC' } : options;
+    return new Intl.DateTimeFormat(locale, resolvedOptions).format(date);
   }
 
   private _formatXRange(point: GanttChartDataPoint): string {
@@ -956,8 +961,9 @@ export class GanttChart extends CartesianChartBase {
     if (numericYAxis) {
       const [min, max] = this._getNumericYDomain(yValues);
       const yAxisScale = getNiceDomainAndTicks(min, max, toNumber(this.yAxisTickCount, DEFAULT_Y_TICK_COUNT));
+      const effectiveTicks = this.yAxisTickValues ?? yAxisScale.ticks;
       const safeSpan = yAxisScale.domain[1] - yAxisScale.domain[0] || 1;
-      yAxisScale.ticks.forEach(tick => {
+      effectiveTicks.forEach(tick => {
         const ratio = (tick - yAxisScale.domain[0]) / safeSpan;
         const y = height - margins.bottom - ratio * (height - margins.top - margins.bottom);
         const label = this.yAxisTickFormat

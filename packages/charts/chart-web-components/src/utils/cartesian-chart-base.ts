@@ -117,6 +117,18 @@ export abstract class CartesianChartBase extends ChartBase {
   @attr({ attribute: 'date-localize-options', converter: jsonConverter })
   public dateLocalizeOptions?: Intl.DateTimeFormatOptions;
 
+  /** When true, date axes display values in UTC instead of the user's local timezone. */
+  @attr({ attribute: 'use-utc', mode: 'boolean' })
+  public useUTC: boolean = false;
+
+  /**
+   * Optional custom formatter function for date-axis tick labels.
+   * Receives a `Date` and returns a formatted string.
+   * When set, takes precedence over `tickFormat` and `dateLocalizeOptions`.
+   * Cannot be set via HTML attribute — assign directly on the element.
+   */
+  public customDateTimeFormatter?: (dateTime: Date) => string;
+
   // ── Lifecycle ────────────────────────────────────────────────────
 
   connectedCallback() {
@@ -230,6 +242,10 @@ export abstract class CartesianChartBase extends ChartBase {
   }
 
   protected dateLocalizeOptionsChanged() {
+    this._requestRender();
+  }
+
+  protected useUTCChanged() {
     this._requestRender();
   }
 }
