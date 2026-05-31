@@ -1,5 +1,5 @@
 import { FASTElement, attr, observable } from '@microsoft/fast-element';
-import type { ChartLegendPosition, Legend } from '../utils/chart.options.js';
+import type { ChartLegendPosition, Legend } from '../utils/chart-options.js';
 import { jsonConverter } from '../utils/chart-helpers.js';
 
 /**
@@ -53,6 +53,10 @@ export class ChartLegend extends FASTElement {
   @attr({ attribute: 'overflow-text' })
   public overflowText?: string;
 
+  /** Centers the legend row horizontally within its host. */
+  @attr({ attribute: 'center', mode: 'boolean' })
+  public center = false;
+
   /**
    * Number of items that overflow the row. Drives the `when()` that renders
    * the "+N more" button and the overflow popup.
@@ -81,7 +85,7 @@ export class ChartLegend extends FASTElement {
     // Save defaults first so we can restore them for fields that have no
     // corresponding HTML attribute (FAST won't call the setter in that case).
     const self = this as Record<string, unknown>;
-    const attrFields = ['items', 'position', 'overflowText'] as const;
+    const attrFields = ['items', 'position', 'overflowText', 'center'] as const;
     const observableFields = ['highlighted', 'selected', '_overflowCount', '_overflowItems'] as const;
 
     const savedAttr: Partial<Record<(typeof attrFields)[number], unknown>> = {};

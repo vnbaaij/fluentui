@@ -1718,3 +1718,94 @@ test.describe('HorizontalBarChart - tooltipRenderer', () => {
     await expect(element.locator('.tooltip-body')).toBeVisible();
   });
 });
+
+test.describe('HorizontalBarChart - hide-ratio-per-bar', () => {
+  const ratioPerBarData: HorizontalBarChartProps[] = [
+    {
+      chartSeriesTitle: 'Row 1',
+      chartData: [
+        { legend: 'Completed', data: 30, color: '#637cef' },
+        { legend: 'Remaining', data: 70, color: '#e3008c' },
+      ],
+    },
+    {
+      chartSeriesTitle: 'Row 2',
+      chartData: [
+        { legend: 'Completed', data: 45, color: '#637cef' },
+        { legend: 'Remaining', data: 55, color: '#e3008c' },
+      ],
+    },
+    {
+      chartSeriesTitle: 'Row 3',
+      chartData: [
+        { legend: 'Completed', data: 25, color: '#637cef' },
+        { legend: 'Remaining', data: 75, color: '#e3008c' },
+      ],
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--hide-ratio-per-bar'));
+    await page.setContent(/* html */ `
+      <div style="width: 420px">
+        <fluent-horizontal-bar-chart
+          chart-title="Hide ratio per bar test"
+          hide-ratio-per-bar='[true,false,true]'
+          data='${JSON.stringify(ratioPerBarData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+  });
+
+  test('Should hide ratio text only for the rows configured in hide-ratio-per-bar', async ({ page }) => {
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const rows = element.locator('.bar-title-div');
+
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0).locator('.ratio-numerator')).toHaveCount(0);
+    await expect(rows.nth(1).locator('.ratio-numerator')).toHaveCount(1);
+    await expect(rows.nth(2).locator('.ratio-numerator')).toHaveCount(0);
+  });
+});
+
+test.describe('HorizontalBarChart - show-legend-for-single-point-bar', () => {
+  const singlePointLegendData: HorizontalBarChartProps[] = [
+    {
+      chartSeriesTitle: 'Servers',
+      chartData: [{ legend: 'Servers', data: 32, total: 100, color: '#637cef' }],
+    },
+    {
+      chartSeriesTitle: 'Storage',
+      chartData: [{ legend: 'Storage', data: 48, total: 100, color: '#e3008c' }],
+    },
+    {
+      chartSeriesTitle: 'Network',
+      chartData: [{ legend: 'Network', data: 20, total: 100, color: '#2aa0a4' }],
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--legend-for-single-point-bar'));
+    await page.setContent(/* html */ `
+      <div style="width: 420px">
+        <fluent-horizontal-bar-chart
+          chart-title="Single point legend test"
+          data='${JSON.stringify(singlePointLegendData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+  });
+
+  test('Should add legend entries for single-point bars only when the attribute is present', async ({ page }) => {
+    const element = page.locator('fluent-horizontal-bar-chart');
+
+    await expect(element.getByRole('option')).toHaveCount(0);
+
+    await element.evaluate(el => el.setAttribute('show-legend-for-single-point-bar', ''));
+    await page.waitForTimeout(50);
+
+    await expect(element.getByRole('option')).toHaveCount(3);
+  });
+});

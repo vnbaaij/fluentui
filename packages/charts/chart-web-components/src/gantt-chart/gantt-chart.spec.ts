@@ -645,3 +645,122 @@ test.describe('GanttChart - tooltipRenderer', () => {
     await expect(element.locator('.tooltip-body')).toBeVisible();
   });
 });
+
+test.describe('GanttChart - use-utc', () => {
+  const utcData: GanttChartDataPoint[] = [
+    {
+      x: { start: '2024-03-31T23:30:00Z', end: '2024-04-01T05:00:00Z' },
+      y: 'Overnight import',
+      legend: 'UTC series',
+      color: color1,
+    },
+    {
+      x: { start: '2024-04-01T06:00:00Z', end: '2024-04-01T12:00:00Z' },
+      y: 'Morning sync',
+      legend: 'UTC series',
+      color: color2,
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--use-utc'));
+    await page.setContent(/* html */ `
+      <div style="width: 640px">
+        <fluent-gantt-chart
+          chart-title="UTC gantt test"
+          tick-format="%Y-%m-%d %H:%M"
+          data='${JSON.stringify(utcData)}'
+        ></fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+  });
+
+  test('Should re-render when use-utc attribute is set', async ({ page }) => {
+    const element = page.locator('fluent-gantt-chart');
+    const initialTickCount = await element.locator('.axis-text').count();
+
+    await element.evaluate(el => el.setAttribute('use-utc', ''));
+    await page.waitForTimeout(50);
+
+    await expect(element).toHaveAttribute('use-utc', '');
+    await expect(element.locator('svg.chart-svg')).toBeVisible();
+
+    const rerenderedTickCount = await element.locator('.axis-text').count();
+    expect(initialTickCount).toBeGreaterThan(0);
+    expect(rerenderedTickCount).toBe(initialTickCount);
+  });
+});
+
+test.describe('GanttChart - y-axis-tick-values', () => {
+  const numericYAxisData: GanttChartDataPoint[] = [
+    { x: { start: 0, end: 20 }, y: 0, legend: 'Alpha', color: color1 },
+    { x: { start: 10, end: 35 }, y: 25, legend: 'Alpha', color: color1 },
+    { x: { start: 20, end: 50 }, y: 50, legend: 'Beta', color: color2 },
+    { x: { start: 40, end: 70 }, y: 75, legend: 'Beta', color: color2 },
+    { x: { start: 60, end: 90 }, y: 100, legend: 'Gamma', color: successColor },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div style="width: 640px">
+        <fluent-gantt-chart
+          chart-title="Gantt y-axis tick values test"
+          data='${JSON.stringify(numericYAxisData)}'
+        ></fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+  });
+
+  test('Should render only the provided y-axis tick values', async ({ page }) => {
+    const element = page.locator('fluent-gantt-chart');
+
+    await element.evaluate(el => el.setAttribute('y-axis-tick-values', '[0,50,100]'));
+    await page.waitForTimeout(50);
+
+    const labels = element.locator('.y-axis-text');
+    await expect(labels).toHaveCount(3);
+    await expect(labels.nth(0)).toContainText('0');
+    await expect(labels.nth(1)).toContainText('50');
+    await expect(labels.nth(2)).toContainText('100');
+  });
+});
+
+test.describe('GanttChart - hide-tick-overlap', () => {
+  const crowdedTickData: GanttChartDataPoint[] = [
+    { x: { start: 0, end: 10 }, y: 'Task A', legend: 'Series A', color: color1 },
+    { x: { start: 2, end: 12 }, y: 'Task B', legend: 'Series B', color: color2 },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.setContent(/* html */ `
+      <div style="width: 320px">
+        <fluent-gantt-chart
+          chart-title="Gantt tick overlap test"
+          tick-values='[0,1,2,3,4,5,6,7,8,9,10,11,12]'
+          x-axis-tick-format=".0f"
+          data='${JSON.stringify(crowdedTickData)}'
+        ></fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+  });
+
+  test('Should hide overlapping x-axis tick labels when hide-tick-overlap is present', async ({ page }) => {
+    const element = page.locator('fluent-gantt-chart');
+
+    await element.evaluate(el => el.setAttribute('hide-tick-overlap', ''));
+    await page.waitForTimeout(50);
+
+    const hiddenTickCount = await element.evaluate(el => {
+      return Array.from(el.shadowRoot!.querySelectorAll<SVGTextElement>('text.axis-text')).filter(
+        tick => tick.style.display === 'none',
+      ).length;
+    });
+
+    expect(hiddenTickCount).toBeGreaterThan(0);
+  });
+});

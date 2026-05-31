@@ -1223,3 +1223,75 @@ test.describe('HorizontalBarChartWithAxis - tooltipRenderer', () => {
     await expect(element.locator('.tooltip-body')).toBeVisible();
   });
 });
+
+test.describe('HorizontalBarChartWithAxis - y-axis-tick-values', () => {
+  const compactNumericYAxisData: HorizontalBarChartWithAxisDataPoint[] = [
+    { x: 100, y: 0, legend: 'Alpha', color: '#637cef' },
+    { x: 250, y: 500, legend: 'Beta', color: '#e3008c' },
+    { x: 400, y: 1000, legend: 'Gamma', color: '#2aa0a4' },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Y-axis tick values test"
+          data='${JSON.stringify(compactNumericYAxisData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+  });
+
+  test('Should re-render the numeric y-axis with the provided tick values', async ({ page }) => {
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+
+    await element.evaluate(el => el.setAttribute('y-axis-tick-values', '[0,500,1000]'));
+    await page.waitForTimeout(50);
+
+    const labels = element.locator('.y-axis-text');
+    await expect(labels).toHaveCount(3);
+    await expect(labels.nth(0)).toContainText('0');
+    await expect(labels.nth(1)).toContainText('500');
+    await expect(labels.nth(2)).toContainText(/1k/i);
+  });
+});
+
+test.describe('HorizontalBarChartWithAxis - hide-tick-overlap', () => {
+  const crowdedTickData: HorizontalBarChartWithAxisDataPoint[] = [
+    { x: 1000, y: 'North', legend: 'Alpha', color: '#637cef' },
+    { x: 5000, y: 'South', legend: 'Beta', color: '#e3008c' },
+    { x: 9000, y: 'East', legend: 'Gamma', color: '#2aa0a4' },
+    { x: 12000, y: 'West', legend: 'Delta', color: '#9373c0' },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 320px">
+        <fluent-horizontal-bar-chart-with-axis
+          chart-title="Tick overlap re-render test"
+          tick-values='[0,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,12000]'
+          x-axis-tick-format=".0f"
+          data='${JSON.stringify(crowdedTickData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+  });
+
+  test('Should stay visible when hide-tick-overlap is toggled', async ({ page }) => {
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    const svg = element.locator('svg.chart-svg');
+
+    await element.evaluate(el => el.removeAttribute('hide-tick-overlap'));
+    await page.waitForTimeout(50);
+    await expect(svg).toBeVisible();
+
+    await element.evaluate(el => el.setAttribute('hide-tick-overlap', ''));
+    await page.waitForTimeout(50);
+    await expect(svg).toBeVisible();
+    await expect(element.locator('.axis-text').first()).not.toBeEmpty();
+  });
+});

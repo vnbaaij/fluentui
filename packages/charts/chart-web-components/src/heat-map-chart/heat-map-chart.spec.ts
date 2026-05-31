@@ -221,3 +221,89 @@ test.describe('HeatMapChart - Reactive updates', () => {
     expect(newCount).toBe(1);
   });
 });
+
+test.describe('HeatMapChart - x-axis-string-labels', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-heatmapchart--string-labels'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-heat-map-chart
+          chart-title="Heat map string labels test"
+          data='${JSON.stringify(stringData)}'
+          domain-values-for-color-scale='${JSON.stringify(domainValues)}'
+          range-values-for-color-scale='${JSON.stringify(rangeColors)}'
+          x-axis-string-labels='{"Mon":"Monday","Tue":"Tuesday","Wed":"Wednesday"}'
+        ></fluent-heat-map-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-heat-map-chart'));
+  });
+
+  test('Should render display labels instead of the raw x-axis string keys', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+    const xLabels = element.locator('.axis-text');
+    await expect(xLabels.nth(0)).toContainText('Monday');
+    await expect(xLabels.nth(1)).toContainText('Tuesday');
+    await expect(xLabels.nth(2)).toContainText('Wednesday');
+  });
+});
+
+test.describe('HeatMapChart - x-axis-category-order', () => {
+  const orderedData: HeatMapChartData[] = [
+    {
+      value: 50,
+      legend: 'Usage',
+      data: [
+        { x: 'Banana', y: 'Team A', value: 40, rectText: 40 },
+        { x: 'Apple', y: 'Team A', value: 55, rectText: 55 },
+        { x: 'Cherry', y: 'Team A', value: 70, rectText: 70 },
+      ],
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-heatmapchart--category-order'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-heat-map-chart
+          chart-title="Heat map category order test"
+          data='${JSON.stringify(orderedData)}'
+          domain-values-for-color-scale='[0,50,100]'
+          range-values-for-color-scale='["#d4e8ff","#0078d4","#003a78"]'
+          sort-order="none"
+        ></fluent-heat-map-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-heat-map-chart'));
+  });
+
+  test('Should sort labels alphabetically when the order is alphabetical', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+
+    await element.evaluate(el => el.setAttribute('x-axis-category-order', 'alphabetical'));
+    await page.waitForTimeout(50);
+
+    const labels = (await element.locator('.axis-text').allTextContents()).map(text => text.trim());
+    expect(labels).toEqual(['Apple', 'Banana', 'Cherry']);
+  });
+
+  test('Should sort labels in reverse alphabetical order when the order is descending', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+
+    await element.evaluate(el => el.setAttribute('x-axis-category-order', 'category descending'));
+    await page.waitForTimeout(50);
+
+    const labels = (await element.locator('.axis-text').allTextContents()).map(text => text.trim());
+    expect(labels).toEqual(['Cherry', 'Banana', 'Apple']);
+  });
+
+  test('Should preserve insertion order when the order is none', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+
+    await element.evaluate(el => el.setAttribute('x-axis-category-order', 'none'));
+    await page.waitForTimeout(50);
+
+    const labels = (await element.locator('.axis-text').allTextContents()).map(text => text.trim());
+    expect(labels).toEqual(['Banana', 'Apple', 'Cherry']);
+  });
+});

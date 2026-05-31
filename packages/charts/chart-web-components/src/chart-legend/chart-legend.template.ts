@@ -3,7 +3,7 @@ import { type ElementViewTemplate, html, repeat, when } from '@microsoft/fast-el
 // through FAST style bindings — because repeat() does not propagate parent
 // observable changes into inner bindings reactively.
 import type { ChartLegend } from './chart-legend.js';
-import type { Legend } from '../utils/chart.options.js';
+import type { Legend } from '../utils/chart-options.js';
 import { getColorFromToken } from '../utils/chart-helpers.js';
 
 /**

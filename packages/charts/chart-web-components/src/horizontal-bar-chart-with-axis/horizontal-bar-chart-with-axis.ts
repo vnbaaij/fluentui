@@ -9,7 +9,7 @@ import {
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
 import type { HorizontalBarChartWithAxisDataPoint } from './horizontal-bar-chart-with-axis.options.js';
-import type { AxisCategoryOrder, Legend, TooltipProps, TooltipRenderer } from '../utils/chart.options.js';
+import type { AxisCategoryOrder, Legend, TooltipProps, TooltipRenderer } from '../utils/chart-options.js';
 
 type HBCWATooltipProps = TooltipProps & {
   xLabel: string;

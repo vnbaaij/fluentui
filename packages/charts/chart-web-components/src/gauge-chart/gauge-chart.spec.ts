@@ -403,3 +403,56 @@ test.describe('GaugeChart - width and height', () => {
     expect(transformSmall).not.toEqual(transformLarge);
   });
 });
+
+test.describe('GaugeChart - chart-value-format-template', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-gaugechart--format-template'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gauge-chart
+          chart-title="Gauge format template test"
+          segments='${JSON.stringify(multiSegments)}'
+          chart-value="50"
+          max-value="100"
+          chart-value-format-template="{value} of {max} GB"
+        >
+        </fluent-gauge-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gauge-chart'));
+  });
+
+  test('Should render the filled chart value template', async ({ page }) => {
+    const element = page.locator('fluent-gauge-chart');
+    await expect(element.locator('.chart-value')).toContainText('50 of 100 GB');
+  });
+});
+
+test.describe('GaugeChart - segment ariaLabel', () => {
+  const ariaLabelSegments: GaugeChartSegment[] = [
+    { legend: 'Low', size: 33, ariaLabel: 'Custom label for Low' },
+    { legend: 'Medium', size: 34 },
+    { legend: 'High', size: 33 },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-gaugechart--segment-aria-labels'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gauge-chart
+          chart-title="Gauge segment aria-label test"
+          segments='${JSON.stringify(ariaLabelSegments)}'
+          chart-value="50"
+          max-value="100"
+        >
+        </fluent-gauge-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gauge-chart'));
+  });
+
+  test('Should apply the custom aria-label to the matching segment', async ({ page }) => {
+    const element = page.locator('fluent-gauge-chart');
+    await expect(element.locator('.segment[data-id="Low"]')).toHaveAttribute('aria-label', 'Custom label for Low');
+  });
+});

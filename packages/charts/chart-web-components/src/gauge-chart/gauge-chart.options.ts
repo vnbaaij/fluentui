@@ -24,6 +24,9 @@ export interface GaugeChartSegment {
    * Only used when `enable-gradient` is set on the chart.
    */
   gradient?: [string, string];
+
+  /** Optional custom aria-label for the arc element. Overrides the auto-generated label. */
+  ariaLabel?: string;
 }
 
 /**
@@ -32,6 +35,9 @@ export interface GaugeChartSegment {
  * @public
  */
 export type GaugeValueFormat = 'percentage' | 'fraction';
+
+/** A template string for the gauge center-value label. Tokens: {value}, {min}, {max}, {percent}. */
+export type GaugeValueFormatTemplate = string;
 
 /**
  * Display variant for the gauge.

@@ -9,13 +9,13 @@ import {
   renderComponent,
 } from '../helpers.stories.js';
 import { FunnelChart as FluentFunnelChart } from './funnel-chart.js';
-import type { FunnelDataPoint } from './funnel-chart.options.js';
+import type { FunnelChartDataPoint } from './funnel-chart.options.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
 
 // ── Sample data ──────────────────────────────────────────────────────────────
 
 // DataVizPalette.color5/6/10/3 resolved values – matches the React Charts FunnelChart story
-const simpleData: FunnelDataPoint[] = [
+const simpleData: FunnelChartDataPoint[] = [
   { stage: 'Visitors', value: 1000 },
   { stage: 'Signups', value: 600 },
   { stage: 'Trials', value: 300 },
@@ -23,7 +23,7 @@ const simpleData: FunnelDataPoint[] = [
 ];
 
 // Matches the React Charts FunnelChart stacked story
-const stackedData: FunnelDataPoint[] = [
+const stackedData: FunnelChartDataPoint[] = [
   {
     stage: 'Visit',
     subValues: [
@@ -288,6 +288,113 @@ export const HideTooltip: Story<FluentFunnelChart> = () => {
 };
 HideTooltip.parameters = { docs: { story: { height: '420px' } } };
 
+export const RoundedCorners: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
+
+  let roundCorners = false;
+  let orientation: 'horizontal' | 'vertical' = 'horizontal';
+
+  const renderChart = () => {
+    chart.roundCorners = roundCorners;
+    chart.toggleAttribute('round-corners', roundCorners);
+    chart.orientation = orientation;
+    chart.setAttribute('orientation', orientation);
+  };
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  controls.appendChild(
+    createSwitchField('Rounded corners', 'funnel-round-corners', roundCorners, nextChecked => {
+      roundCorners = nextChecked;
+      renderChart();
+    }).element,
+  );
+
+  controls.appendChild(
+    createRadioGroupField(
+      'Orientation',
+      'funnel-round-corners-orientation',
+      [
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Vertical', value: 'vertical' },
+      ],
+      orientation,
+      newValue => {
+        orientation = newValue as 'horizontal' | 'vertical';
+        renderChart();
+      },
+    ).element,
+  );
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Funnel chart rounded corners example');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('orientation', orientation);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  return container;
+};
+RoundedCorners.parameters = { docs: { story: { height: '440px' } } };
+
+export const TooltipRendererStory: Story<FluentFunnelChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a segment — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Funnel Chart — custom tooltipRenderer');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
+  (chart as any).tooltipRenderer = (_point: any, defaultRender: any) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
+
+export const ResponsiveWidth: Story<FluentFunnelChart> = () => {
+  const outer = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'The chart uses width="75%" and height="75%". Drag the handle to resize the container — the funnel re-renders automatically.';
+  outer.appendChild(info);
+
+  // A resizable wrapper so the story viewer can see the responsive behaviour.
+  const resizable = document.createElement('div');
+  resizable.setAttribute(
+    'style',
+    'resize:both;overflow:auto;border:1px dashed #999;padding:8px;width:600px;min-width:200px;max-width:900px;',
+  );
+  outer.appendChild(resizable);
+
+  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
+  chart.setAttribute('chart-title', 'Responsive funnel chart');
+  chart.setAttribute('data', JSON.stringify(simpleData));
+  chart.setAttribute('width', '75%');
+  chart.setAttribute('height', '75%');
+
+  resizable.appendChild(chart);
+  return outer;
+};
+ResponsiveWidth.storyName = 'Responsive Width';
+ResponsiveWidth.parameters = { docs: { story: { height: '440px' } } };
+
 export const Culture: Story<FluentFunnelChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -411,113 +518,6 @@ export const TitleAndLegendPositions: Story<FluentFunnelChart> = () => {
   return container;
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
-
-export const RoundedCorners: Story<FluentFunnelChart> = () => {
-  const container = document.createElement('div');
-
-  let roundCorners = false;
-  let orientation: 'horizontal' | 'vertical' = 'horizontal';
-
-  const renderChart = () => {
-    chart.roundCorners = roundCorners;
-    chart.toggleAttribute('round-corners', roundCorners);
-    chart.orientation = orientation;
-    chart.setAttribute('orientation', orientation);
-  };
-
-  const controls = document.createElement('div');
-  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
-  container.appendChild(controls);
-
-  controls.appendChild(
-    createSwitchField('Rounded corners', 'funnel-round-corners', roundCorners, nextChecked => {
-      roundCorners = nextChecked;
-      renderChart();
-    }).element,
-  );
-
-  controls.appendChild(
-    createRadioGroupField(
-      'Orientation',
-      'funnel-round-corners-orientation',
-      [
-        { label: 'Horizontal', value: 'horizontal' },
-        { label: 'Vertical', value: 'vertical' },
-      ],
-      orientation,
-      newValue => {
-        orientation = newValue as 'horizontal' | 'vertical';
-        renderChart();
-      },
-    ).element,
-  );
-
-  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
-  chart.setAttribute('chart-title', 'Funnel chart rounded corners example');
-  chart.setAttribute('data', JSON.stringify(simpleData));
-  chart.setAttribute('width', '600');
-  chart.setAttribute('height', '300');
-  chart.setAttribute('orientation', orientation);
-  chart.setAttribute('style', 'margin-top:20px;');
-  container.appendChild(chart);
-
-  return container;
-};
-RoundedCorners.parameters = { docs: { story: { height: '440px' } } };
-
-export const TooltipRendererStory: Story<FluentFunnelChart> = () => {
-  const container = document.createElement('div');
-
-  const info = document.createElement('p');
-  info.textContent =
-    'Hover over a segment — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
-  container.appendChild(info);
-
-  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
-  chart.setAttribute('chart-title', 'Funnel Chart — custom tooltipRenderer');
-  chart.setAttribute('data', JSON.stringify(simpleData));
-  chart.setAttribute('width', '600');
-  chart.setAttribute('height', '300');
-  (chart as any).tooltipRenderer = (_point: any, defaultRender: any) => {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
-    wrapper.innerHTML = defaultRender(_point);
-    return wrapper;
-  };
-
-  container.appendChild(chart);
-  return container;
-};
-TooltipRendererStory.storyName = 'Tooltip Renderer';
-TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
-
-export const ResponsiveWidth: Story<FluentFunnelChart> = () => {
-  const outer = document.createElement('div');
-
-  const info = document.createElement('p');
-  info.textContent =
-    'The chart uses width="75%" and height="75%". Drag the handle to resize the container — the funnel re-renders automatically.';
-  outer.appendChild(info);
-
-  // A resizable wrapper so the story viewer can see the responsive behaviour.
-  const resizable = document.createElement('div');
-  resizable.setAttribute(
-    'style',
-    'resize:both;overflow:auto;border:1px dashed #999;padding:8px;width:600px;min-width:200px;max-width:900px;',
-  );
-  outer.appendChild(resizable);
-
-  const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;
-  chart.setAttribute('chart-title', 'Responsive funnel chart');
-  chart.setAttribute('data', JSON.stringify(simpleData));
-  chart.setAttribute('width', '75%');
-  chart.setAttribute('height', '75%');
-
-  resizable.appendChild(chart);
-  return outer;
-};
-ResponsiveWidth.storyName = 'Responsive Width';
-ResponsiveWidth.parameters = { docs: { story: { height: '440px' } } };
 
 export const RTL: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<FluentFunnelChart>>`
   <div dir="rtl">

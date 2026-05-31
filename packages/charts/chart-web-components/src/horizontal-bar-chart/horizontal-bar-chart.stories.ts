@@ -9,7 +9,6 @@ import {
 } from '../helpers.stories.js';
 import { HorizontalBarChart as FluentHorizontalBarChart } from './horizontal-bar-chart.js';
 import type { HorizontalBarChartDataPoint, HorizontalBarChartProps } from './horizontal-bar-chart.options.js';
-import { Variant } from './horizontal-bar-chart.options.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
 
 const singleBarHBCData = [
@@ -516,7 +515,7 @@ export const singleBarHBC: Story<FluentHorizontalBarChart> = renderComponent(htm
       style="width: 100%"
       chart-title="Horizontal bar chart absolute scale example"
       data="${JSON.stringify(singleBarHBCData)}"
-      variant="${Variant.AbsoluteScale}"
+      variant="${'absolute-scale'}"
     >
     </fluent-horizontal-bar-chart>
   </div>
@@ -542,7 +541,7 @@ export const RoundedCorners: Story<FluentHorizontalBarChart> = () => {
 
   const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
   chart.setAttribute('chart-title', 'Horizontal bar chart rounded corners example');
-  chart.setAttribute('variant', Variant.AbsoluteScale);
+  chart.setAttribute('variant', 'absolute-scale');
   chart.setAttribute('data', JSON.stringify(singleBarHBCData));
   chart.setAttribute('style', 'width:100%;margin-top:20px;');
 
@@ -686,33 +685,6 @@ export const LegendListLabel: Story<FluentHorizontalBarChart> = renderComponent(
   </fluent-horizontal-bar-chart>
 `);
 
-export const Culture: Story<FluentHorizontalBarChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
-  let currentCulture: string = 'en-US';
-
-  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
-  chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
-  chart.setAttribute('culture', currentCulture);
-  chart.setAttribute('data', JSON.stringify(data));
-  chart.setAttribute('style', 'width:100%;margin-top:20px;');
-  container.appendChild(chart);
-
-  const cultureControl = createDropdownField('Culture', 'hbc-culture', [...cultures], currentCulture, nextCulture => {
-    currentCulture = nextCulture;
-    chart.setAttribute('culture', currentCulture);
-    chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
-  });
-  controls.appendChild(cultureControl.element);
-
-  return container;
-};
-Culture.parameters = { docs: { story: { height: '440px' } } };
-
 export const MultipleLegendSelection: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -812,6 +784,142 @@ export const ChartDataModeInteractive: Story<FluentHorizontalBarChart> = () => {
 };
 ChartDataModeInteractive.parameters = { docs: { story: { height: '500px' } } };
 
+export const BarHeight: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let barHeight = 12;
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', 'Horizontal bar chart bar height example');
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+  chart.barHeight = barHeight;
+  chart.setAttribute('bar-height', `${barHeight}`);
+  container.appendChild(chart);
+
+  const barHeightControl = createSliderField('Bar height', 'horizontal-bar-bar-height', barHeight, 4, 40, nextValue => {
+    barHeight = nextValue;
+    barHeightControl.setValue(nextValue);
+    chart.barHeight = nextValue;
+    chart.setAttribute('bar-height', `${nextValue}`);
+  });
+  controls.appendChild(barHeightControl.element);
+
+  return container;
+};
+BarHeight.parameters = { docs: { story: { height: '420px' } } };
+
+export const TooltipRendererStory: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a bar — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.data = data;
+  chart.tooltipRenderer = (point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = `<strong>${(point as any).legend ?? ''}</strong><br>${defaultRender(point)}`;
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
+
+const hideRatioPerBarData: HorizontalBarChartProps[] = [
+  {
+    chartSeriesTitle: 'Quarter 1',
+    chartData: [
+      { legend: 'Completed', data: 32, color: DataVizPalette.color1 },
+      { legend: 'Remaining', data: 68, color: DataVizPalette.color2 },
+    ],
+  },
+  {
+    chartSeriesTitle: 'Quarter 2',
+    chartData: [
+      { legend: 'Completed', data: 54, color: DataVizPalette.color1 },
+      { legend: 'Remaining', data: 46, color: DataVizPalette.color2 },
+    ],
+  },
+  {
+    chartSeriesTitle: 'Quarter 3',
+    chartData: [
+      { legend: 'Completed', data: 71, color: DataVizPalette.color1 },
+      { legend: 'Remaining', data: 29, color: DataVizPalette.color2 },
+    ],
+  },
+];
+
+export const HideRatioPerBar: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    chart-title="Horizontal bar chart hide ratio per bar example"
+    hide-ratio-per-bar='[true,false,false]'
+    data="${JSON.stringify(hideRatioPerBarData)}"
+  >
+  </fluent-horizontal-bar-chart>
+`);
+
+const singlePointLegendData: HorizontalBarChartProps[] = [
+  {
+    chartSeriesTitle: 'Servers',
+    chartData: [{ legend: 'Servers', data: 32, total: 100, color: DataVizPalette.color1 }],
+  },
+  {
+    chartSeriesTitle: 'Storage',
+    chartData: [{ legend: 'Storage', data: 48, total: 100, color: DataVizPalette.color2 }],
+  },
+  {
+    chartSeriesTitle: 'Network',
+    chartData: [{ legend: 'Network', data: 20, total: 100, color: DataVizPalette.color3 }],
+  },
+];
+
+export const LegendForSinglePointBar: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+  <fluent-horizontal-bar-chart
+    style="width: 100%"
+    chart-title="Horizontal bar chart single point legend example"
+    show-legend-for-single-point-bar
+    data="${JSON.stringify(singlePointLegendData)}"
+  >
+  </fluent-horizontal-bar-chart>
+`);
+export const Culture: Story<FluentHorizontalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
+  chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('data', JSON.stringify(data));
+  chart.setAttribute('style', 'width:100%;margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'hbc-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.setAttribute('chart-title', `Horizontal bar chart culture example (${currentCulture})`);
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
+Culture.parameters = { docs: { story: { height: '440px' } } };
+
 export const TitleAlign: Story<FluentHorizontalBarChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -896,57 +1004,6 @@ export const TitleAndLegendPositions: Story<FluentHorizontalBarChart> = () => {
   return container;
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
-
-export const BarHeight: Story<FluentHorizontalBarChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  let barHeight = 12;
-
-  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
-  chart.setAttribute('chart-title', 'Horizontal bar chart bar height example');
-  chart.setAttribute('data', JSON.stringify(data));
-  chart.setAttribute('style', 'width:100%;margin-top:20px;');
-  chart.barHeight = barHeight;
-  chart.setAttribute('bar-height', `${barHeight}`);
-  container.appendChild(chart);
-
-  const barHeightControl = createSliderField('Bar height', 'horizontal-bar-bar-height', barHeight, 4, 40, nextValue => {
-    barHeight = nextValue;
-    barHeightControl.setValue(nextValue);
-    chart.barHeight = nextValue;
-    chart.setAttribute('bar-height', `${nextValue}`);
-  });
-  controls.appendChild(barHeightControl.element);
-
-  return container;
-};
-BarHeight.parameters = { docs: { story: { height: '420px' } } };
-
-export const TooltipRendererStory: Story<FluentHorizontalBarChart> = () => {
-  const container = document.createElement('div');
-
-  const info = document.createElement('p');
-  info.textContent =
-    'Hover over a bar — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
-  container.appendChild(info);
-
-  const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;
-  chart.data = data;
-  chart.tooltipRenderer = (point, defaultRender) => {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
-    wrapper.innerHTML = `<strong>${(point as any).legend ?? ''}</strong><br>${defaultRender(point)}`;
-    return wrapper;
-  };
-
-  container.appendChild(chart);
-  return container;
-};
-TooltipRendererStory.storyName = 'Tooltip Renderer';
-TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
 
 export const RTL: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
   <div dir="rtl">

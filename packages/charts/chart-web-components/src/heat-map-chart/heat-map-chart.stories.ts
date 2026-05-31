@@ -563,6 +563,116 @@ export const LegendToggle: Story<FluentHeatMapChart> = () => {
 };
 LegendToggle.parameters = { docs: { story: { height: '560px' } } };
 
+const xAxisStringLabels = {
+  Mon: 'Monday',
+  Tue: 'Tuesday',
+  Wed: 'Wednesday',
+  Thu: 'Thursday',
+  Fri: 'Friday',
+};
+
+const yAxisStringLabels = {
+  'Team A': 'Alpha team',
+  'Team B': 'Bravo team',
+  'Team C': 'Charlie team',
+};
+
+const categoryOrderData: HeatMapChartData[] = [
+  {
+    value: 50,
+    legend: 'Usage',
+    data: [
+      { x: 'Banana', y: 'Team A', value: 40, rectText: 40 },
+      { x: 'Apple', y: 'Team A', value: 55, rectText: 55 },
+      { x: 'Cherry', y: 'Team A', value: 70, rectText: 70 },
+    ],
+  },
+];
+
+export const StringLabels: Story<FluentHeatMapChart> = renderComponent(html<StoryArgs<FluentHeatMapChart>>`
+  <fluent-heat-map-chart
+    chart-title="Heat map - string label overrides"
+    data="${JSON.stringify(stringData)}"
+    domain-values-for-color-scale="${JSON.stringify([0, 50, 100])}"
+    range-values-for-color-scale="${JSON.stringify(['#d4e8ff', '#0078d4', '#003a78'])}"
+    x-axis-string-labels="${JSON.stringify(xAxisStringLabels)}"
+    y-axis-string-labels="${JSON.stringify(yAxisStringLabels)}"
+  ></fluent-heat-map-chart>
+`);
+
+export const CategoryOrder: Story<FluentHeatMapChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  const orderOptions = ['alphabetical', 'alphabetical-desc', 'none', 'default'] as const;
+  type CategoryOrderControlValue = (typeof orderOptions)[number];
+
+  const normalizeOrder = (value: CategoryOrderControlValue) => {
+    if (value === 'alphabetical-desc') {
+      return 'category descending';
+    }
+    return value;
+  };
+
+  let currentOrder: CategoryOrderControlValue = 'alphabetical';
+
+  const chart = document.createElement('fluent-heat-map-chart') as FluentHeatMapChart;
+  chart.setAttribute('chart-title', 'Heat map - x-axis category order');
+  chart.setAttribute('data', JSON.stringify(categoryOrderData));
+  chart.setAttribute('domain-values-for-color-scale', JSON.stringify([0, 50, 100]));
+  chart.setAttribute('range-values-for-color-scale', JSON.stringify(['#d4e8ff', '#0078d4', '#003a78']));
+  chart.setAttribute('sort-order', 'none');
+  chart.setAttribute('x-axis-category-order', normalizeOrder(currentOrder));
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const orderControl = createDropdownField(
+    'X-axis category order',
+    'heat-map-x-axis-category-order',
+    [...orderOptions],
+    currentOrder,
+    nextValue => {
+      currentOrder = nextValue as CategoryOrderControlValue;
+      chart.setAttribute('x-axis-category-order', normalizeOrder(currentOrder));
+    },
+  );
+  controls.appendChild(orderControl.element);
+
+  return container;
+};
+CategoryOrder.parameters = { docs: { story: { height: '420px' } } };
+
+export const Culture: Story<FluentHeatMapChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement('fluent-heat-map-chart') as FluentHeatMapChart;
+  chart.setAttribute('chart-title', `Heat map chart culture example (${currentCulture})`);
+  chart.setAttribute('data', JSON.stringify(airQualityData));
+  chart.setAttribute('domain-values-for-color-scale', JSON.stringify(domainValues));
+  chart.setAttribute('range-values-for-color-scale', JSON.stringify(rangeColors));
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'hm-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.setAttribute('chart-title', `Heat map chart culture example (${currentCulture})`);
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
+Culture.parameters = { docs: { story: { height: '560px' } } };
+
 export const TitleAlign: Story<FluentHeatMapChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');

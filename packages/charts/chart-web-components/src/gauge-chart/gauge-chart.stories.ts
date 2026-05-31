@@ -412,6 +412,62 @@ export const ResponsiveWidth: Story<FluentGaugeChart> = () => {
 };
 ResponsiveWidth.parameters = { docs: { story: { height: '320px' } } };
 
+const segmentsWithAriaLabels: GaugeChartSegment[] = [
+  { legend: 'Low', size: 33, color: 'qualitative.1', ariaLabel: 'Custom label for Low' },
+  { legend: 'Medium', size: 34, color: 'qualitative.3', ariaLabel: 'Custom label for Medium' },
+  { legend: 'High', size: 33, color: 'qualitative.2', ariaLabel: 'Custom label for High' },
+];
+
+export const FormatTemplate: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
+  <fluent-gauge-chart
+    chart-title="Gauge chart custom value template example"
+    segments="${JSON.stringify(multiSegments)}"
+    chart-value="45"
+    max-value="100"
+    chart-value-format-template="{value} of {max} GB"
+  >
+  </fluent-gauge-chart>
+`);
+
+export const SegmentAriaLabels: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
+  <fluent-gauge-chart
+    chart-title="Gauge chart segment aria-label example"
+    segments="${JSON.stringify(segmentsWithAriaLabels)}"
+    chart-value="45"
+    max-value="100"
+  >
+  </fluent-gauge-chart>
+`);
+
+export const Culture: Story<FluentGaugeChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
+  chart.setAttribute('chart-title', `Gauge chart culture example (${currentCulture})`);
+  chart.setAttribute('segments', JSON.stringify(multiSegments));
+  chart.setAttribute('chart-value', '50');
+  chart.setAttribute('max-value', '100');
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'gauge-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.setAttribute('chart-title', `Gauge chart culture example (${currentCulture})`);
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
+Culture.parameters = { docs: { story: { height: '400px' } } };
+
 export const TitleAlign: Story<FluentGaugeChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');

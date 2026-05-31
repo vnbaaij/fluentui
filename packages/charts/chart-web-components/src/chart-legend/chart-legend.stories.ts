@@ -296,3 +296,18 @@ export const Overflow: Story<FluentChartLegend> = () => {
   );
   return container;
 };
+
+export const Centered: Story<FluentChartLegend> = () => {
+  const container = document.createElement('div');
+  container.style.cssText = 'border:1px dashed #ccc;padding:8px;';
+
+  const el = document.createElement('fluent-chart-legend') as FluentChartLegend;
+  el.items = items;
+  el.label = 'Centered legend';
+  el.toggleAttribute('center', true);
+  wireInteractivity(el);
+
+  container.appendChild(el);
+  container.appendChild(note('Legend items are center-aligned when the center attribute is present.'));
+  return container;
+};

@@ -1,15 +1,15 @@
 import { test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
-import type { FunnelDataPoint } from './funnel-chart.options.js';
+import type { FunnelChartDataPoint } from './funnel-chart.options.js';
 
-const simpleData: FunnelDataPoint[] = [
+const simpleData: FunnelChartDataPoint[] = [
   { stage: 'Impressions', value: 8000, color: '#637cef' },
   { stage: 'Clicks', value: 4000, color: '#e3008c' },
   { stage: 'Leads', value: 1500, color: '#2aa0a4' },
   { stage: 'Conversions', value: 600, color: '#9373c0' },
 ];
 
-const stackedData: FunnelDataPoint[] = [
+const stackedData: FunnelChartDataPoint[] = [
   {
     stage: 'Awareness',
     subValues: [

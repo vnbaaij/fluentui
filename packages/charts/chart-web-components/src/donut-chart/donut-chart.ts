@@ -12,15 +12,15 @@ import {
   validateDonutDataArray,
   wrapText,
 } from '../utils/chart-helpers.js';
-import type { DonutDataPoint } from './donut-chart.options.js';
-import type { Legend, TooltipRenderer } from '../utils/chart.options.js';
+import type { DonutChartDataPoint } from './donut-chart.options.js';
+import type { Legend, TooltipRenderer } from '../utils/chart-options.js';
 
 export class DonutChart extends ChartBase {
   @attr({ attribute: 'show-labels-in-percent', mode: 'boolean' })
   public showLabelsInPercent: boolean = false;
 
   @attr({ converter: jsonConverter })
-  public data!: DonutDataPoint[];
+  public data!: DonutChartDataPoint[];
 
   @attr({ attribute: 'inner-radius', converter: nullableNumberConverter })
   public innerRadius: number = 1;
@@ -36,7 +36,7 @@ export class DonutChart extends ChartBase {
   protected override _enableResizeObserver = true;
 
   /** Narrows the inherited base tooltipRenderer type to the DonutChart data point. */
-  public declare tooltipRenderer: TooltipRenderer<DonutDataPoint> | undefined;
+  public declare tooltipRenderer: TooltipRenderer<DonutChartDataPoint> | undefined;
 
   private _arcs: SVGPathElement[] = [];
   private _arcLabels: SVGTextElement[] = [];
@@ -142,7 +142,7 @@ export class DonutChart extends ChartBase {
     this._render(chartData);
   }
 
-  private _prepareChartData(): DonutDataPoint[] {
+  private _prepareChartData(): DonutChartDataPoint[] {
     validateDonutDataArray(this.data, 'data');
 
     const chartData = this._resolveChartData();
@@ -153,7 +153,7 @@ export class DonutChart extends ChartBase {
     return chartData;
   }
 
-  private _resolveChartData(): DonutDataPoint[] {
+  private _resolveChartData(): DonutChartDataPoint[] {
     const sourceData = this.order === 'sorted' ? [...this.data].sort((a, b) => b.data - a.data) : this.data;
 
     const totalValue = sourceData.reduce((sum, point) => sum + (point.data ?? 0), 0);
@@ -175,7 +175,7 @@ export class DonutChart extends ChartBase {
     });
   }
 
-  private _render(chartData: DonutDataPoint[]) {
+  private _render(chartData: DonutChartDataPoint[]) {
     const totalValue = chartData.reduce((sum, point) => sum + (point.data ?? 0), 0);
     const svgEl = this.group.ownerSVGElement!;
     const svgRect = svgEl.getBoundingClientRect();
@@ -185,11 +185,11 @@ export class DonutChart extends ChartBase {
     const outerRadius = Math.max(0, (Math.min(pixelHeight, pixelWidth) - 20) / 2);
     const cornerRadius = this.roundCorners ? 3 : 0;
 
-    const pie = d3Pie<DonutDataPoint>()
+    const pie = d3Pie<DonutChartDataPoint>()
       .value(d => d.data)
       .padAngle(0.02);
 
-    const arc = d3Arc<PieArcDatum<DonutDataPoint>>()
+    const arc = d3Arc<PieArcDatum<DonutChartDataPoint>>()
       .innerRadius(this.innerRadius)
       .outerRadius(outerRadius)
       .cornerRadius(cornerRadius);
@@ -288,7 +288,7 @@ export class DonutChart extends ChartBase {
     }
   }
 
-  private _getLegends(chartData: DonutDataPoint[]): Legend[] {
+  private _getLegends(chartData: DonutChartDataPoint[]): Legend[] {
     return chartData.map(d => ({
       legend: d.legend,
       color: d.color!,
@@ -335,8 +335,8 @@ export class DonutChart extends ChartBase {
   }
 
   private _createArcLabel(
-    arc: ReturnType<typeof d3Arc<PieArcDatum<DonutDataPoint>>>,
-    arcDatum: PieArcDatum<DonutDataPoint>,
+    arc: ReturnType<typeof d3Arc<PieArcDatum<DonutChartDataPoint>>>,
+    arcDatum: PieArcDatum<DonutChartDataPoint>,
     totalValue: number,
     outerRadius: number,
   ) {
@@ -373,7 +373,7 @@ export class DonutChart extends ChartBase {
     return formatted.endsWith('K') ? `${formatted.slice(0, -1)}k` : formatted;
   }
 
-  private _formatDataPointValue(dataPoint: DonutDataPoint): string {
+  private _formatDataPointValue(dataPoint: DonutChartDataPoint): string {
     return (
       dataPoint.yAxisCalloutData ??
       dataPoint.calloutData ??

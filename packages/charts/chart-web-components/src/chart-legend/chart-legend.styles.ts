@@ -40,6 +40,10 @@ export const styles: ElementStyles = css`
     display: none;
   }
 
+  :host([center]) {
+    justify-content: center;
+  }
+
   /* ── Position overrides ──────────────────────────────────────────── */
 
   /* top: legend sits above chart — padding moves from top to bottom */

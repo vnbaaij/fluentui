@@ -4,7 +4,7 @@ import { format as d3Format } from 'd3-format';
 import { timeFormat as d3TimeFormat } from 'd3-time-format';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import { getColorFromToken, jsonConverter, SVG_NAMESPACE_URI } from '../utils/chart-helpers.js';
-import type { Legend, TooltipProps } from '../utils/chart.options.js';
+import type { AxisCategoryOrder, Legend, TooltipProps } from '../utils/chart-options.js';
 import type { HeatMapChartData, HeatMapChartDataPoint, HeatMapSortOrder } from './heat-map-chart.options.js';
 
 // ── Internal types ────────────────────────────────────────────────────────────
@@ -152,6 +152,52 @@ export class HeatMapChart extends CartesianChartBase {
   @attr({ attribute: 'sort-order' })
   public sortOrder: HeatMapSortOrder = 'alphabetical';
 
+  /**
+   * Sort order for x-axis category labels.
+   * Supports all 14 AxisCategoryOrder modes. Default: `'alphabetical'` (mirrors `sortOrder` for backward compat).
+   * When set, takes precedence over `sortOrder` for the x-axis.
+   */
+  @attr({ attribute: 'x-axis-category-order' })
+  public xAxisCategoryOrder?: AxisCategoryOrder;
+
+  /**
+   * Sort order for y-axis category labels.
+   * Supports all 14 AxisCategoryOrder modes.
+   * When set, takes precedence over `sortOrder` for the y-axis.
+   */
+  @attr({ attribute: 'y-axis-category-order' })
+  public yAxisCategoryOrder?: AxisCategoryOrder;
+
+  /**
+   * Optional JS function to map x-axis string keys to display labels.
+   * Called for each unique x-axis string value. When set, overrides the raw string key.
+   * Cannot be set via HTML attribute — assign directly on the element.
+   */
+  public xAxisStringFormatter?: (key: string) => string;
+
+  /**
+   * Optional JS function to map y-axis string keys to display labels.
+   * Called for each unique y-axis string value. When set, overrides the raw string key.
+   * Cannot be set via HTML attribute — assign directly on the element.
+   */
+  public yAxisStringFormatter?: (key: string) => string;
+
+  /**
+   * JSON dictionary mapping x-axis string keys to display labels.
+   * Used by Blazor (where JS functions cannot be passed as attributes).
+   * Example: '{"monday":"Mon","tuesday":"Tue"}'
+   */
+  @attr({ attribute: 'x-axis-string-labels', converter: jsonConverter })
+  public xAxisStringLabels?: Record<string, string>;
+
+  /**
+   * JSON dictionary mapping y-axis string keys to display labels.
+   * Used by Blazor (where JS functions cannot be passed as attributes).
+   * Example: '{"q1":"Q1 2024","q2":"Q2 2024"}'
+   */
+  @attr({ attribute: 'y-axis-string-labels', converter: jsonConverter })
+  public yAxisStringLabels?: Record<string, string>;
+
   /** Narrows the inherited base tooltipProps type to include heat map fields. */
   public declare tooltipProps: HeatMapTooltipProps;
 
@@ -178,6 +224,10 @@ export class HeatMapChart extends CartesianChartBase {
       'xAxisNumberFormatString',
       'yAxisNumberFormatString',
       'sortOrder',
+      'xAxisCategoryOrder',
+      'yAxisCategoryOrder',
+      'xAxisStringLabels',
+      'yAxisStringLabels',
     ] as const;
 
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
@@ -257,6 +307,22 @@ export class HeatMapChart extends CartesianChartBase {
   }
 
   protected sortOrderChanged(): void {
+    this._requestRender();
+  }
+
+  protected xAxisCategoryOrderChanged(): void {
+    this._requestRender();
+  }
+
+  protected yAxisCategoryOrderChanged(): void {
+    this._requestRender();
+  }
+
+  protected xAxisStringLabelsChanged(): void {
+    this._requestRender();
+  }
+
+  protected yAxisStringLabelsChanged(): void {
     this._requestRender();
   }
 
@@ -431,22 +497,91 @@ export class HeatMapChart extends CartesianChartBase {
       yKeySet.add(axisValueToKey(p.y, yType));
     });
 
-    const sortKeys = (keys: Set<string>, type: 'date' | 'number' | 'string'): string[] => {
+    const sortKeys = (
+      keys: Set<string>,
+      type: 'date' | 'number' | 'string',
+      order: AxisCategoryOrder | undefined,
+      flat: FlatPoint[],
+      axis: 'x' | 'y',
+    ): string[] => {
       const arr = Array.from(keys);
+      // Date/number axes: always sort numerically.
       if (type === 'date' || type === 'number') {
         return arr.sort((a, b) => Number(a) - Number(b));
       }
-      if (this.sortOrder === 'none') {
-        return arr;
+      // Determine effective order: axis-specific order wins, then fall back to sortOrder.
+      const effectiveOrder: Exclude<AxisCategoryOrder, 'default'> | HeatMapSortOrder =
+        !order || order === 'default' ? (this.sortOrder === 'none' ? 'none' : 'alphabetical') : order;
+
+      if (effectiveOrder === 'none' || effectiveOrder === 'data') {
+        return arr; // preserve insertion order
       }
-      return arr.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+      if (effectiveOrder === 'category ascending' || effectiveOrder === 'alphabetical') {
+        return arr.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+      }
+      if (effectiveOrder === 'category descending') {
+        return arr.sort((a, b) => b.toLowerCase().localeCompare(a.toLowerCase()));
+      }
+
+      // Aggregate-based orders: need to compute per-key aggregates.
+      const getValues = (key: string): number[] =>
+        flat
+          .filter(p => (axis === 'x' ? axisValueToKey(p.x, type) : axisValueToKey(p.y, type)) === key)
+          .map(p => p.value);
+
+      const aggregate = (key: string): number => {
+        const values = getValues(key);
+        if (values.length === 0) return 0;
+        switch (effectiveOrder) {
+          case 'total ascending':
+          case 'total descending':
+          case 'sum ascending':
+          case 'sum descending':
+            return values.reduce((s, v) => s + v, 0);
+          case 'min ascending':
+          case 'min descending':
+            return Math.min(...values);
+          case 'max ascending':
+          case 'max descending':
+            return Math.max(...values);
+          case 'mean ascending':
+          case 'mean descending':
+            return values.reduce((s, v) => s + v, 0) / values.length;
+          case 'median ascending':
+          case 'median descending': {
+            const sorted = [...values].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+          }
+          default:
+            return 0;
+        }
+      };
+
+      const isDescending = effectiveOrder.endsWith('descending');
+      return arr.sort((a, b) => {
+        const diff = aggregate(a) - aggregate(b);
+        return isDescending ? -diff : diff;
+      });
     };
 
-    const xKeys = sortKeys(xKeySet, xType);
-    const yKeys = sortKeys(yKeySet, yType);
+    const xKeys = sortKeys(xKeySet, xType, this.xAxisCategoryOrder, flat, 'x');
+    const yKeys = sortKeys(yKeySet, yType, this.yAxisCategoryOrder, flat, 'y');
 
-    const xLabels = xKeys.map(k => formatAxisKey(k, xType, xDateFormat, xNumFormat));
-    const yLabels = yKeys.map(k => formatAxisKey(k, yType, yDateFormat, yNumFormat));
+    const xLabels = xKeys.map(k => {
+      if (xType === 'string') {
+        if (this.xAxisStringFormatter) return this.xAxisStringFormatter(k);
+        if (this.xAxisStringLabels?.[k] !== undefined) return this.xAxisStringLabels[k];
+      }
+      return formatAxisKey(k, xType, xDateFormat, xNumFormat);
+    });
+    const yLabels = yKeys.map(k => {
+      if (yType === 'string') {
+        if (this.yAxisStringFormatter) return this.yAxisStringFormatter(k);
+        if (this.yAxisStringLabels?.[k] !== undefined) return this.yAxisStringLabels[k];
+      }
+      return formatAxisKey(k, yType, yDateFormat, yNumFormat);
+    });
 
     return { xLabels, yLabels };
   }
@@ -469,8 +604,14 @@ export class HeatMapChart extends CartesianChartBase {
     flat.forEach(p => {
       const xKey = axisValueToKey(p.x, xType);
       const yKey = axisValueToKey(p.y, yType);
-      const xLabel = formatAxisKey(xKey, xType, xDateFormat, xNumFormat);
-      const yLabel = formatAxisKey(yKey, yType, yDateFormat, yNumFormat);
+      const xLabel =
+        xType === 'string'
+          ? this.xAxisStringFormatter?.(xKey) ?? this.xAxisStringLabels?.[xKey] ?? formatAxisKey(xKey, xType, xDateFormat, xNumFormat)
+          : formatAxisKey(xKey, xType, xDateFormat, xNumFormat);
+      const yLabel =
+        yType === 'string'
+          ? this.yAxisStringFormatter?.(yKey) ?? this.yAxisStringLabels?.[yKey] ?? formatAxisKey(yKey, yType, yDateFormat, yNumFormat)
+          : formatAxisKey(yKey, yType, yDateFormat, yNumFormat);
       map.set(`${xLabel}|${yLabel}`, p);
     });
     return map;

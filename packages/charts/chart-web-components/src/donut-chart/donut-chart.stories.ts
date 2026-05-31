@@ -9,12 +9,12 @@ import {
   renderComponent,
 } from '../helpers.stories.js';
 import { DonutChart as FluentDonutChart } from './donut-chart.js';
-import type { DonutDataPoint } from './donut-chart.options.js';
+import type { DonutChartDataPoint } from './donut-chart.options.js';
 
 const basicTitle = 'Donut chart basic example';
 const sortedTitle = 'Sorted donut chart example';
 
-const points: DonutDataPoint[] = [
+const points: DonutChartDataPoint[] = [
   {
     legend: 'first',
     data: 20000,
@@ -25,9 +25,9 @@ const points: DonutDataPoint[] = [
   },
 ];
 
-const data: DonutDataPoint[] = points;
+const data: DonutChartDataPoint[] = points;
 
-const sortedPoints: DonutDataPoint[] = [
+const sortedPoints: DonutChartDataPoint[] = [
   {
     legend: 'small',
     data: 5000,
@@ -42,7 +42,7 @@ const sortedPoints: DonutDataPoint[] = [
   },
 ];
 
-const sortedData: DonutDataPoint[] = sortedPoints;
+const sortedData: DonutChartDataPoint[] = sortedPoints;
 
 const storyTemplate = html<StoryArgs<FluentDonutChart>>`
   <fluent-donut-chart
@@ -274,6 +274,31 @@ export const Sorted: Story<FluentDonutChart> = renderComponent(html<StoryArgs<Fl
   </fluent-donut-chart>
 `);
 
+export const TooltipRendererStory: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a slice — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.data = data;
+  chart.chartTitle = 'Donut Chart — custom tooltipRenderer';
+  chart.innerRadius = 55;
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
+
 export const Culture: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -391,31 +416,6 @@ export const TitleAndLegendPositions: Story<FluentDonutChart> = () => {
   return container;
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
-
-export const TooltipRendererStory: Story<FluentDonutChart> = () => {
-  const container = document.createElement('div');
-
-  const info = document.createElement('p');
-  info.textContent =
-    'Hover over a slice — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
-  container.appendChild(info);
-
-  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
-  chart.data = data;
-  chart.chartTitle = 'Donut Chart — custom tooltipRenderer';
-  chart.innerRadius = 55;
-  chart.tooltipRenderer = (_point, defaultRender) => {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
-    wrapper.innerHTML = defaultRender(_point);
-    return wrapper;
-  };
-
-  container.appendChild(chart);
-  return container;
-};
-TooltipRendererStory.storyName = 'Tooltip Renderer';
-TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
 
 export const RTL: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
   <div dir="rtl">

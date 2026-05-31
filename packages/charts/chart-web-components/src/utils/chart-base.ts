@@ -7,7 +7,7 @@ import type {
   Legend,
   TooltipProps,
   TooltipRenderer,
-} from './chart.options.js';
+} from './chart-options.js';
 import { getRTL } from './chart-helpers.js';
 
 /**

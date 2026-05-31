@@ -7,8 +7,8 @@ import {
   jsonConverter,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
-import type { Legend, TooltipRenderer } from '../utils/chart.options.js';
-import type { FunnelDataPoint, FunnelSubValue } from './funnel-chart.options.js';
+import type { Legend, TooltipRenderer } from '../utils/chart-options.js';
+import type { FunnelChartDataPoint, FunnelChartSubValue } from './funnel-chart.options.js';
 import {
   buildStackedGeometryParams,
   getContrastTextColor,
@@ -41,7 +41,7 @@ const orientationConverter = {
  */
 export class FunnelChart extends ChartBase {
   @attr({ converter: jsonConverter })
-  public data!: FunnelDataPoint[];
+  public data!: FunnelChartDataPoint[];
 
   @attr({ converter: orientationConverter })
   public orientation: 'vertical' | 'horizontal' = 'horizontal';
@@ -53,7 +53,7 @@ export class FunnelChart extends ChartBase {
 
   /** Narrows the inherited base tooltipRenderer type to funnel data point fields. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public declare tooltipRenderer: TooltipRenderer<FunnelDataPoint> | undefined;
+  public declare tooltipRenderer: TooltipRenderer<FunnelChartDataPoint> | undefined;
 
   private _segments: SVGPathElement[] = [];
   private _segmentTexts: SVGTextElement[] = [];
@@ -153,7 +153,7 @@ export class FunnelChart extends ChartBase {
     this._applyLegendButtonState();
   }
 
-  private _resolveColors(): FunnelDataPoint[] {
+  private _resolveColors(): FunnelChartDataPoint[] {
     return this.data.map((d, i) => {
       if (d.subValues && d.subValues.length > 0) {
         const resolvedSubValues = d.subValues.map((sv, k) => ({
@@ -167,7 +167,7 @@ export class FunnelChart extends ChartBase {
     });
   }
 
-  private _buildLegends(data: FunnelDataPoint[]): Legend[] {
+  private _buildLegends(data: FunnelChartDataPoint[]): Legend[] {
     if (isStackedFunnelData(data)) {
       const seen = new Map<string, string>();
       data.forEach(stage => {
@@ -182,7 +182,7 @@ export class FunnelChart extends ChartBase {
     return data.filter(isSimpleFunnelDataPoint).map(d => ({ legend: d.stage, color: d.color! }));
   }
 
-  private _renderSimpleFunnel(data: FunnelDataPoint[], funnelWidth: number, funnelHeight: number) {
+  private _renderSimpleFunnel(data: FunnelChartDataPoint[], funnelWidth: number, funnelHeight: number) {
     const simpleData = data.filter(isSimpleFunnelDataPoint);
     if (simpleData.length === 0) {
       return;
@@ -235,11 +235,11 @@ export class FunnelChart extends ChartBase {
     });
   }
 
-  private _renderStackedFunnel(data: FunnelDataPoint[], funnelWidth: number, funnelHeight: number) {
+  private _renderStackedFunnel(data: FunnelChartDataPoint[], funnelWidth: number, funnelHeight: number) {
     const { stages, totals, maxTotal } = buildStackedGeometryParams(data);
 
     data.forEach((stage, i) => {
-      (stage.subValues ?? []).forEach((sv: FunnelSubValue, k) => {
+      (stage.subValues ?? []).forEach((sv: FunnelChartSubValue, k) => {
         const geom =
           this.orientation === 'vertical'
             ? getStackedVerticalFunnelSegmentGeometry({

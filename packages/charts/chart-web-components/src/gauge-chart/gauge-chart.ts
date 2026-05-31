@@ -2,7 +2,7 @@ import { attr, nullableNumberConverter, observable } from '@microsoft/fast-eleme
 import { arc as d3Arc } from 'd3-shape';
 import { ChartBase } from '../utils/chart-base.js';
 import { getColorFromToken, getNextColor, jsonConverter, SVG_NAMESPACE_URI, wrapText } from '../utils/chart-helpers.js';
-import type { Legend } from '../utils/chart.options.js';
+import type { Legend } from '../utils/chart-options.js';
 import type { ExtendedSegment, GaugeChartSegment, GaugeChartVariant, GaugeValueFormat } from './gauge-chart.options.js';
 
 // ── Layout constants (mirrors the React implementation) ───────────────────────
@@ -79,6 +79,19 @@ export function getChartValueLabel(
   chartValueFormatFn?: (sweepFraction: [number, number]) => string,
   chartValueFormatTemplate?: string,
 ): string {
+  // JS function takes highest precedence.
+  if (chartValueFormatFn) {
+    return chartValueFormatFn([chartValue, maxValue]);
+  }
+  // Template string (Blazor path) takes second precedence.
+  if (chartValueFormatTemplate) {
+    const percent = maxValue > minValue ? (((chartValue - minValue) / (maxValue - minValue)) * 100).toFixed() : '0';
+    return chartValueFormatTemplate
+      .replace('{value}', String(chartValue))
+      .replace('{max}', String(maxValue))
+      .replace('{min}', String(minValue))
+      .replace('{percent}', percent);
+  }
   if (forCallout) {
     return minValue !== 0
       ? chartValue.toString()
@@ -181,6 +194,7 @@ export class GaugeChart extends ChartBase {
       'sublabel',
       'hideMinMax',
       'chartValueFormat',
+      'chartValueFormatTemplate',
       'variant',
       'enableGradient',
     ] as const;
@@ -594,6 +608,9 @@ export class GaugeChart extends ChartBase {
         this._computedMinValue,
         this._computedMaxValue,
         this.chartValueFormat,
+        false,
+        this.chartValueFormatFn,
+        this.chartValueFormatTemplate,
       )}`,
     );
     path.setAttribute('tabindex', '0');
@@ -638,6 +655,9 @@ export class GaugeChart extends ChartBase {
       this._computedMinValue,
       this._computedMaxValue,
       this.chartValueFormat,
+      false,
+      this.chartValueFormatFn,
+      this.chartValueFormatTemplate,
     );
     this.group.appendChild(text);
 
@@ -721,14 +741,14 @@ export class GaugeChart extends ChartBase {
     return (
       'Current value: ' +
       getChartValueLabel(
-      this.chartValue,
-      this._computedMinValue,
-      this._computedMaxValue,
-      this.chartValueFormat,
-      true,
-      this.chartValueFormatFn,
-      this.chartValueFormatTemplate,
-    )
+        this.chartValue,
+        this._computedMinValue,
+        this._computedMaxValue,
+        this.chartValueFormat,
+        true,
+        this.chartValueFormatFn,
+        this.chartValueFormatTemplate,
+      )
     );
   }
 

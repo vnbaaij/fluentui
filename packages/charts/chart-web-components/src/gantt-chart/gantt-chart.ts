@@ -12,7 +12,7 @@ import {
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
 import type { GanttChartDataPoint } from './gantt-chart.options.js';
-import type { AxisCategoryOrder, Legend, TooltipProps, TooltipRenderer } from '../utils/chart.options.js';
+import type { AxisCategoryOrder, Legend, TooltipProps, TooltipRenderer } from '../utils/chart-options.js';
 
 type GanttTooltipProps = TooltipProps & {
   xLabel: string;
@@ -933,6 +933,23 @@ export class GanttChart extends CartesianChartBase {
 
       axisLayer.appendChild(text);
     });
+
+    // Hide overlapping x-axis tick labels when hideTickOverlap is true.
+    if (this.hideTickOverlap) {
+      const textEls = Array.from(axisLayer.querySelectorAll<SVGTextElement>('text.axis-text'));
+      let prevRight = -Infinity;
+      textEls.forEach(el => {
+        const bbox = (el as SVGTextElement).getBBox?.();
+        if (!bbox) return;
+        const left = bbox.x;
+        const right = bbox.x + bbox.width;
+        if (left < prevRight + 4) {
+          el.style.display = 'none';
+        } else {
+          prevRight = right;
+        }
+      });
+    }
 
     if (this.xAxisTitle) {
       const titleX = (rangeStart + rangeEnd) / 2;

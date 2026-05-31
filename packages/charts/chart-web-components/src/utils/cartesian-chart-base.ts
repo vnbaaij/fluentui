@@ -98,6 +98,13 @@ export abstract class CartesianChartBase extends ChartBase {
   @attr({ attribute: 'tick-format' })
   public tickFormat?: string;
 
+  /**
+   * Explicit tick positions for the y-axis. Overrides auto-generated y-axis ticks.
+   * Accepts an array of numbers (parsed via JSON attribute).
+   */
+  @attr({ attribute: 'y-axis-tick-values', converter: jsonConverter })
+  public yAxisTickValues?: number[];
+
   /** Width in pixels of the SVG stroke drawn on each bar. When set, an outline is applied. */
   @attr({ attribute: 'stroke-width' })
   public strokeWidth?: number | string;
@@ -108,6 +115,13 @@ export abstract class CartesianChartBase extends ChartBase {
    */
   @attr({ attribute: 'show-x-axis-labels-tooltip', mode: 'boolean' })
   public showXAxisLabelsTooltip: boolean = false;
+
+  /**
+   * When true (default), hides x-axis tick labels that would overlap with the previous label.
+   * Set to false to always show all tick labels regardless of overlap.
+   */
+  @attr({ attribute: 'hide-tick-overlap', mode: 'boolean' })
+  public hideTickOverlap: boolean = true;
 
   /**
    * Locale-aware date/time format options (`Intl.DateTimeFormatOptions`) passed to
@@ -151,9 +165,12 @@ export abstract class CartesianChartBase extends ChartBase {
       'yMaxValue',
       'tickValues',
       'tickFormat',
+      'yAxisTickValues',
       'strokeWidth',
       'showXAxisLabelsTooltip',
+      'hideTickOverlap',
       'dateLocalizeOptions',
+      'useUTC',
     ] as const;
 
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
@@ -233,11 +250,19 @@ export abstract class CartesianChartBase extends ChartBase {
     this._requestRender();
   }
 
+  protected yAxisTickValuesChanged() {
+    this._requestRender();
+  }
+
   protected strokeWidthChanged() {
     this._requestRender();
   }
 
   protected showXAxisLabelsTooltipChanged() {
+    this._requestRender();
+  }
+
+  protected hideTickOverlapChanged() {
     this._requestRender();
   }
 

@@ -10,9 +10,8 @@ import {
   SVG_NAMESPACE_URI,
   validateChartPropsArray,
 } from '../utils/chart-helpers.js';
-import type { HorizontalBarChartDataPoint, HorizontalBarChartProps } from './horizontal-bar-chart.options.js';
-import type { Legend, TooltipRenderer } from '../utils/chart.options.js';
-import { Variant } from './horizontal-bar-chart.options.js';
+import type { HorizontalBarChartDataPoint, HorizontalBarChartProps, HorizontalBarChartVariant } from './horizontal-bar-chart.options.js';
+import type { Legend, TooltipRenderer } from '../utils/chart-options.js';
 
 /**
  * A Horizontal Bar Chart HTML Element.
@@ -21,13 +20,19 @@ import { Variant } from './horizontal-bar-chart.options.js';
  */
 export class HorizontalBarChart extends ChartBase {
   @attr
-  public variant?: Variant;
+  public variant?: HorizontalBarChartVariant;
 
   @attr({ converter: jsonConverter })
   public data!: HorizontalBarChartProps[];
 
   @attr({ attribute: 'hide-ratio', mode: 'boolean' })
   public hideRatio: boolean = false;
+
+  @attr({ attribute: 'hide-ratio-per-bar', converter: jsonConverter })
+  public hideRatioPerBar?: boolean[];
+
+  @attr({ attribute: 'show-legend-for-single-point-bar', mode: 'boolean' })
+  public showLegendForSinglePointBar: boolean = false;
 
   @attr({ attribute: 'chart-data-mode' })
   public chartDataMode: 'default' | 'fraction' | 'percentage' = 'default';
@@ -50,7 +55,16 @@ export class HorizontalBarChart extends ChartBase {
     // attribute changes go through the FAST reactive system and trigger the *Changed()
     // callbacks, and so that observable assignments notify template bindings.
     const self = this as Record<string, unknown>;
-    const attrFields = ['variant', 'data', 'hideRatio', 'chartDataMode', 'enableGradient', 'barHeight'] as const;
+    const attrFields = [
+      'variant',
+      'data',
+      'hideRatio',
+      'hideRatioPerBar',
+      'showLegendForSinglePointBar',
+      'chartDataMode',
+      'enableGradient',
+      'barHeight',
+    ] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -78,6 +92,14 @@ export class HorizontalBarChart extends ChartBase {
   }
 
   protected hideRatioChanged() {
+    this._requestRender();
+  }
+
+  protected hideRatioPerBarChanged() {
+    this._requestRender();
+  }
+
+  protected showLegendForSinglePointBarChanged() {
     this._requestRender();
   }
 
@@ -158,7 +180,7 @@ export class HorizontalBarChart extends ChartBase {
   }
 
   private _initializeData() {
-    if (this.variant === Variant.SingleBar) {
+    if (this.variant === 'single-bar') {
       this._hydrateData();
     }
     this._hydrateLegends();
@@ -192,6 +214,10 @@ export class HorizontalBarChart extends ChartBase {
     for (const dataSeries of this.data) {
       for (const point of dataSeries.chartData!) {
         if ((point as any).placeholder === true) {
+          continue;
+        }
+        // Skip legend for single-point bars unless explicitly enabled.
+        if (!this.showLegendForSinglePointBar && dataSeries.chartData!.filter(p => !(p as any).placeholder).length === 1) {
           continue;
         }
         if (!uniqueLegendsMap.has(point.legend)) {
@@ -259,7 +285,7 @@ export class HorizontalBarChart extends ChartBase {
       (acc: number, point: HorizontalBarChartDataPoint) => acc + (point.data ?? 0),
       0,
     );
-    const total = this.variant === Variant.AbsoluteScale ? longestBarTotalValue : barTotalValue;
+    const total = this.variant === 'absolute-scale' ? longestBarTotalValue : barTotalValue;
 
     let sumOfPercent = 0;
     data.chartData!.map((point: HorizontalBarChartDataPoint) => {
@@ -277,7 +303,7 @@ export class HorizontalBarChart extends ChartBase {
       return sumOfPercent;
     });
 
-    if (this.variant === Variant.AbsoluteScale) {
+    if (this.variant === 'absolute-scale') {
       let value = total === 0 ? 0 : ((total - barTotalValue) / total) * 100;
       if (value < 1 && value !== 0) {
         value = 1;
@@ -416,7 +442,7 @@ export class HorizontalBarChart extends ChartBase {
       .attr('class', 'bar-title')
       .text(data?.chartSeriesTitle ? data?.chartSeriesTitle : '');
 
-    const showChartDataText = this.variant !== Variant.AbsoluteScale;
+    const showChartDataText = this.variant !== 'absolute-scale';
 
     if (!this.hideLabels && showChartDataText) {
       const numData = data!.chartData![0].data ?? 0;
@@ -442,7 +468,11 @@ export class HorizontalBarChart extends ChartBase {
           .attr('class', 'ratio-numerator')
           .text(`${percentage}%`);
       } else {
-        const showRatio = !this.hideRatio && data!.chartData!.length === 2;
+        const effectiveHideRatio =
+          this.hideRatioPerBar !== undefined
+            ? (this.hideRatioPerBar[barNo ?? 0] ?? this.hideRatio)
+            : this.hideRatio;
+        const showRatio = !effectiveHideRatio && data!.chartData!.length === 2;
         if (showRatio) {
           const ratioDiv = barTitleDiv.append('div').attr('role', 'text').attr('class', 'bar-label');
           ratioDiv.append('span').attr('class', 'ratio-numerator').text(numData);
@@ -497,7 +527,7 @@ export class HorizontalBarChart extends ChartBase {
         this._clearTooltip();
       });
 
-    if (this.variant === Variant.AbsoluteScale) {
+    if (this.variant === 'absolute-scale') {
       const showLabel = !this.hideLabels;
       const barLabel = barTotalValue;
       if (showLabel) {

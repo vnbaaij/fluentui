@@ -9,7 +9,7 @@ import {
 import { GanttChart as FluentGanttChart } from './gantt-chart.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
 import type { GanttChartDataPoint } from './gantt-chart.options.js';
-import type { AxisCategoryOrder } from '../utils/chart.options.js';
+import type { AxisCategoryOrder } from '../utils/chart-options.js';
 
 // ── Sample data: Basic (mirrors GanttChartBasic React story) ─────────────────
 
@@ -619,6 +619,64 @@ export const TooltipRendererStory: Story<FluentGanttChart> = () => {
 TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '420px' } } };
 
+const utcStoryData: GanttChartDataPoint[] = [
+  {
+    x: { start: new Date('2024-03-31T23:30:00Z'), end: new Date('2024-04-01T05:00:00Z') },
+    y: 'Overnight import',
+    legend: 'UTC series',
+    color: DataVizPalette.color1,
+  },
+  {
+    x: { start: new Date('2024-04-01T06:00:00Z'), end: new Date('2024-04-01T12:00:00Z') },
+    y: 'Morning sync',
+    legend: 'UTC series',
+    color: DataVizPalette.color2,
+  },
+];
+
+export const UseUTC: Story<FluentGanttChart> = () => {
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = utcStoryData;
+  chart.chartTitle = 'Gantt Chart — UTC date ticks';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.toggleAttribute('use-utc', true);
+  chart.setAttribute('tick-format', '%Y-%m-%d %H:%M');
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+  return chart;
+};
+UseUTC.parameters = { docs: { story: { height: '420px' } } };
+
+export const Culture: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = `Gantt chart culture example (${currentCulture})`;
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'gantt-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.chartTitle = `Gantt chart culture example (${currentCulture})`;
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
+Culture.parameters = { docs: { story: { height: '440px' } } };
+
 export const TitleAlign: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -709,3 +767,16 @@ export const TitleAndLegendPositions: Story<FluentGanttChart> = () => {
   return container;
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
+
+export const RTL: Story<FluentGanttChart> = () => {
+  const div = document.createElement('div');
+  div.setAttribute('dir', 'rtl');
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt chart RTL example';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+  div.appendChild(chart);
+  return div;
+};

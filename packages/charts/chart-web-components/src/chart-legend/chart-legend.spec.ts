@@ -320,3 +320,43 @@ test.describe('ChartLegend - roving tabindex', () => {
     await expect(buttons.nth(0)).toHaveAttribute('tabindex', '-1');
   });
 });
+
+test.describe('ChartLegend - center', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-chartlegend--centered'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-chart-legend label="Chart legend"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      (document.querySelector('fluent-chart-legend') as any).items = items;
+    }, items);
+  });
+
+  test('Should center-align the legend when center is present', async ({ page }) => {
+    const element = page.locator('fluent-chart-legend');
+
+    await element.evaluate(el => el.setAttribute('center', ''));
+
+    const justifyContent = await element.evaluate(el => getComputedStyle(el).justifyContent);
+    expect(justifyContent).toBe('center');
+  });
+
+  test('Should not center-align the legend when center is absent', async ({ page }) => {
+    const element = page.locator('fluent-chart-legend');
+    const justifyContent = await element.evaluate(el => getComputedStyle(el).justifyContent);
+    expect(justifyContent).not.toBe('center');
+  });
+
+  test('Should update alignment when center is added and removed dynamically', async ({ page }) => {
+    const element = page.locator('fluent-chart-legend');
+
+    await element.evaluate(el => el.setAttribute('center', ''));
+    expect(await element.evaluate(el => getComputedStyle(el).justifyContent)).toBe('center');
+
+    await element.evaluate(el => el.removeAttribute('center'));
+    expect(await element.evaluate(el => getComputedStyle(el).justifyContent)).not.toBe('center');
+  });
+});
