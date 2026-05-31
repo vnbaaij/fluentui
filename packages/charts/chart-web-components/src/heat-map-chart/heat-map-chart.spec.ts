@@ -41,7 +41,7 @@ const chartTitle = 'Heat map basic test';
 
 test.describe('HeatMapChart - Basic', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(fixtureURL('components-heatmapchart--default'));
+    await page.goto(fixtureURL('components-heatmapchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-heat-map-chart
@@ -117,7 +117,7 @@ test.describe('HeatMapChart - Basic', () => {
 
 test.describe('HeatMapChart - Tooltip', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(fixtureURL('components-heatmapchart--default'));
+    await page.goto(fixtureURL('components-heatmapchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-heat-map-chart
@@ -158,7 +158,7 @@ test.describe('HeatMapChart - Tooltip', () => {
 
 test.describe('HeatMapChart - Legend interaction', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(fixtureURL('components-heatmapchart--default'));
+    await page.goto(fixtureURL('components-heatmapchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-heat-map-chart
@@ -174,7 +174,7 @@ test.describe('HeatMapChart - Legend interaction', () => {
 
   test('Should highlight cells of the hovered legend', async ({ page }) => {
     const element = page.locator('fluent-heat-map-chart');
-    const legend = element.locator('.legend-item').first();
+    const legend = element.locator('.legend').first();
     await legend.hover();
     // Cells not matching the hovered legend should become inactive
     const inactiveCells = element.locator('.heat-cell.inactive');
@@ -184,7 +184,7 @@ test.describe('HeatMapChart - Legend interaction', () => {
 
   test('Should reset cell opacity after legend mouse out', async ({ page }) => {
     const element = page.locator('fluent-heat-map-chart');
-    const legend = element.locator('.legend-item').first();
+    const legend = element.locator('.legend').first();
     await legend.hover();
     // Move away
     await page.mouse.move(0, 0);
@@ -195,7 +195,7 @@ test.describe('HeatMapChart - Legend interaction', () => {
 
 test.describe('HeatMapChart - Reactive updates', () => {
   test('Should re-render when data attribute changes', async ({ page }) => {
-    await page.goto(fixtureURL('components-heatmapchart--default'));
+    await page.goto(fixtureURL('components-heatmapchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-heat-map-chart
@@ -216,9 +216,9 @@ test.describe('HeatMapChart - Reactive updates', () => {
     ];
     await element.evaluate((el, d) => el.setAttribute('data', JSON.stringify(d)), newData);
 
+    await expect(element.locator('.heat-cell')).toHaveCount(1);
     const newCount = await element.locator('.heat-cell').count();
     expect(newCount).toBeLessThan(initialCount);
-    expect(newCount).toBe(1);
   });
 });
 
