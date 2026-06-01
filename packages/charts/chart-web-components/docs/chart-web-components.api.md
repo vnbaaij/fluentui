@@ -38,20 +38,33 @@ export class AreaChart extends CartesianChartBase {
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
+    // Warning: (ae-forgotten-export) The symbol "AreaChartMode" needs to be exported by the entry point index.d.ts
+    mode: AreaChartMode;
+    // (undocumented)
+    protected modeChanged(): void;
     // (undocumented)
     protected _performRender(): void;
+    secondaryYAxisTitle: string;
+    // (undocumented)
+    protected secondaryYAxisTitleChanged(): void;
     // (undocumented)
     get tooltipInlineTransform(): string;
     // Warning: (ae-forgotten-export) The symbol "TooltipState" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
     tooltipProps: TooltipState;
+    // Warning: (ae-forgotten-export) The symbol "TooltipProps" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    protected tooltipPropsChanged(old: TooltipProps, newValue: TooltipProps): void;
 }
 
 // @public (undocumented)
 export interface AreaChartDataPoint {
+    callOutAccessibilityData?: AccessibilityData;
     // (undocumented)
     x: number | Date;
+    xAxisCalloutAccessibilityData?: AccessibilityData;
     // (undocumented)
     y: number;
 }
@@ -67,6 +80,7 @@ export interface AreaChartSeries {
     data: AreaChartDataPoint[];
     // (undocumented)
     legend: string;
+    useSecondaryYScale?: boolean;
 }
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -286,8 +300,6 @@ export class GanttChart extends CartesianChartBase {
     get tooltipInlineTransform(): "translateX(50%)" | "translateX(-50%)";
     // Warning: (ae-forgotten-export) The symbol "GanttTooltipProps" needs to be exported by the entry point index.d.ts
     tooltipProps: GanttTooltipProps;
-    // Warning: (ae-forgotten-export) The symbol "TooltipProps" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void;
     tooltipRenderer: TooltipRenderer<GanttChartDataPoint> | undefined;

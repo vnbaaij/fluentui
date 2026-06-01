@@ -1,6 +1,6 @@
 import { attr } from '@microsoft/fast-element';
 import { bisector, extent } from 'd3-array';
-import { axisBottom, axisLeft, type Axis, type AxisDomain } from 'd3-axis';
+import { axisBottom, axisLeft, axisRight, type Axis, type AxisDomain } from 'd3-axis';
 import { format, formatPrefix } from 'd3-format';
 import { scaleLinear, scaleTime, type ScaleLinear, type ScaleTime } from 'd3-scale';
 import { area as createArea, curveMonotoneX, line as createLine, stack as createStack } from 'd3-shape';
@@ -248,6 +248,62 @@ const renderLeftAxis = (
   svg.appendChild(group);
 };
 
+const renderRightAxis = (
+  svg: SVGSVGElement,
+  chart: AreaChart,
+  scale: ScaleLike<number>,
+  axis: Axis<number>,
+  formatter: (value: number) => string,
+  innerHeight: number,
+  innerWidth: number,
+): void => {
+  const group = createSvgElement<SVGGElement>('g');
+  group.classList.add('y-axis-secondary');
+  group.setAttribute('transform', `translate(${defaultMargins.left + innerWidth}, ${defaultMargins.top})`);
+
+  const domain = createSvgElement<SVGLineElement>('line');
+  domain.classList.add('axis-domain');
+  domain.setAttribute('y2', String(innerHeight));
+  group.appendChild(domain);
+
+  const tickPadding = toNumber(chart.tickPadding, 6);
+  getTickValues(axis, scale).forEach(value => {
+    const tick = createSvgElement<SVGGElement>('g');
+    tick.classList.add('tick');
+    tick.setAttribute('transform', `translate(0, ${getPosition(scale, value)})`);
+
+    const line = createSvgElement<SVGLineElement>('line');
+    line.classList.add('axis-tick-line');
+    line.setAttribute('x2', '6');
+    tick.appendChild(line);
+
+    const text = createSvgElement<SVGTextElement>('text');
+    text.classList.add('y-axis-text');
+    text.setAttribute('x', String(6 + tickPadding));
+    text.setAttribute('text-anchor', 'start');
+    text.setAttribute('dominant-baseline', 'middle');
+    text.textContent = formatter(value);
+    tick.appendChild(text);
+
+    group.appendChild(tick);
+  });
+
+  if (chart.secondaryYAxisTitle) {
+    const title = createSvgElement<SVGTextElement>('text');
+    title.classList.add('y-axis-title');
+    // Mirror of the left axis title: rotate(90) places text reading top-to-bottom,
+    // x=innerHeight/2 centres vertically, y=42 positions it 42px to the right of the axis.
+    title.setAttribute('x', String(innerHeight / 2));
+    title.setAttribute('y', '42');
+    title.setAttribute('text-anchor', 'middle');
+    title.setAttribute('transform', 'rotate(90)');
+    title.textContent = chart.secondaryYAxisTitle;
+    group.appendChild(title);
+  }
+
+  svg.appendChild(group);
+};
+
 /** @public */
 export class AreaChart extends CartesianChartBase {
   declare public tooltipProps: TooltipState;
@@ -266,11 +322,15 @@ export class AreaChart extends CartesianChartBase {
   @attr()
   public mode: AreaChartMode = 'tonexty';
 
+  /** Optional title for the secondary (right) Y axis. */
+  @attr({ attribute: 'secondary-y-axis-title' })
+  public secondaryYAxisTitle: string = '';
+
   protected override _enableResizeObserver = true;
 
   public connectedCallback() {
     const self = this as Record<string, unknown>;
-    const attrFields = ['data', 'enableGradient', 'mode'] as const;
+    const attrFields = ['data', 'enableGradient', 'mode', 'secondaryYAxisTitle'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -307,6 +367,10 @@ export class AreaChart extends CartesianChartBase {
   }
 
   protected modeChanged(): void {
+    this._requestRender();
+  }
+
+  protected secondaryYAxisTitleChanged(): void {
     this._requestRender();
   }
 
@@ -374,14 +438,21 @@ export class AreaChart extends CartesianChartBase {
       return { legend: series.legend, color, data };
     });
 
+    // Determine which series are plotted on the secondary (right) Y axis.
+    const isSecondaryByIndex: boolean[] = seriesData.map(s => Boolean(s.useSecondaryYScale));
+    const hasSecondaryY = isSecondaryByIndex.some(Boolean);
+
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
     const height = toNumber(this.height, 300);
-    const innerWidth = Math.max(width - defaultMargins.left - defaultMargins.right, 1);
+    const rightMargin = hasSecondaryY ? 70 : defaultMargins.right;
+    const innerWidth = Math.max(width - defaultMargins.left - rightMargin, 1);
     const innerHeight = Math.max(height - defaultMargins.top - defaultMargins.bottom, 1);
 
     // Build a unified dataset keyed by x-value so d3Stack can compute stacked layers.
     // Each entry holds all series values at that x position (missing values default to 0).
     const legendKeys = normalizedSeries.map(s => s.legend);
+    // Only primary-axis series participate in stacking.
+    const primaryLegendKeys = legendKeys.filter((_, i) => !isSecondaryByIndex[i]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const xEntryMap = new Map<string, any>();
     normalizedSeries.forEach(series => {
@@ -405,12 +476,12 @@ export class AreaChart extends CartesianChartBase {
 
     // mode='tonexty' (default): stacked — d3Stack computes cumulative bands.
     // mode='tozeroy': non-stacked — each series' area fills independently from y=0.
+    // Secondary-axis series always use tozeroy ([0, y]) regardless of mode.
     // This mirrors React's _shouldFillToZeroY() / _getDataPoints() logic.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let stackedLayers: any[];
-    if (this.mode === 'tozeroy') {
-      // Build fake layers: [0, y] for each point (same structure d3Stack would produce)
-      stackedLayers = legendKeys.map(key =>
+    let primaryStackedLayers: any[];
+    if (this.mode === 'tozeroy' || primaryLegendKeys.length === 0) {
+      primaryStackedLayers = primaryLegendKeys.map(key =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stackDataset.map((dp: any) => {
           const entry = [0, dp[key] as number] as any;
@@ -419,19 +490,43 @@ export class AreaChart extends CartesianChartBase {
         }),
       );
     } else {
-      stackedLayers = createStack<any, any, string>().keys(legendKeys)(stackDataset);
+      primaryStackedLayers = createStack<any, any, string>().keys(primaryLegendKeys)(stackDataset);
     }
+    // Secondary series always use [0, y] (independent scale, no stacking).
+    const secondaryLegendKeys = legendKeys.filter((_, i) => isSecondaryByIndex[i]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const secondaryStackedLayers: any[] = secondaryLegendKeys.map(key =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      stackDataset.map((dp: any) => {
+        const entry = [0, dp[key] as number] as any;
+        entry.data = dp;
+        return entry;
+      }),
+    );
+    // Merge back in original series order.
+    let primaryIdx = 0;
+    let secondaryIdx = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stackedLayers: any[] = legendKeys.map((_, i) => {
+      if (isSecondaryByIndex[i]) {
+        return secondaryStackedLayers[secondaryIdx++];
+      }
+      return primaryStackedLayers[primaryIdx++];
+    });
 
     // Compute the actual range of all stacked y values (lower and upper bounds) to support
     // negative data correctly — matches React's _getMinMaxOfYAxis() behaviour.
+    // Only primary series contribute to the left axis domain.
     // Always include 0 so positive-only charts start at zero and all-negative charts end at zero.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const allStackedValues: number[] = (stackedLayers as any[]).flatMap(layer =>
+    const primaryLayersForDomain = primaryStackedLayers.length > 0 ? primaryStackedLayers : secondaryStackedLayers;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allPrimaryValues: number[] = (primaryLayersForDomain as any[]).flatMap(layer =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (layer as any[]).flatMap((d: any) => [d[0] as number, d[1] as number]),
     );
-    const stackedDataMin = allStackedValues.length > 0 ? Math.min(...allStackedValues) : 0;
-    const stackedDataMax = allStackedValues.length > 0 ? Math.max(...allStackedValues) : 1;
+    const stackedDataMin = allPrimaryValues.length > 0 ? Math.min(...allPrimaryValues) : 0;
+    const stackedDataMax = allPrimaryValues.length > 0 ? Math.max(...allPrimaryValues) : 1;
     let yMin = toOptionalNumber(this.yMinValue) ?? Math.min(0, stackedDataMin);
     let yMax = toOptionalNumber(this.yMaxValue) ?? Math.max(0, stackedDataMax);
     if (yMin === yMax) {
@@ -473,8 +568,26 @@ export class AreaChart extends CartesianChartBase {
       yScale.nice();
     }
 
+    // Secondary Y axis scale: derived from secondary series raw values only.
+    let yScaleSecondary = yScale; // fallback: same as primary when no secondary series
+    if (hasSecondaryY) {
+      const secValues = seriesData
+        .flatMap((s, i) => (isSecondaryByIndex[i] ? s.data.map(p => p.y) : []))
+        .filter(v => typeof v === 'number');
+      const secMin = secValues.length > 0 ? Math.min(0, ...secValues) : 0;
+      let secMax = secValues.length > 0 ? Math.max(0, ...secValues) : 1;
+      if (secMin === secMax) {
+        secMax += 1;
+      }
+      yScaleSecondary = scaleLinear().domain([secMin, secMax]).range([innerHeight, 0]);
+      if (this.roundedTicks) {
+        yScaleSecondary.nice();
+      }
+    }
+
     normalizedSeries.forEach((series, si) => {
       const layer = stackedLayers[si];
+      const scale = isSecondaryByIndex[si] ? yScaleSecondary : yScale;
       series.data.forEach(point => {
         point.cx = xScale(point.x as never) ?? 0;
         // cy reflects the top of the stacked layer at this x-value (for tooltip placement)
@@ -483,7 +596,7 @@ export class AreaChart extends CartesianChartBase {
         const stackPoint = layer.find((d: any) =>
           String(d.data.xVal instanceof Date ? d.data.xVal.getTime() : d.data.xVal) === xKey,
         );
-        point.cy = stackPoint ? yScale(stackPoint[1]) : yScale(point.y);
+        point.cy = stackPoint ? scale(stackPoint[1]) : scale(point.y);
       });
     });
 
@@ -520,8 +633,10 @@ export class AreaChart extends CartesianChartBase {
     // Pre-compute a lookup map from x-value key → all series entries at that x.
     // This mirrors React's calloutData() utility: group all series by their x value
     // so the mousemove handler can retrieve every series in O(1) without re-iterating.
-    type CalloutEntry = { legend: string; color: string; y: number; stackedY1: number; callOutAriaLabel?: string };
-    type CalloutPoint = { xLabel: string; cx: number; xAxisAriaLabel?: string; entries: CalloutEntry[] };
+    // Entries are stored as a SPARSE ARRAY indexed by series index so sparse x-values
+    // across series don't cause index mismatches.
+    type CalloutEntry = { legend: string; color: string; y: number; stackedY1: number; isSecondaryY: boolean; callOutAriaLabel?: string };
+    type CalloutPoint = { xLabel: string; cx: number; xAxisAriaLabel?: string; entries: (CalloutEntry | undefined)[] };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const calloutPointsByX = new Map<number, CalloutPoint>();
     normalizedSeries.forEach((series, si) => {
@@ -529,8 +644,6 @@ export class AreaChart extends CartesianChartBase {
       series.data.forEach((point, di) => {
         const key = point.x instanceof Date ? point.x.getTime() : Number(point.x);
         if (!calloutPointsByX.has(key)) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const stackedY1 = (layer[di] as any)?.[1] ?? point.y;
           calloutPointsByX.set(key, {
             xLabel: point.xLabel,
             cx: point.cx,
@@ -540,13 +653,15 @@ export class AreaChart extends CartesianChartBase {
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const stackedY1 = (layer[di] as any)?.[1] ?? point.y;
-        calloutPointsByX.get(key)!.entries.push({
+        // Store at series index so sparse datasets don't misalign entries.
+        calloutPointsByX.get(key)!.entries[si] = {
           legend: series.legend,
           color: series.color,
           y: point.y,
           stackedY1,
+          isSecondaryY: isSecondaryByIndex[si],
           callOutAriaLabel: point.callOutAccessibilityData?.ariaLabel,
-        });
+        };
       });
     });
 
@@ -557,6 +672,7 @@ export class AreaChart extends CartesianChartBase {
 
     stackedLayers.forEach((layer: any, index: number) => {
       const series = normalizedSeries[index];
+      const scale = isSecondaryByIndex[index] ? yScaleSecondary : yScale;
       if (this.enableGradient) {
         const gradient = createSvgElement<SVGLinearGradientElement>('linearGradient');
         gradient.id = `area-gradient-${index}`;
@@ -588,8 +704,8 @@ export class AreaChart extends CartesianChartBase {
         'd',
         createArea<any>()
           .x((d: any) => xScale(d.data.xVal as never) ?? 0)
-          .y0((d: any) => yScale(d[0]))
-          .y1((d: any) => yScale(d[1]))
+          .y0((d: any) => scale(d[0]))
+          .y1((d: any) => scale(d[1]))
           .curve(curveMonotoneX)(layer) ?? '',
       );
       plotGroup.appendChild(areaPath);
@@ -603,7 +719,7 @@ export class AreaChart extends CartesianChartBase {
         'd',
         createLine<any>()
           .x((d: any) => xScale(d.data.xVal as never) ?? 0)
-          .y((d: any) => yScale(d[1]))
+          .y((d: any) => scale(d[1]))
           .curve(curveMonotoneX)(layer) ?? '',
       );
       plotGroup.appendChild(linePath);
@@ -699,7 +815,8 @@ export class AreaChart extends CartesianChartBase {
         const entry = found.entries[si];
         const active = entry && this._shouldShowTooltip(series.legend);
         if (active) {
-          const cy = yScale(entry.stackedY1);
+          const dotScale = entry.isSecondaryY ? yScaleSecondary : yScale;
+          const cy = dotScale(entry.stackedY1);
           hoverDots[si].setAttribute('cx', String(cx));
           hoverDots[si].setAttribute('cy', String(cy));
           hoverDots[si].style.display = '';
@@ -746,23 +863,27 @@ export class AreaChart extends CartesianChartBase {
     overlay.addEventListener('mouseleave', onOverlayMouseLeave);
 
     renderBottomAxis(svg, this, xScale as ScaleLike<AxisDomain>, xAxis as Axis<AxisDomain>, xFormatter, innerWidth, innerHeight);
-    renderLeftAxis(
-      svg,
-      this,
-      yScale as ScaleLike<number>,
-      yAxis as unknown as Axis<number>,
-      value => {
-        if (this.yAxisTickFormat) {
-          try {
-            return format(this.yAxisTickFormat)(value);
-          } catch {
-            // Fall through to default.
-          }
+
+    const yFormatter = (value: number): string => {
+      if (this.yAxisTickFormat) {
+        try {
+          return format(this.yAxisTickFormat)(value);
+        } catch {
+          // Fall through to default.
         }
-        return defaultYAxisTickFormatter(value);
-      },
-      innerHeight,
-    );
+      }
+      return defaultYAxisTickFormatter(value);
+    };
+
+    // Skip left axis when all series are secondary (no primary data to scale against).
+    if (primaryStackedLayers.length > 0) {
+      renderLeftAxis(svg, this, yScale as ScaleLike<number>, yAxis as unknown as Axis<number>, yFormatter, innerHeight);
+    }
+
+    if (hasSecondaryY) {
+      const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
+      renderRightAxis(svg, this, yScaleSecondary as ScaleLike<number>, yAxisSecondary as unknown as Axis<number>, yFormatter, innerHeight, innerWidth);
+    }
 
     this.chartContainer.appendChild(svg);
     this.legends = normalizedSeries.map(series => ({ legend: series.legend, color: series.color }));

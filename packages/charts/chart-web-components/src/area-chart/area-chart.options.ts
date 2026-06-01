@@ -15,6 +15,12 @@ export interface AreaChartSeries {
   /** @public */ legend: string;
   /** @public */ data: AreaChartDataPoint[];
   /** @public */ color?: string;
+  /**
+   * When true this series is plotted against the right-hand secondary Y axis rather than
+   * the primary (left) Y axis.  The secondary axis has its own independent scale.
+   * @public
+   */
+  useSecondaryYScale?: boolean;
 }
 
 /**

@@ -138,34 +138,6 @@ const multipleNegativeData: AreaChartSeries[] = [
   },
 ];
 
-// Three series with qualitative.11/12/13 colors (mirrors React AreaChartLargeData)
-const largeData: AreaChartSeries[] = [
-  {
-    legend: 'legend1',
-    color: 'qualitative.11',
-    data: [
-      { x: 20, y: 9 }, { x: 25, y: 14 }, { x: 30, y: 14 }, { x: 35, y: 23 }, { x: 40, y: 20 },
-      { x: 45, y: 31 }, { x: 50, y: 29 }, { x: 55, y: 27 }, { x: 60, y: 37 }, { x: 65, y: 51 },
-    ],
-  },
-  {
-    legend: 'legend2',
-    color: 'qualitative.12',
-    data: [
-      { x: 20, y: 21 }, { x: 25, y: 25 }, { x: 30, y: 10 }, { x: 35, y: 10 }, { x: 40, y: 14 },
-      { x: 45, y: 18 }, { x: 50, y: 9 }, { x: 55, y: 23 }, { x: 60, y: 7 }, { x: 65, y: 55 },
-    ],
-  },
-  {
-    legend: 'legend3',
-    color: 'qualitative.13',
-    data: [
-      { x: 20, y: 30 }, { x: 25, y: 35 }, { x: 30, y: 33 }, { x: 35, y: 40 }, { x: 40, y: 10 },
-      { x: 45, y: 40 }, { x: 50, y: 34 }, { x: 55, y: 40 }, { x: 60, y: 60 }, { x: 65, y: 40 },
-    ],
-  },
-];
-
 // Five data points per series with qualitative.8/9/10 colors (mirrors React AreaChartCustomAccessibility)
 const customAccessibilityData: AreaChartSeries[] = [
   {
@@ -370,17 +342,6 @@ export const CustomAccessibility: Story<AreaChart> = () => {
 CustomAccessibility.storyName = 'Custom Accessibility';
 CustomAccessibility.parameters = { docs: { story: { height: '420px' } } };
 
-export const LargeData: Story<AreaChart> = () => {
-  const chart = document.createElement('fluent-area-chart') as AreaChart;
-  chart.data = largeData;
-  chart.chartTitle = 'Area chart large data example';
-  chart.setAttribute('width', '700');
-  chart.setAttribute('height', '300');
-  return chart;
-};
-LargeData.storyName = 'Large Data';
-LargeData.parameters = { docs: { story: { height: '420px' } } };
-
 export const Negative: Story<AreaChart> = () => {
   const chart = document.createElement('fluent-area-chart') as AreaChart;
   chart.data = negativeData;
@@ -419,18 +380,6 @@ export const AllNegative: Story<AreaChart> = () => {
 AllNegative.storyName = 'All Negative Y Values';
 AllNegative.parameters = { docs: { story: { height: '420px' } } };
 
-export const EnableGradient: Story<AreaChart> = () => {
-  const chart = document.createElement('fluent-area-chart') as AreaChart;
-  chart.data = basicData;
-  chart.chartTitle = 'Area chart with gradient fill';
-  chart.setAttribute('width', '700');
-  chart.setAttribute('height', '300');
-  chart.setAttribute('enable-gradient', '');
-  return chart;
-};
-EnableGradient.storyName = 'Enable Gradient';
-EnableGradient.parameters = { docs: { story: { height: '420px' } } };
-
 /** Non-stacked mode: each series fills independently from y=0 (equivalent to React's mode="tozeroy"). */
 export const ZeroY: Story<AreaChart> = () => {
   const chart = document.createElement('fluent-area-chart') as AreaChart;
@@ -445,4 +394,32 @@ export const ZeroY: Story<AreaChart> = () => {
 };
 ZeroY.storyName = 'Zero Y (Non-stacked)';
 ZeroY.parameters = { docs: { story: { height: '420px' } } };
+
+// Secondary Y axis data: same x-values, second series has a different magnitude (mirrors React AreaChartSecondaryYAxis)
+const secondaryYAxisData: AreaChartSeries[] = [
+  {
+    legend: 'Prices',
+    data: chart1Points,
+  },
+  {
+    legend: 'Gains',
+    useSecondaryYScale: true,
+    data: chart1Points.map(p => ({ x: p.x, y: Math.round(p.y * 0.02 + 100) })),
+  },
+];
+
+export const SecondaryYAxis: Story<AreaChart> = () => {
+  const chart = document.createElement('fluent-area-chart') as AreaChart;
+  chart.data = secondaryYAxisData;
+  chart.chartTitle = 'Area chart with secondary Y axis';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('x-axis-title', 'Number of days');
+  chart.setAttribute('y-axis-title', 'Prices');
+  chart.setAttribute('secondary-y-axis-title', 'Gains');
+  chart.setAttribute('mode', 'tozeroy');
+  return chart;
+};
+SecondaryYAxis.storyName = 'Secondary Y Axis';
+SecondaryYAxis.parameters = { docs: { story: { height: '420px' } } };
 
