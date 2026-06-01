@@ -291,10 +291,12 @@ const renderRightAxis = (
   if (chart.secondaryYAxisTitle) {
     const title = createSvgElement<SVGTextElement>('text');
     title.classList.add('y-axis-title');
-    // Mirror of the left axis title: rotate(90) places text reading top-to-bottom,
-    // x=innerHeight/2 centres vertically, y=42 positions it 42px to the right of the axis.
+    // Mirror of the left axis title: rotate(90) places text reading top-to-bottom.
+    // After rotate(90), point (x,y) maps to (-y, x), so:
+    //   x=innerHeight/2 → y'=innerHeight/2 (centres the title vertically along the axis)
+    //   y=-42 → x'=+42 (places the title 42px to the RIGHT of the axis, outside the chart)
     title.setAttribute('x', String(innerHeight / 2));
-    title.setAttribute('y', '42');
+    title.setAttribute('y', '-42');
     title.setAttribute('text-anchor', 'middle');
     title.setAttribute('transform', 'rotate(90)');
     title.textContent = chart.secondaryYAxisTitle;
