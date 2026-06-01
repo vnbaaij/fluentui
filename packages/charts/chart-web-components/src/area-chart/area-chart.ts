@@ -129,10 +129,11 @@ const renderBottomAxis = <Domain extends AxisDomain>(
   formatter: (value: Domain) => string,
   innerWidth: number,
   innerHeight: number,
+  leftMargin: number,
 ): void => {
   const group = createSvgElement<SVGGElement>('g');
   group.classList.add('x-axis');
-  group.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top + innerHeight})`);
+  group.setAttribute('transform', `translate(${leftMargin}, ${defaultMargins.top + innerHeight})`);
 
   const domain = createSvgElement<SVGLineElement>('line');
   domain.classList.add('axis-domain');
@@ -203,10 +204,15 @@ const renderLeftAxis = (
   axis: Axis<number>,
   formatter: (value: number) => string,
   innerHeight: number,
+  innerWidth: number,
+  leftMargin: number,
 ): void => {
+  const isRtl = getRTL(chart);
   const group = createSvgElement<SVGGElement>('g');
   group.classList.add('y-axis');
-  group.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top})`);
+  // In RTL the primary Y axis moves to the right side of the chart.
+  const groupX = isRtl ? leftMargin + innerWidth : leftMargin;
+  group.setAttribute('transform', `translate(${groupX}, ${defaultMargins.top})`);
 
   const domain = createSvgElement<SVGLineElement>('line');
   domain.classList.add('axis-domain');
@@ -221,13 +227,14 @@ const renderLeftAxis = (
 
     const line = createSvgElement<SVGLineElement>('line');
     line.classList.add('axis-tick-line');
-    line.setAttribute('x2', '-6');
+    // In RTL the axis is on the right: ticks point right (outward from the chart area).
+    line.setAttribute('x2', isRtl ? '6' : '-6');
     tick.appendChild(line);
 
     const text = createSvgElement<SVGTextElement>('text');
     text.classList.add('y-axis-text');
-    text.setAttribute('x', String(-(6 + tickPadding)));
-    text.setAttribute('text-anchor', 'end');
+    text.setAttribute('x', String(isRtl ? 6 + tickPadding : -(6 + tickPadding)));
+    text.setAttribute('text-anchor', isRtl ? 'start' : 'end');
     text.setAttribute('dominant-baseline', 'middle');
     text.textContent = formatter(value);
     tick.appendChild(text);
@@ -238,16 +245,17 @@ const renderLeftAxis = (
   if (chart.yAxisTitle) {
     const title = createSvgElement<SVGTextElement>('text');
     title.classList.add('y-axis-title');
-    // LTR: rotate(-90) reads bottom-to-top. rotate(-90) maps (x,y) → (y,-x).
-    //   x'=-42 (left of axis), y'=innerHeight/2: set x=-innerHeight/2, y=-42.
-    // RTL: rotate(90) flips to top-to-bottom. rotate(90) maps (x,y) → (-y,x).
-    //   x'=-42 (left of axis), y'=innerHeight/2: set x=innerHeight/2, y=42.
-    const isRtl = getRTL(chart);
+    // LTR (axis on LEFT): rotate(-90) reads bottom-to-top.
+    //   rotate(-90) maps (x,y) → (y,-x). To land at x'=-42 (left of axis),
+    //   y'=innerHeight/2: set x=-innerHeight/2, y=-42.
+    // RTL (axis on RIGHT): rotate(90) reads top-to-bottom (mirrored).
+    //   rotate(90) maps (x,y) → (-y,x). To land at x'=+42 (right of axis),
+    //   y'=innerHeight/2: -y=42 → y=-42, x=innerHeight/2.
+    // In both cases ty is '-42'; only tx and rotation differ.
     const rotation = isRtl ? 'rotate(90)' : 'rotate(-90)';
     const tx = isRtl ? String(innerHeight / 2) : String(-innerHeight / 2);
-    const ty = isRtl ? '42' : '-42';
     title.setAttribute('x', tx);
-    title.setAttribute('y', ty);
+    title.setAttribute('y', '-42');
     title.setAttribute('text-anchor', 'middle');
     title.setAttribute('transform', rotation);
     title.textContent = chart.yAxisTitle;
@@ -265,10 +273,14 @@ const renderRightAxis = (
   formatter: (value: number) => string,
   innerHeight: number,
   innerWidth: number,
+  leftMargin: number,
 ): void => {
+  const isRtl = getRTL(chart);
   const group = createSvgElement<SVGGElement>('g');
   group.classList.add('y-axis-secondary');
-  group.setAttribute('transform', `translate(${defaultMargins.left + innerWidth}, ${defaultMargins.top})`);
+  // In RTL the secondary axis swaps to the left side (primary moves right).
+  const groupX = isRtl ? leftMargin : leftMargin + innerWidth;
+  group.setAttribute('transform', `translate(${groupX}, ${defaultMargins.top})`);
 
   const domain = createSvgElement<SVGLineElement>('line');
   domain.classList.add('axis-domain');
@@ -283,13 +295,14 @@ const renderRightAxis = (
 
     const line = createSvgElement<SVGLineElement>('line');
     line.classList.add('axis-tick-line');
-    line.setAttribute('x2', '6');
+    // In RTL the secondary axis is on the left: ticks point left (outward).
+    line.setAttribute('x2', isRtl ? '-6' : '6');
     tick.appendChild(line);
 
     const text = createSvgElement<SVGTextElement>('text');
     text.classList.add('y-axis-text');
-    text.setAttribute('x', String(6 + tickPadding));
-    text.setAttribute('text-anchor', 'start');
+    text.setAttribute('x', String(isRtl ? -(6 + tickPadding) : 6 + tickPadding));
+    text.setAttribute('text-anchor', isRtl ? 'end' : 'start');
     text.setAttribute('dominant-baseline', 'middle');
     text.textContent = formatter(value);
     tick.appendChild(text);
@@ -300,20 +313,16 @@ const renderRightAxis = (
   if (chart.secondaryYAxisTitle) {
     const title = createSvgElement<SVGTextElement>('text');
     title.classList.add('y-axis-title');
-    // In LTR: rotate(-90) reads bottom-to-top, matching the left axis direction.
-    //   rotate(-90) maps (x, y) → (y, -x). To land at x'=+42 (right of axis),
-    //   y'=innerHeight/2 (centred): set x=-innerHeight/2, y=42.
-    // In RTL: rotate(90) flips both axes to top-to-bottom reading.
-    //   rotate(90) maps (x, y) → (-y, x). To land at x'=+42, y'=innerHeight/2:
-    //   set x=innerHeight/2, y=-42.
-    const isRtl = getRTL(chart);
-    const rotation = isRtl ? 'rotate(90)' : 'rotate(-90)';
-    const tx = isRtl ? String(innerHeight / 2) : String(-innerHeight / 2);
+    // rotate(-90) reads bottom-to-top, matching the primary axis direction.
+    //   rotate(-90) maps (x, y) → (y, -x).
+    // LTR (axis on RIGHT): x'=+42, y'=innerHeight/2 → set x=-innerHeight/2, y=42.
+    // RTL (axis on LEFT):  x'=-42, y'=innerHeight/2 → set x=-innerHeight/2, y=-42.
+    // rotation is always 'rotate(-90)'; only ty differs.
     const ty = isRtl ? '-42' : '42';
-    title.setAttribute('x', tx);
+    title.setAttribute('x', String(-innerHeight / 2));
     title.setAttribute('y', ty);
     title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('transform', rotation);
+    title.setAttribute('transform', 'rotate(-90)');
     title.textContent = chart.secondaryYAxisTitle;
     group.appendChild(title);
   }
@@ -459,10 +468,16 @@ export class AreaChart extends CartesianChartBase {
     const isSecondaryByIndex: boolean[] = seriesData.map(s => Boolean(s.useSecondaryYScale));
     const hasSecondaryY = isSecondaryByIndex.some(Boolean);
 
+    const isRtl = getRTL(this);
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
     const height = toNumber(this.height, 300);
-    const rightMargin = hasSecondaryY ? 70 : defaultMargins.right;
-    const innerWidth = Math.max(width - defaultMargins.left - rightMargin, 1);
+    // In RTL the primary Y axis moves to the right side and the secondary to the left,
+    // so the two margin sides swap compared to LTR.
+    const primaryAxisSpace = defaultMargins.left; // 60 px — space for Y axis ticks + labels
+    const secondaryAxisSpace = 70; // extra space when a secondary Y axis is present
+    const leftMargin = isRtl ? (hasSecondaryY ? secondaryAxisSpace : defaultMargins.right) : primaryAxisSpace;
+    const rightMargin = isRtl ? primaryAxisSpace : (hasSecondaryY ? secondaryAxisSpace : defaultMargins.right);
+    const innerWidth = Math.max(width - leftMargin - rightMargin, 1);
     const innerHeight = Math.max(height - defaultMargins.top - defaultMargins.bottom, 1);
 
     // Build a unified dataset keyed by x-value so d3Stack can compute stacked layers.
@@ -627,7 +642,7 @@ export class AreaChart extends CartesianChartBase {
     svg.appendChild(defs);
 
     const plotGroup = createSvgElement<SVGGElement>('g');
-    plotGroup.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top})`);
+    plotGroup.setAttribute('transform', `translate(${leftMargin}, ${defaultMargins.top})`);
     svg.appendChild(plotGroup);
 
     const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6));
@@ -778,7 +793,7 @@ export class AreaChart extends CartesianChartBase {
     const onOverlayMouseMove = (event: MouseEvent) => {
       const svgRect = svg.getBoundingClientRect();
       // localX is in plot-group coordinates (same coordinate space as xScale's range).
-      const localX = event.clientX - svgRect.left - defaultMargins.left;
+      const localX = event.clientX - svgRect.left - leftMargin;
 
       // Invert pixel → domain value, then bisect by domain value.
       // This is the exact same approach React uses:
@@ -863,7 +878,7 @@ export class AreaChart extends CartesianChartBase {
           xLabel: found.xLabel,
           xAxisAriaLabel: found.xAxisAriaLabel,
           entries,
-          xPos: svgRect.left - hostRect.left + defaultMargins.left + cx,
+          xPos: svgRect.left - hostRect.left + leftMargin + cx,
           yPos: svgRect.top - hostRect.top + defaultMargins.top + topY - 10,
         };
       }
@@ -879,7 +894,7 @@ export class AreaChart extends CartesianChartBase {
     overlay.addEventListener('mousemove', onOverlayMouseMove);
     overlay.addEventListener('mouseleave', onOverlayMouseLeave);
 
-    renderBottomAxis(svg, this, xScale as ScaleLike<AxisDomain>, xAxis as Axis<AxisDomain>, xFormatter, innerWidth, innerHeight);
+    renderBottomAxis(svg, this, xScale as ScaleLike<AxisDomain>, xAxis as Axis<AxisDomain>, xFormatter, innerWidth, innerHeight, leftMargin);
 
     const yFormatter = (value: number): string => {
       if (this.yAxisTickFormat) {
@@ -894,12 +909,12 @@ export class AreaChart extends CartesianChartBase {
 
     // Skip left axis when all series are secondary (no primary data to scale against).
     if (primaryStackedLayers.length > 0) {
-      renderLeftAxis(svg, this, yScale as ScaleLike<number>, yAxis as unknown as Axis<number>, yFormatter, innerHeight);
+      renderLeftAxis(svg, this, yScale as ScaleLike<number>, yAxis as unknown as Axis<number>, yFormatter, innerHeight, innerWidth, leftMargin);
     }
 
     if (hasSecondaryY) {
       const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
-      renderRightAxis(svg, this, yScaleSecondary as ScaleLike<number>, yAxisSecondary as unknown as Axis<number>, yFormatter, innerHeight, innerWidth);
+      renderRightAxis(svg, this, yScaleSecondary as ScaleLike<number>, yAxisSecondary as unknown as Axis<number>, yFormatter, innerHeight, innerWidth, leftMargin);
     }
 
     this.chartContainer.appendChild(svg);
