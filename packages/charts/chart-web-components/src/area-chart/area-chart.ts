@@ -157,6 +157,9 @@ const renderBottomAxis = <Domain extends AxisDomain>(
     const text = createSvgElement<SVGTextElement>('text');
     text.classList.add('axis-text');
     text.setAttribute('y', String(6 + tickPadding));
+    // dominant-baseline='hanging' makes y the top of the text, so the full
+    // tickPadding gap is preserved between the tick end and the label top.
+    text.setAttribute('dominant-baseline', 'hanging');
     text.setAttribute('text-anchor', chart.rotateXAxisLabels ? 'start' : 'middle');
     text.textContent = formatter(value);
     if (chart.rotateXAxisLabels) {
@@ -234,7 +237,10 @@ const renderLeftAxis = (
     const text = createSvgElement<SVGTextElement>('text');
     text.classList.add('y-axis-text');
     text.setAttribute('x', String(isRtl ? 6 + tickPadding : -(6 + tickPadding)));
-    text.setAttribute('text-anchor', isRtl ? 'start' : 'end');
+    // SVG inherits direction from the container (dir="rtl"), which makes text-anchor
+    // direction-aware: 'end' = logical-end = LEFT edge in RTL, RIGHT edge in LTR.
+    // Using 'end' places the label outward (right of tick in RTL, left of tick in LTR).
+    text.setAttribute('text-anchor', 'end');
     text.setAttribute('dominant-baseline', 'middle');
     text.textContent = formatter(value);
     tick.appendChild(text);
@@ -302,7 +308,10 @@ const renderRightAxis = (
     const text = createSvgElement<SVGTextElement>('text');
     text.classList.add('y-axis-text');
     text.setAttribute('x', String(isRtl ? -(6 + tickPadding) : 6 + tickPadding));
-    text.setAttribute('text-anchor', isRtl ? 'end' : 'start');
+    // In RTL, 'start' = right edge of text at given x; text extends leftward (outward from chart).
+    // In LTR, 'start' = left edge of text at given x; text extends rightward (outward from chart).
+    // Using 'start' consistently is correct since the axis side and tick direction both flip with RTL.
+    text.setAttribute('text-anchor', 'start');
     text.setAttribute('dominant-baseline', 'middle');
     text.textContent = formatter(value);
     tick.appendChild(text);
