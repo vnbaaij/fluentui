@@ -11,6 +11,7 @@ import {
   formatLocaleNumber,
   getColorFromToken,
   getNextColor,
+  getRTL,
   jsonConverter,
   parseDateOrNumber,
   SVG_NAMESPACE_URI,
@@ -237,10 +238,18 @@ const renderLeftAxis = (
   if (chart.yAxisTitle) {
     const title = createSvgElement<SVGTextElement>('text');
     title.classList.add('y-axis-title');
-    title.setAttribute('x', String(-innerHeight / 2));
-    title.setAttribute('y', '-42');
+    // LTR: rotate(-90) reads bottom-to-top. rotate(-90) maps (x,y) → (y,-x).
+    //   x'=-42 (left of axis), y'=innerHeight/2: set x=-innerHeight/2, y=-42.
+    // RTL: rotate(90) flips to top-to-bottom. rotate(90) maps (x,y) → (-y,x).
+    //   x'=-42 (left of axis), y'=innerHeight/2: set x=innerHeight/2, y=42.
+    const isRtl = getRTL(chart);
+    const rotation = isRtl ? 'rotate(90)' : 'rotate(-90)';
+    const tx = isRtl ? String(innerHeight / 2) : String(-innerHeight / 2);
+    const ty = isRtl ? '42' : '-42';
+    title.setAttribute('x', tx);
+    title.setAttribute('y', ty);
     title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('transform', 'rotate(-90)');
+    title.setAttribute('transform', rotation);
     title.textContent = chart.yAxisTitle;
     group.appendChild(title);
   }
@@ -291,14 +300,20 @@ const renderRightAxis = (
   if (chart.secondaryYAxisTitle) {
     const title = createSvgElement<SVGTextElement>('text');
     title.classList.add('y-axis-title');
-    // Mirror of the left axis title: rotate(90) places text reading top-to-bottom.
-    // After rotate(90), point (x,y) maps to (-y, x), so:
-    //   x=innerHeight/2 → y'=innerHeight/2 (centres the title vertically along the axis)
-    //   y=-42 → x'=+42 (places the title 42px to the RIGHT of the axis, outside the chart)
-    title.setAttribute('x', String(innerHeight / 2));
-    title.setAttribute('y', '-42');
+    // In LTR: rotate(-90) reads bottom-to-top, matching the left axis direction.
+    //   rotate(-90) maps (x, y) → (y, -x). To land at x'=+42 (right of axis),
+    //   y'=innerHeight/2 (centred): set x=-innerHeight/2, y=42.
+    // In RTL: rotate(90) flips both axes to top-to-bottom reading.
+    //   rotate(90) maps (x, y) → (-y, x). To land at x'=+42, y'=innerHeight/2:
+    //   set x=innerHeight/2, y=-42.
+    const isRtl = getRTL(chart);
+    const rotation = isRtl ? 'rotate(90)' : 'rotate(-90)';
+    const tx = isRtl ? String(innerHeight / 2) : String(-innerHeight / 2);
+    const ty = isRtl ? '-42' : '42';
+    title.setAttribute('x', tx);
+    title.setAttribute('y', ty);
     title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('transform', 'rotate(90)');
+    title.setAttribute('transform', rotation);
     title.textContent = chart.secondaryYAxisTitle;
     group.appendChild(title);
   }
