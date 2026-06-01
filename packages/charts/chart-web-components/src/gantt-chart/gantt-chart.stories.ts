@@ -134,7 +134,7 @@ export const Basic: Story<FluentGanttChart> = () => {
   chart.setAttribute('width', '600');
   chart.setAttribute('height', '350');
   return chart;
-};
+};;
 Basic.parameters = { docs: { story: { height: '420px' } } };
 
 export const StandardAttributes: Story<FluentGanttChart> = () => {
@@ -325,6 +325,8 @@ export const NumericAxis: Story<FluentGanttChart> = () => {
   return chart;
 };
 
+
+NumericAxis.parameters = { docs: { story: { height: '420px' } } };
 export const HideLegends: Story<FluentGanttChart> = () => {
   const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
   chart.data = basicData;
@@ -334,6 +336,8 @@ export const HideLegends: Story<FluentGanttChart> = () => {
   return chart;
 };
 
+
+HideLegends.parameters = { docs: { story: { height: '420px' } } };
 export const CategoryOrder: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
 
@@ -367,6 +371,8 @@ export const CategoryOrder: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+CategoryOrder.parameters = { docs: { story: { height: '480px' } } };
 export const AxisTitles: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
   const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
@@ -379,6 +385,8 @@ export const AxisTitles: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+AxisTitles.parameters = { docs: { story: { height: '420px' } } };
 export const TickFormat: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
   const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
@@ -390,6 +398,8 @@ export const TickFormat: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+TickFormat.parameters = { docs: { story: { height: '420px' } } };
 export const TickPadding: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
   const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
@@ -401,6 +411,8 @@ export const TickPadding: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+TickPadding.parameters = { docs: { story: { height: '420px' } } };
 export const RotateXAxisLabels: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
   const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
@@ -412,6 +424,8 @@ export const RotateXAxisLabels: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+RotateXAxisLabels.parameters = { docs: { story: { height: '420px' } } };
 export const SupportNegativeData: Story<FluentGanttChart> = () => {
   const negativeNumericData: GanttChartDataPoint[] = [
     { x: { start: -10, end: 0 }, y: 5, legend: 'Past', color: DataVizPalette.color1 },
@@ -427,6 +441,8 @@ export const SupportNegativeData: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+SupportNegativeData.parameters = { docs: { story: { height: '420px' } } };
 export const RoundedTicks: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
   const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
@@ -437,6 +453,8 @@ export const RoundedTicks: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+RoundedTicks.parameters = { docs: { story: { height: '420px' } } };
 export const BarHeight: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
 
@@ -480,6 +498,8 @@ export const TickValues: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+TickValues.parameters = { docs: { story: { height: '480px' } } };
 export const TickFormatLocale: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
 
@@ -499,6 +519,8 @@ export const TickFormatLocale: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+TickFormatLocale.parameters = { docs: { story: { height: '480px' } } };
 export const StrokeWidth: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
 
@@ -524,6 +546,8 @@ export const StrokeWidth: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+StrokeWidth.parameters = { docs: { story: { height: '540px' } } };
 export const ShowXAxisLabelsTooltip: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
 
@@ -555,6 +579,8 @@ export const ShowXAxisLabelsTooltip: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+ShowXAxisLabelsTooltip.parameters = { docs: { story: { height: '520px' } } };
 export const DateLocalizeOptions: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
 
@@ -592,6 +618,8 @@ export const DateLocalizeOptions: Story<FluentGanttChart> = () => {
   return container;
 };
 
+
+DateLocalizeOptions.parameters = { docs: { story: { height: '480px' } } };
 export const TooltipRendererStory: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
 
@@ -617,7 +645,7 @@ export const TooltipRendererStory: Story<FluentGanttChart> = () => {
   return container;
 };
 TooltipRendererStory.storyName = 'Tooltip Renderer';
-TooltipRendererStory.parameters = { docs: { story: { height: '420px' } } };
+TooltipRendererStory.parameters = { docs: { story: { height: '480px' } } };
 
 const utcStoryData: GanttChartDataPoint[] = [
   {
@@ -675,7 +703,7 @@ export const Culture: Story<FluentGanttChart> = () => {
 
   return container;
 };
-Culture.parameters = { docs: { story: { height: '440px' } } };
+Culture.parameters = { docs: { story: { height: '470px' } } };
 
 export const TitleAlign: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
@@ -710,7 +738,7 @@ export const TitleAlign: Story<FluentGanttChart> = () => {
 
   return container;
 };
-TitleAlign.parameters = { docs: { story: { height: '440px' } } };
+TitleAlign.parameters = { docs: { story: { height: '470px' } } };
 
 export const TitleAndLegendPositions: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
@@ -766,7 +794,7 @@ export const TitleAndLegendPositions: Story<FluentGanttChart> = () => {
 
   return container;
 };
-TitleAndLegendPositions.parameters = { docs: { story: { height: '440px' } } };
+TitleAndLegendPositions.parameters = { docs: { story: { height: '470px' } } };
 
 export const RTL: Story<FluentGanttChart> = () => {
   const div = document.createElement('div');
@@ -780,3 +808,4 @@ export const RTL: Story<FluentGanttChart> = () => {
   div.appendChild(chart);
   return div;
 };
+RTL.parameters = { docs: { story: { height: '420px' } } };

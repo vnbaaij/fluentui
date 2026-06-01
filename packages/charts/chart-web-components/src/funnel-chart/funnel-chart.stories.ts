@@ -67,7 +67,7 @@ export const Basic: Story<FluentFunnelChart> = () => {
   chart.setAttribute('height', '500');
   chart.setAttribute('orientation', 'horizontal');
   return chart;
-};
+};;
 Basic.parameters = { docs: { story: { height: '560px' } } };
 
 export const StandardAttributes: Story<FluentFunnelChart> = () => {
@@ -140,7 +140,7 @@ export const StandardAttributes: Story<FluentFunnelChart> = () => {
   return container;
 };
 StandardAttributes.storyName = 'Standard Attributes';
-StandardAttributes.parameters = { docs: { story: { height: '640px' } } };
+StandardAttributes.parameters = { docs: { story: { height: '740px' } } };
 
 export const Orientation: Story<FluentFunnelChart> = () => {
   const container = document.createElement('div');
@@ -365,7 +365,7 @@ export const TooltipRendererStory: Story<FluentFunnelChart> = () => {
   return container;
 };
 TooltipRendererStory.storyName = 'Tooltip Renderer';
-TooltipRendererStory.parameters = { docs: { story: { height: '380px' } } };
+TooltipRendererStory.parameters = { docs: { story: { height: '430px' } } };
 
 export const ResponsiveWidth: Story<FluentFunnelChart> = () => {
   const outer = document.createElement('div');
@@ -529,3 +529,4 @@ export const RTL: Story<FluentFunnelChart> = renderComponent(html<StoryArgs<Flue
     ></fluent-funnel-chart>
   </div>
 `);
+RTL.parameters = { docs: { story: { height: '420px' } } };

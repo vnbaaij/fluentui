@@ -1,0 +1,800 @@
+import { attr } from '@microsoft/fast-element';
+import { bisector, extent } from 'd3-array';
+import { axisBottom, axisLeft, type Axis, type AxisDomain } from 'd3-axis';
+import { format, formatPrefix } from 'd3-format';
+import { scaleLinear, scaleTime, type ScaleLinear, type ScaleTime } from 'd3-scale';
+import { area as createArea, curveMonotoneX, line as createLine, stack as createStack } from 'd3-shape';
+import { timeFormat, utcFormat } from 'd3-time-format';
+import type { TooltipProps } from '../utils/chart-options.js';
+import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
+import {
+  formatLocaleNumber,
+  getColorFromToken,
+  getNextColor,
+  jsonConverter,
+  parseDateOrNumber,
+  SVG_NAMESPACE_URI,
+  wrapText,
+} from '../utils/chart-helpers.js';
+import type { AreaChartDataPoint, AreaChartMode, AreaChartSeries } from './area-chart.options.js';
+
+const createSvgElement = <T extends SVGElement>(tag: string): T =>
+  document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
+
+const escapeHtml = (str: string): string =>
+  str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+/** A single series entry shown in the multi-series hover tooltip. */
+export type TooltipEntry = { legend: string; color: string; value: string; callOutAriaLabel?: string };
+
+type TooltipState = TooltipProps & { xLabel: string; xAxisAriaLabel?: string; entries: TooltipEntry[] };
+type XValue = number | Date;
+type ContinuousScale = ScaleLinear<number, number> | ScaleTime<number, number>;
+type ScaleLike<Domain extends AxisDomain> = {
+  domain(): Domain[];
+  ticks?: (count?: number) => Domain[];
+  bandwidth?: () => number;
+  (value: Domain): number | undefined;
+};
+type NormalizedPoint = AreaChartDataPoint & { x: XValue; xLabel: string; cx: number; cy: number };
+type NormalizedSeries = { legend: string; color: string; data: NormalizedPoint[] };
+
+const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
+
+const toNumber = (value: number | string | undefined, fallback: number): number => {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toOptionalNumber = (value: number | string | undefined): number | undefined => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const formatNumberValue = (value: number, specifier: string | undefined, culture: string | undefined): string => {
+  if (specifier) {
+    try {
+      return format(specifier)(value);
+    } catch {
+      // Fall back to locale formatting below.
+    }
+  }
+  return formatLocaleNumber(value, culture);
+};
+
+/**
+ * Default y-axis tick formatter matching React charting's `defaultYAxisTickFormatter`.
+ * Uses d3 SI-prefix notation (e.g. 10k, 1.5M) for values ≥ 1 and general format for
+ * small values, keeping up to 2 significant digits and trimming trailing zeros.
+ */
+const defaultYAxisTickFormatter = (value: number): string => {
+  if (Math.abs(value) < 1) {
+    return format('.2~g')(value);
+  }
+  return formatPrefix('.2~', value)(value);
+};
+
+const formatDateValue = (chart: AreaChart, value: Date): string => {
+  if (chart.customDateTimeFormatter) {
+    return chart.customDateTimeFormatter(value);
+  }
+  if (chart.tickFormat) {
+    try {
+      return (chart.useUTC ? utcFormat(chart.tickFormat) : timeFormat(chart.tickFormat))(value);
+    } catch {
+      // Fall back to Intl below.
+    }
+  }
+  try {
+    return new Intl.DateTimeFormat(chart.culture, chart.dateLocalizeOptions).format(value);
+  } catch {
+    return new Intl.DateTimeFormat(undefined, chart.dateLocalizeOptions).format(value);
+  }
+};
+
+const getNormalizedXValue = (value: number | Date): XValue => {
+  const parsed = parseDateOrNumber(value as number | Date | string);
+  return parsed instanceof Date ? parsed : Number(parsed);
+};
+
+const getTickValues = <Domain extends AxisDomain>(axis: Axis<Domain>, scale: ScaleLike<Domain>): Domain[] => {
+  const explicit = axis.tickValues();
+  if (explicit) {
+    return Array.from(explicit as Iterable<Domain>);
+  }
+  if (typeof scale.ticks === 'function') {
+    const [count] = axis.tickArguments() as [number?];
+    return scale.ticks(count);
+  }
+  return scale.domain();
+};
+
+const getPosition = <Domain extends AxisDomain>(scale: ScaleLike<Domain>, value: Domain): number => {
+  const start = scale(value) ?? 0;
+  return typeof scale.bandwidth === 'function' ? start + scale.bandwidth() / 2 : start;
+};
+
+const renderBottomAxis = <Domain extends AxisDomain>(
+  svg: SVGSVGElement,
+  chart: AreaChart,
+  scale: ScaleLike<Domain>,
+  axis: Axis<Domain>,
+  formatter: (value: Domain) => string,
+  innerWidth: number,
+  innerHeight: number,
+): void => {
+  const group = createSvgElement<SVGGElement>('g');
+  group.classList.add('x-axis');
+  group.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top + innerHeight})`);
+
+  const domain = createSvgElement<SVGLineElement>('line');
+  domain.classList.add('axis-domain');
+  domain.setAttribute('x1', '0');
+  domain.setAttribute('x2', String(innerWidth));
+  group.appendChild(domain);
+
+  const tickPadding = toNumber(chart.tickPadding, 6);
+  let previousRight = Number.NEGATIVE_INFINITY;
+
+  getTickValues(axis, scale).forEach(value => {
+    const tick = createSvgElement<SVGGElement>('g');
+    tick.classList.add('tick');
+    tick.setAttribute('transform', `translate(${getPosition(scale, value)}, 0)`);
+
+    const line = createSvgElement<SVGLineElement>('line');
+    line.classList.add('axis-tick-line');
+    line.setAttribute('y2', '6');
+    tick.appendChild(line);
+
+    const text = createSvgElement<SVGTextElement>('text');
+    text.classList.add('axis-text');
+    text.setAttribute('y', String(6 + tickPadding));
+    text.setAttribute('text-anchor', chart.rotateXAxisLabels ? 'start' : 'middle');
+    text.textContent = formatter(value);
+    if (chart.rotateXAxisLabels) {
+      text.setAttribute('transform', 'rotate(45)');
+    }
+    if (chart.showXAxisLabelsTooltip) {
+      const title = createSvgElement<SVGTitleElement>('title');
+      title.textContent = text.textContent;
+      text.appendChild(title);
+    }
+    tick.appendChild(text);
+    group.appendChild(tick);
+
+    if (chart.wrapXAxisLabels && typeof scale.bandwidth === 'function') {
+      wrapText(text, Math.max(scale.bandwidth(), 1));
+    } else if (chart.hideTickOverlap && !chart.rotateXAxisLabels) {
+      const box = text.getBBox();
+      const left = getPosition(scale, value) + box.x;
+      const right = left + box.width;
+      if (left < previousRight) {
+        tick.style.display = 'none';
+      } else {
+        previousRight = right + 4;
+      }
+    }
+  });
+
+  if (chart.xAxisTitle) {
+    const title = createSvgElement<SVGTextElement>('text');
+    title.classList.add('x-axis-title');
+    title.setAttribute('x', String(innerWidth / 2));
+    title.setAttribute('y', '42');
+    title.setAttribute('text-anchor', 'middle');
+    title.textContent = chart.xAxisTitle;
+    group.appendChild(title);
+  }
+
+  svg.appendChild(group);
+};
+
+const renderLeftAxis = (
+  svg: SVGSVGElement,
+  chart: AreaChart,
+  scale: ScaleLike<number>,
+  axis: Axis<number>,
+  formatter: (value: number) => string,
+  innerHeight: number,
+): void => {
+  const group = createSvgElement<SVGGElement>('g');
+  group.classList.add('y-axis');
+  group.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top})`);
+
+  const domain = createSvgElement<SVGLineElement>('line');
+  domain.classList.add('axis-domain');
+  domain.setAttribute('y2', String(innerHeight));
+  group.appendChild(domain);
+
+  const tickPadding = toNumber(chart.tickPadding, 6);
+  getTickValues(axis, scale).forEach(value => {
+    const tick = createSvgElement<SVGGElement>('g');
+    tick.classList.add('tick');
+    tick.setAttribute('transform', `translate(0, ${getPosition(scale, value)})`);
+
+    const line = createSvgElement<SVGLineElement>('line');
+    line.classList.add('axis-tick-line');
+    line.setAttribute('x2', '-6');
+    tick.appendChild(line);
+
+    const text = createSvgElement<SVGTextElement>('text');
+    text.classList.add('y-axis-text');
+    text.setAttribute('x', String(-(6 + tickPadding)));
+    text.setAttribute('text-anchor', 'end');
+    text.setAttribute('dominant-baseline', 'middle');
+    text.textContent = formatter(value);
+    tick.appendChild(text);
+
+    group.appendChild(tick);
+  });
+
+  if (chart.yAxisTitle) {
+    const title = createSvgElement<SVGTextElement>('text');
+    title.classList.add('y-axis-title');
+    title.setAttribute('x', String(-innerHeight / 2));
+    title.setAttribute('y', '-42');
+    title.setAttribute('text-anchor', 'middle');
+    title.setAttribute('transform', 'rotate(-90)');
+    title.textContent = chart.yAxisTitle;
+    group.appendChild(title);
+  }
+
+  svg.appendChild(group);
+};
+
+/** @public */
+export class AreaChart extends CartesianChartBase {
+  declare public tooltipProps: TooltipState;
+
+  @attr({ converter: jsonConverter })
+  public data!: AreaChartSeries[];
+
+  @attr({ attribute: 'enable-gradient', mode: 'boolean' })
+  public enableGradient: boolean = false;
+
+  /**
+   * Controls how areas are filled.
+   * - `'tonexty'` (default): Stacked — each area fills from the previous series up.
+   * - `'tozeroy'`: Non-stacked — each series fills independently from y=0.
+   */
+  @attr()
+  public mode: AreaChartMode = 'tonexty';
+
+  protected override _enableResizeObserver = true;
+
+  public connectedCallback() {
+    const self = this as Record<string, unknown>;
+    const attrFields = ['data', 'enableGradient', 'mode'] as const;
+    const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
+
+    for (const field of attrFields) {
+      saved[field] = self[field];
+      delete self[field];
+    }
+
+    super.connectedCallback();
+
+    for (const field of attrFields) {
+      if (self[field] === undefined && saved[field] !== undefined) {
+        self[field] = saved[field];
+      }
+    }
+
+    this.tooltipProps = { ...this.tooltipProps, xLabel: '', entries: [] } as TooltipState;
+    this._requestRender();
+  }
+
+  public get tooltipInlineTransform(): string {
+    // Position the tooltip to the right (LTR) or left (RTL) of the hover crosshair so it
+    // does not cover the indicator line and hover dots.  React's Callout uses
+    // DirectionalHint.topAutoEdge anchored on the highlighted circle, which has the same
+    // visual result: the tooltip appears beside the data point, not on top of it.
+    return this._isRTL ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)';
+  }
+
+  protected dataChanged(): void {
+    this._requestRender();
+  }
+
+  protected enableGradientChanged(): void {
+    this._requestRender();
+  }
+
+  protected modeChanged(): void {
+    this._requestRender();
+  }
+
+  protected override _clearTooltip(): void {
+    this.tooltipProps = { isVisible: false, legend: '', xLabel: '', xAxisAriaLabel: undefined, yValue: '', color: '', xPos: 0, yPos: 0, entries: [] };
+  }
+
+  protected override tooltipPropsChanged(old: TooltipProps, newValue: TooltipProps): void {
+    super.tooltipPropsChanged(old, newValue);
+    if (newValue.isVisible && !this.hideTooltip) {
+      const state = newValue as TooltipState;
+      const xText = state.xAxisAriaLabel ?? state.xLabel;
+      const parts = [xText, ...(state.entries ?? []).map(e => e.callOutAriaLabel ?? `${e.legend}: ${e.value}`)].filter(Boolean);
+      this.liveRegionText = parts.join('. ');
+    }
+  }
+
+  protected override _buildDefaultTooltipHTML(): string {
+    const state = this.tooltipProps as TooltipState;
+    const header = `<div class="tooltip-header">${escapeHtml(state.xLabel ?? '')}</div>`;
+    const entries = (state.entries ?? [])
+      .map(e =>
+        [
+          `<div class="tooltip-info" style="border-color: ${escapeHtml(e.color)};">`,
+          `<div class="tooltip-legend-text">${escapeHtml(e.legend)}</div>`,
+          `<div class="tooltip-primary-value" style="color: ${escapeHtml(e.color)};">${escapeHtml(e.value)}</div>`,
+          `</div>`,
+        ].join(''),
+      )
+      .join('');
+    return header + entries;
+  }
+
+  protected override _performRender(): void {
+    if (!this.$fastController.isConnected || !this.chartContainer) {
+      return;
+    }
+
+    this._applyHostDimensions(this.width, this.height);
+    this._clearChart();
+
+    const seriesData = Array.isArray(this.data) ? this.data : [];
+    if (seriesData.length === 0) {
+      this.legends = [];
+      this._updateLegendInteractionState();
+      this.elementInternals.ariaLabel = this._getHostAriaLabel();
+      return;
+    }
+
+    const flattened = seriesData.flatMap(series => series.data.map(point => getNormalizedXValue(point.x)));
+    const isDateAxis = flattened.some(value => value instanceof Date);
+
+    const normalizedSeries: NormalizedSeries[] = seriesData.map((series, index) => {
+      const color = series.color ? getColorFromToken(series.color) : getNextColor(index, 0);
+      const data = series.data.map(point => {
+        const x = getNormalizedXValue(point.x);
+        return {
+          x,
+          y: point.y,
+          xLabel: x instanceof Date ? formatDateValue(this, x) : formatNumberValue(x, this.xAxisTickFormat, this.culture),
+          cx: 0,
+          cy: 0,
+        };
+      });
+      return { legend: series.legend, color, data };
+    });
+
+    const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
+    const height = toNumber(this.height, 300);
+    const innerWidth = Math.max(width - defaultMargins.left - defaultMargins.right, 1);
+    const innerHeight = Math.max(height - defaultMargins.top - defaultMargins.bottom, 1);
+
+    // Build a unified dataset keyed by x-value so d3Stack can compute stacked layers.
+    // Each entry holds all series values at that x position (missing values default to 0).
+    const legendKeys = normalizedSeries.map(s => s.legend);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const xEntryMap = new Map<string, any>();
+    normalizedSeries.forEach(series => {
+      series.data.forEach(point => {
+        const key = String(point.x instanceof Date ? point.x.getTime() : point.x);
+        if (!xEntryMap.has(key)) {
+          xEntryMap.set(key, { xVal: point.x, xLabel: point.xLabel });
+        }
+        xEntryMap.get(key)[series.legend] = point.y;
+      });
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stackDataset: any[] = [...xEntryMap.values()].sort((a, b) => {
+      const ax = a.xVal instanceof Date ? a.xVal.getTime() : Number(a.xVal);
+      const bx = b.xVal instanceof Date ? b.xVal.getTime() : Number(b.xVal);
+      return ax - bx;
+    });
+    // Ensure every entry has a value for every legend (fill missing with 0)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    stackDataset.forEach((dp: any) => legendKeys.forEach(k => { if (dp[k] === undefined) dp[k] = 0; }));
+
+    // mode='tonexty' (default): stacked — d3Stack computes cumulative bands.
+    // mode='tozeroy': non-stacked — each series' area fills independently from y=0.
+    // This mirrors React's _shouldFillToZeroY() / _getDataPoints() logic.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let stackedLayers: any[];
+    if (this.mode === 'tozeroy') {
+      // Build fake layers: [0, y] for each point (same structure d3Stack would produce)
+      stackedLayers = legendKeys.map(key =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        stackDataset.map((dp: any) => {
+          const entry = [0, dp[key] as number] as any;
+          entry.data = dp;
+          return entry;
+        }),
+      );
+    } else {
+      stackedLayers = createStack<any, any, string>().keys(legendKeys)(stackDataset);
+    }
+
+    // Compute the actual range of all stacked y values (lower and upper bounds) to support
+    // negative data correctly — matches React's _getMinMaxOfYAxis() behaviour.
+    // Always include 0 so positive-only charts start at zero and all-negative charts end at zero.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allStackedValues: number[] = (stackedLayers as any[]).flatMap(layer =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (layer as any[]).flatMap((d: any) => [d[0] as number, d[1] as number]),
+    );
+    const stackedDataMin = allStackedValues.length > 0 ? Math.min(...allStackedValues) : 0;
+    const stackedDataMax = allStackedValues.length > 0 ? Math.max(...allStackedValues) : 1;
+    let yMin = toOptionalNumber(this.yMinValue) ?? Math.min(0, stackedDataMin);
+    let yMax = toOptionalNumber(this.yMaxValue) ?? Math.max(0, stackedDataMax);
+    if (yMin === yMax) {
+      yMax += 1;
+    }
+
+    let xScale: ContinuousScale;
+    let xFormatter: (value: AxisDomain) => string;
+    if (isDateAxis) {
+      const dateValues = normalizedSeries.flatMap(series => series.data.map(point => point.x)).filter((value): value is Date => value instanceof Date);
+      const rawExtent = extent(dateValues, value => value.getTime());
+      const xMin = this.xMinValue !== undefined ? parseDateOrNumber(this.xMinValue as string | number) : new Date(rawExtent[0] ?? 0);
+      const xMax = this.xMaxValue !== undefined ? parseDateOrNumber(this.xMaxValue as string | number) : new Date(rawExtent[1] ?? 0);
+      const domainMin = xMin instanceof Date ? xMin : new Date(Number(xMin));
+      const domainMax = xMax instanceof Date ? xMax : new Date(Number(xMax));
+      xScale = scaleTime().domain([domainMin, domainMax]).range([0, innerWidth]);
+      if (this.roundedTicks) {
+        xScale.nice();
+      }
+      xFormatter = value => formatDateValue(this, value as Date);
+    } else {
+      const xValues = normalizedSeries.flatMap(series => series.data.map(point => point.x)).filter((value): value is number => typeof value === 'number');
+      const rawExtent = extent(xValues);
+      let xMin = toOptionalNumber(this.xMinValue) ?? rawExtent[0] ?? 0;
+      let xMax = toOptionalNumber(this.xMaxValue) ?? rawExtent[1] ?? 1;
+      if (xMin === xMax) {
+        xMin -= 1;
+        xMax += 1;
+      }
+      xScale = scaleLinear().domain([xMin, xMax]).range([0, innerWidth]);
+      if (this.roundedTicks) {
+        xScale.nice();
+      }
+      xFormatter = value => formatNumberValue(Number(value), this.xAxisTickFormat, this.culture);
+    }
+
+    const yScale = scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
+    if (this.roundedTicks) {
+      yScale.nice();
+    }
+
+    normalizedSeries.forEach((series, si) => {
+      const layer = stackedLayers[si];
+      series.data.forEach(point => {
+        point.cx = xScale(point.x as never) ?? 0;
+        // cy reflects the top of the stacked layer at this x-value (for tooltip placement)
+        const xKey = String(point.x instanceof Date ? point.x.getTime() : point.x);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const stackPoint = layer.find((d: any) =>
+          String(d.data.xVal instanceof Date ? d.data.xVal.getTime() : d.data.xVal) === xKey,
+        );
+        point.cy = stackPoint ? yScale(stackPoint[1]) : yScale(point.y);
+      });
+    });
+
+    const svg = createSvgElement<SVGSVGElement>('svg');
+    svg.classList.add('chart-svg');
+    svg.setAttribute('width', String(width));
+    svg.setAttribute('height', String(height));
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+    const defs = createSvgElement<SVGDefsElement>('defs');
+    svg.appendChild(defs);
+
+    const plotGroup = createSvgElement<SVGGElement>('g');
+    plotGroup.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top})`);
+    svg.appendChild(plotGroup);
+
+    const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6));
+    if (!isDateAxis) {
+      xAxis.ticks(6);
+    }
+    if (this.tickValues?.length) {
+      if (isDateAxis) {
+        xAxis.tickValues(this.tickValues.map(value => parseDateOrNumber(value as string | number | Date) as Date));
+      } else {
+        xAxis.tickValues(this.tickValues.map(value => Number(value)));
+      }
+    }
+
+    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
+    if (this.yAxisTickValues?.length) {
+      yAxis.tickValues(this.yAxisTickValues);
+    }
+
+    // Pre-compute a lookup map from x-value key → all series entries at that x.
+    // This mirrors React's calloutData() utility: group all series by their x value
+    // so the mousemove handler can retrieve every series in O(1) without re-iterating.
+    type CalloutEntry = { legend: string; color: string; y: number; stackedY1: number; callOutAriaLabel?: string };
+    type CalloutPoint = { xLabel: string; cx: number; xAxisAriaLabel?: string; entries: CalloutEntry[] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const calloutPointsByX = new Map<number, CalloutPoint>();
+    normalizedSeries.forEach((series, si) => {
+      const layer = stackedLayers[si];
+      series.data.forEach((point, di) => {
+        const key = point.x instanceof Date ? point.x.getTime() : Number(point.x);
+        if (!calloutPointsByX.has(key)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const stackedY1 = (layer[di] as any)?.[1] ?? point.y;
+          calloutPointsByX.set(key, {
+            xLabel: point.xLabel,
+            cx: point.cx,
+            xAxisAriaLabel: point.xAxisCalloutAccessibilityData?.ariaLabel,
+            entries: [],
+          });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const stackedY1 = (layer[di] as any)?.[1] ?? point.y;
+        calloutPointsByX.get(key)!.entries.push({
+          legend: series.legend,
+          color: series.color,
+          y: point.y,
+          stackedY1,
+          callOutAriaLabel: point.callOutAccessibilityData?.ariaLabel,
+        });
+      });
+    });
+
+    // Bisector mirrors React's: bisector((d) => d.x).left on the first series data,
+    // then compare d0/d1 neighbors to pick the closer domain value.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bisect = bisector((d: any) => d.xVal).left;
+
+    stackedLayers.forEach((layer: any, index: number) => {
+      const series = normalizedSeries[index];
+      if (this.enableGradient) {
+        const gradient = createSvgElement<SVGLinearGradientElement>('linearGradient');
+        gradient.id = `area-gradient-${index}`;
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('x2', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('y2', '100%');
+
+        const start = createSvgElement<SVGStopElement>('stop');
+        start.setAttribute('offset', '0%');
+        start.setAttribute('stop-color', series.color);
+        start.setAttribute('stop-opacity', '0.8');
+        gradient.appendChild(start);
+
+        const end = createSvgElement<SVGStopElement>('stop');
+        end.setAttribute('offset', '100%');
+        end.setAttribute('stop-color', series.color);
+        end.setAttribute('stop-opacity', '0.1');
+        gradient.appendChild(end);
+        defs.appendChild(gradient);
+      }
+
+      const areaPath = createSvgElement<SVGPathElement>('path');
+      areaPath.classList.add('area-path');
+      areaPath.dataset.legend = series.legend;
+      areaPath.setAttribute('fill', this.enableGradient ? `url(#area-gradient-${index})` : series.color);
+      areaPath.setAttribute('fill-opacity', '0.7');
+      areaPath.setAttribute(
+        'd',
+        createArea<any>()
+          .x((d: any) => xScale(d.data.xVal as never) ?? 0)
+          .y0((d: any) => yScale(d[0]))
+          .y1((d: any) => yScale(d[1]))
+          .curve(curveMonotoneX)(layer) ?? '',
+      );
+      plotGroup.appendChild(areaPath);
+
+      const linePath = createSvgElement<SVGPathElement>('path');
+      linePath.classList.add('area-line');
+      linePath.dataset.legend = series.legend;
+      linePath.setAttribute('fill', 'none');
+      linePath.setAttribute('stroke', series.color);
+      linePath.setAttribute(
+        'd',
+        createLine<any>()
+          .x((d: any) => xScale(d.data.xVal as never) ?? 0)
+          .y((d: any) => yScale(d[1]))
+          .curve(curveMonotoneX)(layer) ?? '',
+      );
+      plotGroup.appendChild(linePath);
+    });
+
+    // Hover elements: vertical intercept line + one dot per series (matching React's behaviour).
+    const hoverLine = createSvgElement<SVGLineElement>('line');
+    hoverLine.classList.add('hover-line');
+    hoverLine.setAttribute('y1', '0');
+    hoverLine.setAttribute('y2', String(innerHeight));
+    hoverLine.style.display = 'none';
+    plotGroup.appendChild(hoverLine);
+
+    const hoverDots = normalizedSeries.map(series => {
+      const dot = createSvgElement<SVGCircleElement>('circle');
+      dot.classList.add('hover-dot');
+      dot.setAttribute('r', '6');
+      dot.setAttribute('fill', '#fff');
+      dot.setAttribute('stroke', series.color);
+      dot.setAttribute('stroke-width', '2');
+      dot.style.display = 'none';
+      plotGroup.appendChild(dot);
+      return dot;
+    });
+
+    // Transparent overlay rect captures all mouse events across the plot area.
+    // Use fill="white" + fill-opacity="0" (not fill="transparent") so SVG hit-testing
+    // still fires even when the cursor is between visible paths.
+    const overlay = createSvgElement<SVGRectElement>('rect');
+    overlay.setAttribute('x', '0');
+    overlay.setAttribute('y', '0');
+    overlay.setAttribute('width', String(innerWidth));
+    overlay.setAttribute('height', String(innerHeight));
+    overlay.setAttribute('fill', 'white');
+    overlay.setAttribute('fill-opacity', '0');
+    overlay.setAttribute('pointer-events', 'all');
+    plotGroup.appendChild(overlay);
+
+    const onOverlayMouseMove = (event: MouseEvent) => {
+      const svgRect = svg.getBoundingClientRect();
+      // localX is in plot-group coordinates (same coordinate space as xScale's range).
+      const localX = event.clientX - svgRect.left - defaultMargins.left;
+
+      // Invert pixel → domain value, then bisect by domain value.
+      // This is the exact same approach React uses:
+      //   xOffset = xScale.invert(pointer(event)[0])
+      //   i = bisect(data, xOffset)  → compare d0/d1 to find nearest
+      const xOffset = xScale.invert(localX);
+      const i = bisect(stackDataset, xOffset);
+      const d0 = stackDataset[i - 1] as (typeof stackDataset)[0] | undefined;
+      const d1 = stackDataset[i] as (typeof stackDataset)[0] | undefined;
+
+      let nearestDataPoint: (typeof stackDataset)[0] | undefined;
+      if (d0 === undefined) {
+        nearestDataPoint = d1;
+      } else if (d1 === undefined) {
+        nearestDataPoint = d0;
+      } else if (isDateAxis) {
+        const x0 = (xOffset as Date).getTime();
+        const p0 = (d0.xVal as Date).getTime();
+        const p1 = (d1.xVal as Date).getTime();
+        nearestDataPoint = Math.abs(x0 - p0) > Math.abs(x0 - p1) ? d1 : d0;
+      } else {
+        const x0 = xOffset as number;
+        const p0 = d0.xVal as number;
+        const p1 = d1.xVal as number;
+        nearestDataPoint = Math.abs(x0 - p0) > Math.abs(x0 - p1) ? d1 : d0;
+      }
+
+      if (!nearestDataPoint) {
+        return;
+      }
+
+      const xKey = nearestDataPoint.xVal instanceof Date
+        ? nearestDataPoint.xVal.getTime()
+        : Number(nearestDataPoint.xVal);
+      const found = calloutPointsByX.get(xKey);
+      if (!found) {
+        return;
+      }
+
+      const cx = xScale(nearestDataPoint.xVal as never) ?? 0;
+
+      // Position the vertical intercept line.
+      hoverLine.setAttribute('x1', String(cx));
+      hoverLine.setAttribute('x2', String(cx));
+      hoverLine.style.display = '';
+
+      // Position hover dots at the top of each stacked layer; collect tooltip entries.
+      let topY = innerHeight;
+      const entries: TooltipEntry[] = [];
+      normalizedSeries.forEach((series, si) => {
+        const entry = found.entries[si];
+        const active = entry && this._shouldShowTooltip(series.legend);
+        if (active) {
+          const cy = yScale(entry.stackedY1);
+          hoverDots[si].setAttribute('cx', String(cx));
+          hoverDots[si].setAttribute('cy', String(cy));
+          hoverDots[si].style.display = '';
+          topY = Math.min(topY, cy);
+          entries.push({
+            legend: series.legend,
+            color: series.color,
+            value: formatNumberValue(entry.y, this.yAxisTickFormat, this.culture),
+            callOutAriaLabel: entry.callOutAriaLabel,
+          });
+        } else {
+          hoverDots[si].style.display = 'none';
+        }
+      });
+
+      // Apply .hovered class to series line paths.
+      plotGroup.querySelectorAll<SVGPathElement>('.area-line').forEach(p => p.classList.add('hovered'));
+
+      if (!this.hideTooltip && entries.length > 0) {
+        const hostRect = this.getBoundingClientRect();
+        this._currentTooltipDataPoint = { xLabel: found.xLabel, entries };
+        this.tooltipProps = {
+          isVisible: true,
+          legend: entries[0].legend,
+          yValue: entries[0].value,
+          color: entries[0].color,
+          xLabel: found.xLabel,
+          xAxisAriaLabel: found.xAxisAriaLabel,
+          entries,
+          xPos: svgRect.left - hostRect.left + defaultMargins.left + cx,
+          yPos: svgRect.top - hostRect.top + defaultMargins.top + topY - 10,
+        };
+      }
+    };
+
+    const onOverlayMouseLeave = () => {
+      hoverLine.style.display = 'none';
+      hoverDots.forEach(dot => { dot.style.display = 'none'; });
+      plotGroup.querySelectorAll<SVGPathElement>('.area-line').forEach(p => p.classList.remove('hovered'));
+      this._clearTooltip();
+    };
+
+    overlay.addEventListener('mousemove', onOverlayMouseMove);
+    overlay.addEventListener('mouseleave', onOverlayMouseLeave);
+
+    renderBottomAxis(svg, this, xScale as ScaleLike<AxisDomain>, xAxis as Axis<AxisDomain>, xFormatter, innerWidth, innerHeight);
+    renderLeftAxis(
+      svg,
+      this,
+      yScale as ScaleLike<number>,
+      yAxis as unknown as Axis<number>,
+      value => {
+        if (this.yAxisTickFormat) {
+          try {
+            return format(this.yAxisTickFormat)(value);
+          } catch {
+            // Fall through to default.
+          }
+        }
+        return defaultYAxisTickFormatter(value);
+      },
+      innerHeight,
+    );
+
+    this.chartContainer.appendChild(svg);
+    this.legends = normalizedSeries.map(series => ({ legend: series.legend, color: series.color }));
+    this._updateLegendInteractionState();
+    this.elementInternals.ariaLabel = this._getHostAriaLabel();
+  }
+
+  protected override _applyActiveLegendState(): void {
+    if (!this.chartContainer) {
+      return;
+    }
+    const highlighted = this._getHighlightedLegends();
+    const hasSelection = highlighted.length > 0;
+    this.chartContainer.querySelectorAll<SVGElement>('.area-path, .area-line').forEach(element => {
+      const legend = element.dataset.legend ?? '';
+      const isActive = !hasSelection || highlighted.includes(legend);
+      element.classList.toggle('inactive', !isActive);
+      element.setAttribute('opacity', isActive ? '1' : '0.1');
+    });
+  }
+
+  protected override _getHostAriaLabel(): string {
+    const seriesCount = Array.isArray(this.data) ? this.data.length : 0;
+    if (seriesCount === 0) {
+      return this.chartTitle ? `${this.chartTitle}. No data.` : 'Area chart with no data.';
+    }
+    return `${this.chartTitle || 'Area chart'}. ${seriesCount} series.`;
+  }
+
+  private _clearChart(): void {
+    while (this.chartContainer.firstChild) {
+      this.chartContainer.firstChild.remove();
+    }
+  }
+}

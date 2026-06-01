@@ -140,7 +140,8 @@ export const Basic: Story<FluentChartLegend> = () => {
     note('Hover to preview; click to select/deselect. Hover is blocked while an item is selected.'),
   );
   return container;
-};
+};;
+Basic.parameters = { docs: { story: { height: '150px' } } };
 
 export const WithHighlighted: Story<FluentChartLegend> = () => {
   const container = document.createElement('div');
@@ -154,6 +155,7 @@ export const WithHighlighted: Story<FluentChartLegend> = () => {
   );
   return container;
 };
+WithHighlighted.parameters = { docs: { story: { height: '150px' } } };
 
 export const WithMultipleHighlighted: Story<FluentChartLegend> = () => {
   const container = document.createElement('div');
@@ -173,6 +175,7 @@ export const WithMultipleHighlighted: Story<FluentChartLegend> = () => {
   );
   return container;
 };
+WithMultipleHighlighted.parameters = { docs: { story: { height: '150px' } } };
 
 export const Hidden: Story<FluentChartLegend> = () => {
   const container = document.createElement('div');
@@ -184,6 +187,7 @@ export const Hidden: Story<FluentChartLegend> = () => {
   container.appendChild(note('The legend is hidden (display: none via :host([hidden])).'));
   return container;
 };
+Hidden.parameters = { docs: { story: { height: '100px' } } };
 
 export const PositionTop: Story<FluentChartLegend> = () => {
   const container = document.createElement('div');
@@ -206,6 +210,7 @@ export const PositionTop: Story<FluentChartLegend> = () => {
   container.appendChild(note('Legend positioned at the top (position="top"). padding shifts to bottom.'));
   return container;
 };
+PositionTop.parameters = { docs: { story: { height: '260px' } } };
 
 export const PositionStart: Story<FluentChartLegend> = () => {
   const container = document.createElement('div');
@@ -233,6 +238,7 @@ export const PositionStart: Story<FluentChartLegend> = () => {
   container.appendChild(note('Legend positioned at the start (position="start"). Renders in a column.'));
   return container;
 };
+PositionStart.parameters = { docs: { story: { height: '260px' } } };
 
 export const PositionEnd: Story<FluentChartLegend> = () => {
   const container = document.createElement('div');
@@ -260,6 +266,7 @@ export const PositionEnd: Story<FluentChartLegend> = () => {
   container.appendChild(note('Legend positioned at the end (position="end"). Renders in a column.'));
   return container;
 };
+PositionEnd.parameters = { docs: { story: { height: '260px' } } };
 
 const manyItems = [
   { legend: 'Apples', color: DataVizPalette.color1 },
@@ -296,6 +303,7 @@ export const Overflow: Story<FluentChartLegend> = () => {
   );
   return container;
 };
+Overflow.parameters = { docs: { story: { height: '180px' } } };
 
 export const Centered: Story<FluentChartLegend> = () => {
   const container = document.createElement('div');
@@ -311,3 +319,4 @@ export const Centered: Story<FluentChartLegend> = () => {
   container.appendChild(note('Legend items are center-aligned when the center attribute is present.'));
   return container;
 };
+Centered.parameters = { docs: { story: { height: '150px' } } };
