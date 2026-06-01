@@ -1,13 +1,17 @@
 
+import { html } from '@microsoft/fast-element';
 import { FluentDesignSystem } from '@fluentui/web-components';
 import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
+  createDropdownField,
   createSliderField,
   createSwitchField,
   ensureDefinition,
   type Meta,
+  renderComponent,
   type Story,
+  type StoryArgs,
 } from '../helpers.stories.js';
 import { definition } from './area-chart.definition.js';
 import type { AreaChartSeries } from './area-chart.options.js';
@@ -422,4 +426,139 @@ export const SecondaryYAxis: Story<AreaChart> = () => {
 };
 SecondaryYAxis.storyName = 'Secondary Y Axis';
 SecondaryYAxis.parameters = { docs: { story: { height: '420px' } } };
+
+export const Culture: Story<AreaChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement('fluent-area-chart') as AreaChart;
+  chart.data = basicData;
+  chart.chartTitle = `Area chart culture example (${currentCulture})`;
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('x-axis-title', 'Number of days');
+  chart.setAttribute('y-axis-title', 'Variation of stock market prices');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'area-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.chartTitle = `Area chart culture example (${currentCulture})`;
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
+Culture.parameters = { docs: { story: { height: '470px' } } };
+
+export const TitleAlign: Story<AreaChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const alignments = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof alignments)[number] = 'start';
+
+  const chart = document.createElement('fluent-area-chart') as AreaChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Area chart title alignment example';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('title-align', currentAlign);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const alignControl = createDropdownField(
+    'Title align',
+    'area-title-align',
+    [...alignments],
+    currentAlign,
+    nextAlign => {
+      currentAlign = nextAlign as (typeof alignments)[number];
+      chart.setAttribute('title-align', currentAlign);
+    },
+  );
+  controls.appendChild(alignControl.element);
+
+  return container;
+};
+TitleAlign.parameters = { docs: { story: { height: '470px' } } };
+
+export const TitleAndLegendPositions: Story<AreaChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const positions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentPosition: (typeof positions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-area-chart') as AreaChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Title and legend position example';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const posControl = createDropdownField(
+    'Legend position',
+    'area-legend-position',
+    [...positions],
+    currentPosition,
+    nextPosition => {
+      currentPosition = nextPosition as (typeof positions)[number];
+      if (currentPosition === 'bottom') {
+        chart.removeAttribute('legend-position');
+      } else {
+        chart.setAttribute('legend-position', currentPosition);
+      }
+    },
+  );
+
+  const titlePosControl = createDropdownField(
+    'Title position',
+    'area-title-position',
+    [...titlePositions],
+    currentTitlePosition,
+    nextTitlePosition => {
+      currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+      if (currentTitlePosition === 'top') {
+        chart.removeAttribute('title-position');
+      } else {
+        chart.setAttribute('title-position', currentTitlePosition);
+      }
+    },
+  );
+  controls.appendChild(titlePosControl.element);
+  controls.appendChild(posControl.element);
+
+  return container;
+};
+TitleAndLegendPositions.parameters = { docs: { story: { height: '470px' } } };
+
+export const RTL: Story<AreaChart> = renderComponent(html<StoryArgs<AreaChart>>`
+  <div dir="rtl">
+    <fluent-area-chart
+      chart-title="Area chart RTL example"
+      data="${JSON.stringify(basicData)}"
+      width="700"
+      height="300"
+      x-axis-title="Number of days"
+      y-axis-title="Variation of stock market prices"
+    >
+    </fluent-area-chart>
+  </div>
+`);
+RTL.parameters = { docs: { story: { height: '420px' } } };
 
