@@ -41,6 +41,7 @@ export default {
 } as Meta<FluentGaugeChart>;
 
 export const Basic: Story<FluentGaugeChart> = renderComponent(storyTemplate).bind({});
+Basic.parameters = { docs: { story: { height: '320px' } } };
 
 export const StandardAttributes: Story<FluentGaugeChart> = () => {
   const container = document.createElement('div');
@@ -127,6 +128,8 @@ export const SingleSegment: Story<FluentGaugeChart> = renderComponent(html<Story
   </fluent-gauge-chart>
 `);
 
+
+SingleSegment.parameters = { docs: { story: { height: '320px' } } };
 export const FractionFormat: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
     chart-title="Gauge chart fraction format example"
@@ -138,6 +141,8 @@ export const FractionFormat: Story<FluentGaugeChart> = renderComponent(html<Stor
   </fluent-gauge-chart>
 `);
 
+
+FractionFormat.parameters = { docs: { story: { height: '320px' } } };
 export const HideMinMax: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
     chart-title="Gauge chart hidden min/max example"
@@ -149,6 +154,8 @@ export const HideMinMax: Story<FluentGaugeChart> = renderComponent(html<StoryArg
   </fluent-gauge-chart>
 `);
 
+
+HideMinMax.parameters = { docs: { story: { height: '320px' } } };
 export const WithSublabel: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
     chart-title="Gauge chart sublabel example"
@@ -161,6 +168,8 @@ export const WithSublabel: Story<FluentGaugeChart> = renderComponent(html<StoryA
   </fluent-gauge-chart>
 `);
 
+
+WithSublabel.parameters = { docs: { story: { height: '320px' } } };
 export const RoundedCorners: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
     chart-title="Gauge chart rounded corners example"
@@ -172,6 +181,8 @@ export const RoundedCorners: Story<FluentGaugeChart> = renderComponent(html<Stor
   </fluent-gauge-chart>
 `);
 
+
+RoundedCorners.parameters = { docs: { story: { height: '320px' } } };
 export const HideLegends: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
     chart-title="Gauge chart hidden legend example"
@@ -183,6 +194,8 @@ export const HideLegends: Story<FluentGaugeChart> = renderComponent(html<StoryAr
   </fluent-gauge-chart>
 `);
 
+
+HideLegends.parameters = { docs: { story: { height: '320px' } } };
 export const Sizing: Story<FluentGaugeChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -326,6 +339,8 @@ export const WithSublabelAndTitle: Story<FluentGaugeChart> = renderComponent(htm
   </fluent-gauge-chart>
 `);
 
+
+WithSublabelAndTitle.parameters = { docs: { story: { height: '360px' } } };
 export const MultipleLegendSelection: Story<FluentGaugeChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -429,6 +444,8 @@ export const FormatTemplate: Story<FluentGaugeChart> = renderComponent(html<Stor
   </fluent-gauge-chart>
 `);
 
+
+FormatTemplate.parameters = { docs: { story: { height: '320px' } } };
 export const SegmentAriaLabels: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
     chart-title="Gauge chart segment aria-label example"
@@ -439,6 +456,8 @@ export const SegmentAriaLabels: Story<FluentGaugeChart> = renderComponent(html<S
   </fluent-gauge-chart>
 `);
 
+
+SegmentAriaLabels.parameters = { docs: { story: { height: '320px' } } };
 export const Culture: Story<FluentGaugeChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -568,3 +587,4 @@ export const RTL: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<Fluen
     </fluent-gauge-chart>
   </div>
 `);
+RTL.parameters = { docs: { story: { height: '320px' } } };

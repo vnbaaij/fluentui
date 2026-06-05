@@ -362,6 +362,10 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     `);
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    // Wait for bars and axis labels to be rendered before measuring layout
+    await expect(element.locator('.bar')).toHaveCount(4);
+    await expect(element.locator('.y-axis-text')).toHaveCount(6);
+
     const firstBar = element.locator('.bar').first();
     const firstLabel = element.locator('.bar-label').first();
     const firstYAxisLabel = element.locator('.y-axis-text').first();

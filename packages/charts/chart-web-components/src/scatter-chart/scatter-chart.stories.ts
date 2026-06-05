@@ -1,0 +1,131 @@
+import { FluentDesignSystem } from '@fluentui/web-components';
+import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
+import {
+  controlsRowStyle,
+  createSliderField,
+  createSwitchField,
+  ensureDefinition,
+  type Meta,
+  type Story,
+} from '../helpers.stories.js';
+import { definition } from './scatter-chart.definition.js';
+import type { ScatterChartSeries } from './scatter-chart.options.js';
+import type { ScatterChart } from './scatter-chart.js';
+
+ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
+ensureDefinition('fluent-scatter-chart', () => definition.define(FluentDesignSystem.registry));
+
+// ── Sample data ───────────────────────────────────────────────────────────────
+
+const basicData: ScatterChartSeries[] = [
+  {
+    legend: 'Phase 1',
+    color: 'qualitative.3',
+    data: [
+      { x: 10, y: 50000, size: 12 },
+      { x: 20, y: 75000, size: 15 },
+      { x: 30, y: 90000, size: 18 },
+      { x: 40, y: 120000, size: 22 },
+      { x: 50, y: 150000, size: 25 },
+    ],
+  },
+  {
+    legend: 'Phase 2',
+    color: 'qualitative.4',
+    data: [
+      { x: 60, y: 180000, size: 28 },
+      { x: 70, y: 200000, size: 30 },
+      { x: 80, y: 220000, size: 32 },
+      { x: 90, y: 250000, size: 35 },
+      { x: 100, y: 300000, size: 40 },
+    ],
+  },
+  {
+    legend: 'Milestone',
+    color: 'qualitative.5',
+    data: [{ x: 75, y: 250000, size: 50 }],
+  },
+];
+
+const basicTitle = 'Project Revenue and Transactions Over Time';
+
+export default { title: 'Components/ScatterChart' } as Meta<ScatterChart>;
+
+export const Basic: Story<ScatterChart> = () => {
+  const chart = document.createElement('fluent-scatter-chart') as ScatterChart;
+  chart.data = basicData;
+  chart.chartTitle = basicTitle;
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('x-axis-title', 'Days since project start');
+  chart.setAttribute('y-axis-title', 'Revenue in dollars');
+  return chart;
+};
+Basic.parameters = { docs: { story: { height: '470px' } } };
+
+export const StandardAttributes: Story<ScatterChart> = () => {
+  const container = document.createElement('div');
+
+  let width = 650;
+  let height = 350;
+
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  container.appendChild(sliderControls);
+
+  const toggleControls = document.createElement('div');
+  toggleControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(toggleControls);
+
+  const chart = document.createElement('fluent-scatter-chart') as ScatterChart;
+  chart.data = basicData;
+  chart.chartTitle = basicTitle;
+  chart.setAttribute('width', `${width}`);
+  chart.setAttribute('height', `${height}`);
+  chart.setAttribute('x-axis-title', 'Days since project start');
+  chart.setAttribute('y-axis-title', 'Revenue in dollars');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const widthControl = createSliderField('Width', 'scatter-sa-width', width, 200, 1000, nextValue => {
+    width = nextValue;
+    widthControl.setValue(nextValue);
+    chart.setAttribute('width', `${nextValue}`);
+  });
+  sliderControls.appendChild(widthControl.element);
+
+  const heightControl = createSliderField('Height', 'scatter-sa-height', height, 100, 600, nextValue => {
+    height = nextValue;
+    heightControl.setValue(nextValue);
+    chart.setAttribute('height', `${nextValue}`);
+  });
+  sliderControls.appendChild(heightControl.element);
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Legends', 'scatter-sa-hide-legends', false, checked => {
+      chart.toggleAttribute('hide-legends', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Tooltip', 'scatter-sa-hide-tooltip', false, checked => {
+      chart.toggleAttribute('hide-tooltip', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Round Corners', 'scatter-sa-round-corners', false, checked => {
+      chart.toggleAttribute('round-corners', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Multiple Legend Selection', 'scatter-sa-multi-select', false, checked => {
+      chart.toggleAttribute('allow-multiple-legend-selection', checked);
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+StandardAttributes.storyName = 'Standard Attributes';
+StandardAttributes.parameters = { docs: { story: { height: '560px' } } };

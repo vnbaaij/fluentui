@@ -38,8 +38,8 @@ test.describe('GaugeChart - Basic', () => {
   test('Should render segments as SVG paths', async ({ page }) => {
     const element = page.locator('fluent-gauge-chart');
     const segments = element.locator('.segment');
-    // 3 user segments + 1 trailing "Unknown" filler
-    await expect(segments).toHaveCount(4);
+    // 3 user segments, total (33+34+33=100) equals maxValue so no filler is added
+    await expect(segments).toHaveCount(3);
   });
 
   test('Should render the needle', async ({ page }) => {
@@ -305,7 +305,7 @@ test.describe('GaugeChart - Reactive rerender', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-gauge-chart'));
 
     const element = page.locator('fluent-gauge-chart');
-    await expect(element.locator('.segment')).toHaveCount(4); // 3 + filler
+    await expect(element.locator('.segment')).toHaveCount(3); // 33+34+33=100=maxValue, no filler
 
     const newSegments: GaugeChartSegment[] = [
       { legend: 'Alpha', size: 50 },
@@ -394,11 +394,11 @@ test.describe('GaugeChart - width and height', () => {
     const element = page.locator('fluent-gauge-chart');
     await element.evaluate(el => el.setAttribute('width', '340'));
     const svgSmall = element.locator('svg.chart');
-    const transformSmall = await element.locator('g[ref]').getAttribute('transform');
+    const transformSmall = await element.locator('svg.chart > g').getAttribute('transform');
 
     await element.evaluate(el => el.setAttribute('width', '500'));
     await expect(svgSmall).toHaveAttribute('width', '500');
-    const transformLarge = await element.locator('g[ref]').getAttribute('transform');
+    const transformLarge = await element.locator('svg.chart > g').getAttribute('transform');
 
     expect(transformSmall).not.toEqual(transformLarge);
   });

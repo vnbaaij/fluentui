@@ -59,6 +59,7 @@ export default {
 } as Meta<FluentDonutChart>;
 
 export const Basic: Story<FluentDonutChart> = renderComponent(storyTemplate).bind({});
+Basic.parameters = { docs: { story: { height: '380px' } } };
 
 export const StandardAttributes: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -233,7 +234,7 @@ export const ShowLabelsInPercent: Story<FluentDonutChart> = () => {
 
   return chart;
 };
-
+ShowLabelsInPercent.parameters = { docs: { story: { height: '380px' } } };
 
 export const ValueInsideDonut: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -273,6 +274,7 @@ export const Sorted: Story<FluentDonutChart> = renderComponent(html<StoryArgs<Fl
   >
   </fluent-donut-chart>
 `);
+Sorted.parameters = { docs: { story: { height: '380px' } } };
 
 export const TooltipRendererStory: Story<FluentDonutChart> = () => {
   const container = document.createElement('div');
@@ -428,3 +430,4 @@ export const RTL: Story<FluentDonutChart> = renderComponent(html<StoryArgs<Fluen
     </fluent-donut-chart>
   </div>
 `);
+RTL.parameters = { docs: { story: { height: '380px' } } };

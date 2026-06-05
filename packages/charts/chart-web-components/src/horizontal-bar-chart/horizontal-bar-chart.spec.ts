@@ -397,7 +397,7 @@ test.describe('horizontalbarchart - Single Bar HBC', () => {
     await page.goto(fixtureURL('components-horizontalbarchart--single-bar-hbc'));
     await page.setContent(/* html */ `
     <div>
-        <fluent-horizontal-bar-chart data='${JSON.stringify(singleBarHBCData)}'>
+        <fluent-horizontal-bar-chart data='${JSON.stringify(singleBarHBCData)}' show-legend-for-single-point-bar>
         </fluent-horizontal-bar-chart>
     </div>
     `);
@@ -516,7 +516,7 @@ test.describe('horizontalbarchart - Single Bar NM Variant', () => {
     await page.goto(fixtureURL('components-horizontalbarchart--single-bar-nm-variant'));
     await page.setContent(/* html */ `
     <div>
-        <fluent-horizontal-bar-chart data='${JSON.stringify(singleBarNMVariantData)}' variant="single-bar">
+        <fluent-horizontal-bar-chart data='${JSON.stringify(singleBarNMVariantData)}' variant="single-bar" show-legend-for-single-point-bar>
         </fluent-horizontal-bar-chart>
     </div>
     `);
@@ -650,7 +650,7 @@ test.describe('horizontalbarchart - Single Data Point', () => {
     await page.goto(fixtureURL('components-horizontalbarchart--single-data-point'));
     await page.setContent(/* html */ `
     <div>
-        <fluent-horizontal-bar-chart data='${JSON.stringify(singlePointData)}' variant="single-bar">
+        <fluent-horizontal-bar-chart data='${JSON.stringify(singlePointData)}' variant="single-bar" show-legend-for-single-point-bar>
         </fluent-horizontal-bar-chart>
     </div>
     `);

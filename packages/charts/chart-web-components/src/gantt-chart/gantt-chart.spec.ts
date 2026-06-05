@@ -25,7 +25,7 @@ const ganttTitle = 'Gantt chart basic';
 
 test.describe('GanttChart - Basic', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -132,7 +132,7 @@ test.describe('GanttChart - Grouped', () => {
 
 test.describe('GanttChart - Legend interaction', () => {
   test('Should dim inactive bars when a legend is hovered', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -155,7 +155,7 @@ test.describe('GanttChart - Legend interaction', () => {
   });
 
   test('Should restore bar opacity when mouse leaves a legend item', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -181,7 +181,7 @@ test.describe('GanttChart - Legend interaction', () => {
 
 test.describe('GanttChart - title-align', () => {
   async function setupWithTitle(page: import('@playwright/test').Page, extraAttrs = '') {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -201,7 +201,7 @@ test.describe('GanttChart - title-align', () => {
   });
 
   test('Should not render .chart-title when chart-title is not set', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart data='${JSON.stringify(basicData)}'></fluent-gantt-chart>
@@ -244,7 +244,7 @@ test.describe('GanttChart - title-align', () => {
 
 test.describe('GanttChart - legend-position', () => {
   async function setupWithLegendPosition(page: import('@playwright/test').Page, position: string) {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -287,7 +287,7 @@ test.describe('GanttChart - legend-position', () => {
 
 test.describe('GanttChart - axis-titles', () => {
   test('Should render x-axis-title when attribute is set', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -303,7 +303,7 @@ test.describe('GanttChart - axis-titles', () => {
   });
 
   test('Should render y-axis-title when attribute is set', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -319,7 +319,7 @@ test.describe('GanttChart - axis-titles', () => {
   });
 
   test('Should not render axis-title when attributes are absent', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -336,7 +336,7 @@ test.describe('GanttChart - axis-titles', () => {
 
 test.describe('GanttChart - rotate-x-axis-labels', () => {
   test('Should add transform rotate to x-axis text when rotate-x-axis-labels is set', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -359,7 +359,7 @@ test.describe('GanttChart - support-negative-data', () => {
       { x: { start: -10, end: 0 }, y: 5, legend: 'Past', color: color1 },
       { x: { start: -5, end: 10 }, y: 10, legend: 'Current', color: color2 },
     ];
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -379,7 +379,7 @@ test.describe('GanttChart - support-negative-data', () => {
 
 test.describe('GanttChart - bar-height', () => {
   test('Should render bars with specified bar-height', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -397,7 +397,7 @@ test.describe('GanttChart - bar-height', () => {
   });
 
   test('Should update bar height when bar-height attribute changes', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -422,7 +422,7 @@ test.describe('GanttChart - bar-height', () => {
 
 test.describe('GanttChart - tick-format', () => {
   test('Should accept tick-format attribute without error (placeholder for future d3 support)', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
 
     const start = new Date('2024-03-01T00:00:00').getTime();
     const end = new Date('2024-06-30T00:00:00').getTime();
@@ -450,7 +450,7 @@ test.describe('GanttChart - tick-format', () => {
 
 test.describe('GanttChart - tick-values', () => {
   test('Should render exactly the provided tick values on the x-axis', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -466,7 +466,7 @@ test.describe('GanttChart - tick-values', () => {
   });
 
   test('Should update tick positions when tick-values attribute changes', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -490,7 +490,7 @@ test.describe('GanttChart - tick-values', () => {
 
 test.describe('GanttChart - stroke-width', () => {
   test('Should apply stroke-width attribute to bars', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -508,7 +508,7 @@ test.describe('GanttChart - stroke-width', () => {
   });
 
   test('Should not set stroke-width when attribute is absent', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -525,7 +525,7 @@ test.describe('GanttChart - stroke-width', () => {
 
 test.describe('GanttChart - show-x-axis-labels-tooltip', () => {
   test('Should truncate long x-axis labels and add title tooltip when enabled', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     // Use .10f format to produce labels > 10 chars (e.g. "0.0000000000")
     await page.setContent(/* html */ `
       <div>
@@ -546,7 +546,7 @@ test.describe('GanttChart - show-x-axis-labels-tooltip', () => {
   });
 
   test('Should not add title tooltip when show-x-axis-labels-tooltip is absent', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -569,7 +569,7 @@ test.describe('GanttChart - date-localize-options', () => {
   ];
 
   test('Should use provided dateLocalizeOptions when formatting date axis ticks', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -606,7 +606,7 @@ test.describe('GanttChart - date-localize-options', () => {
 
 test.describe('GanttChart - tooltipRenderer', () => {
   test('Should inject custom renderer output into tooltip-body', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -628,7 +628,7 @@ test.describe('GanttChart - tooltipRenderer', () => {
   });
 
   test('Should show default tooltip-body when tooltipRenderer is not set', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
         <fluent-gantt-chart
@@ -702,7 +702,7 @@ test.describe('GanttChart - y-axis-tick-values', () => {
   ];
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div style="width: 640px">
         <fluent-gantt-chart
@@ -735,7 +735,7 @@ test.describe('GanttChart - hide-tick-overlap', () => {
   ];
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--default'));
+    await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div style="width: 320px">
         <fluent-gantt-chart

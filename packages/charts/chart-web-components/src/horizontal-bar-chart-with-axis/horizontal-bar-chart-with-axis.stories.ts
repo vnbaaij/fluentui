@@ -284,7 +284,7 @@ export const Basic: Story<FluentHorizontalBarChartWithAxis> = () => {
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
   return chart;
-};
+};;
 Basic.parameters = { docs: { story: { height: '420px' } } };
 
 export const StandardAttributes: Story<FluentHorizontalBarChartWithAxis> = () => {
@@ -410,6 +410,8 @@ export const StringYAxis: Story<FluentHorizontalBarChartWithAxis> = renderCompon
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+StringYAxis.parameters = { docs: { story: { height: '420px' } } };
 export const NumericYAxis: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
 >`
@@ -421,6 +423,8 @@ export const NumericYAxis: Story<FluentHorizontalBarChartWithAxis> = renderCompo
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+NumericYAxis.parameters = { docs: { story: { height: '420px' } } };
 export const Stacked: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
 >`
@@ -432,6 +436,8 @@ export const Stacked: Story<FluentHorizontalBarChartWithAxis> = renderComponent(
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+Stacked.parameters = { docs: { story: { height: '420px' } } };
 export const Negative: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
 >`
@@ -445,6 +451,8 @@ export const Negative: Story<FluentHorizontalBarChartWithAxis> = renderComponent
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+Negative.parameters = { docs: { story: { height: '420px' } } };
 export const CategoryOrder: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
   container.className = 'containerDiv';
@@ -564,6 +572,8 @@ export const HideLegends: Story<FluentHorizontalBarChartWithAxis> = renderCompon
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+HideLegends.parameters = { docs: { story: { height: '420px' } } };
 export const Gradient: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
 >`
@@ -576,6 +586,8 @@ export const Gradient: Story<FluentHorizontalBarChartWithAxis> = renderComponent
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+Gradient.parameters = { docs: { story: { height: '420px' } } };
 export const RoundedCorners: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
 >`
@@ -588,6 +600,8 @@ export const RoundedCorners: Story<FluentHorizontalBarChartWithAxis> = renderCom
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+RoundedCorners.parameters = { docs: { story: { height: '420px' } } };
 export const ShowYAxisLabels: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
 >`
@@ -606,6 +620,8 @@ export const ShowYAxisLabels: Story<FluentHorizontalBarChartWithAxis> = renderCo
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+ShowYAxisLabels.parameters = { docs: { story: { height: '420px' } } };
 export const LegendListLabel: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChartWithAxis>
 >`
@@ -618,6 +634,8 @@ export const LegendListLabel: Story<FluentHorizontalBarChartWithAxis> = renderCo
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+LegendListLabel.parameters = { docs: { story: { height: '420px' } } };
 export const HideTooltip: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -690,6 +708,8 @@ export const HideLabels: Story<FluentHorizontalBarChartWithAxis> = renderCompone
   </fluent-horizontal-bar-chart-with-axis>
 `);
 
+
+HideLabels.parameters = { docs: { story: { height: '420px' } } };
 export const BarHeight: Story<FluentHorizontalBarChartWithAxis> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
@@ -1165,3 +1185,4 @@ export const RTL: Story<FluentHorizontalBarChartWithAxis> = renderComponent(html
     </fluent-horizontal-bar-chart-with-axis>
   </div>
 `);
+RTL.parameters = { docs: { story: { height: '420px' } } };

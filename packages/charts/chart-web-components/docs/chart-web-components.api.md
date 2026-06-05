@@ -10,14 +10,106 @@ import { FASTElement } from '@microsoft/fast-element';
 import { FASTElementDefinition } from '@microsoft/fast-element';
 
 // @public
-export class ChartLegend extends FASTElement {
+export interface AccessibilityData {
+    ariaLabel?: string;
+}
+
+// Warning: (ae-forgotten-export) The symbol "CartesianChartBase" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export class AreaChart extends CartesianChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    protected _buildDefaultTooltipHTML(): string;
+    // (undocumented)
+    protected _clearTooltip(): void;
     // (undocumented)
     connectedCallback(): void;
+    // (undocumented)
+    data: AreaChartSeries[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // Warning: (ae-forgotten-export) The symbol "AreaChartMode" needs to be exported by the entry point index.d.ts
+    mode: AreaChartMode;
+    // (undocumented)
+    protected modeChanged(): void;
+    // (undocumented)
+    protected _performRender(): void;
+    secondaryYAxisTitle: string;
+    // (undocumented)
+    protected secondaryYAxisTitleChanged(): void;
+    // (undocumented)
+    get tooltipInlineTransform(): string;
+    // Warning: (ae-forgotten-export) The symbol "TooltipState" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    tooltipProps: TooltipState;
+    // Warning: (ae-forgotten-export) The symbol "TooltipProps" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    protected tooltipPropsChanged(old: TooltipProps, newValue: TooltipProps): void;
+}
+
+// @public (undocumented)
+export interface AreaChartDataPoint {
+    callOutAccessibilityData?: AccessibilityData;
+    // (undocumented)
+    x: number | Date;
+    xAxisCalloutAccessibilityData?: AccessibilityData;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+export const AreaChartDefinition: FASTElementDefinition<typeof AreaChart>;
+
+// @public (undocumented)
+export interface AreaChartSeries {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    data: AreaChartDataPoint[];
+    // (undocumented)
+    legend: string;
+    useSecondaryYScale?: boolean;
+}
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const AreaChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const AreaChartTemplate: ElementViewTemplate<AreaChart>;
+
+// @public
+export class ChartLegend extends FASTElement {
+    center: boolean;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    disconnectedCallback(): void;
     _handleLegendKeydown(e: KeyboardEvent): boolean;
     highlighted: string[];
     // Warning: (ae-forgotten-export) The symbol "Legend" needs to be exported by the entry point index.d.ts
     items: Legend[];
+    itemsChanged(): void;
     label?: string;
+    _measure(): void;
+    _overflowCount: number;
+    _overflowItems: Legend[];
+    overflowText?: string;
     // Warning: (ae-forgotten-export) The symbol "ChartLegendPosition" needs to be exported by the entry point index.d.ts
     position?: ChartLegendPosition;
     selected: string[];
@@ -42,23 +134,21 @@ export class DonutChart extends ChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;
     // (undocumented)
-    connectedCallback(): void;
-    // Warning: (ae-forgotten-export) The symbol "DonutDataPoint" needs to be exported by the entry point index.d.ts
-    //
+    protected _applyHostDimensions(): void;
     // (undocumented)
-    data: DonutDataPoint[];
+    connectedCallback(): void;
+    // (undocumented)
+    data: DonutChartDataPoint[];
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
     disconnectedCallback(): void;
     // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
     protected _getHostAriaLabel(): string;
     // (undocumented)
     group: SVGGElement;
-    // (undocumented)
-    height: number;
-    // (undocumented)
-    protected heightChanged(): void;
     // (undocumented)
     innerRadius: number;
     // (undocumented)
@@ -75,14 +165,24 @@ export class DonutChart extends ChartBase {
     protected showLabelsInPercentChanged(): void;
     // (undocumented)
     protected tooltipPropsChanged(_oldValue: any, _newValue: any): void;
+    // Warning: (ae-forgotten-export) The symbol "TooltipRenderer" needs to be exported by the entry point index.d.ts
+    tooltipRenderer: TooltipRenderer<DonutChartDataPoint> | undefined;
     // (undocumented)
     valueInsideDonut?: string;
     // (undocumented)
     protected valueInsideDonutChanged(): void;
-    // (undocumented)
-    width: number;
-    // (undocumented)
-    protected widthChanged(): void;
+}
+
+// Warning: (ae-missing-release-tag) "DonutChartDataPoint" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export interface DonutChartDataPoint {
+    calloutData?: string;
+    color?: string;
+    data: number;
+    legend: string;
+    xAxisCalloutData?: string;
+    yAxisCalloutData?: string;
 }
 
 // @public (undocumented)
@@ -101,23 +201,21 @@ export class FunnelChart extends ChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;
     // (undocumented)
-    connectedCallback(): void;
-    // Warning: (ae-forgotten-export) The symbol "FunnelDataPoint" needs to be exported by the entry point index.d.ts
-    //
+    protected _applyHostDimensions(): void;
     // (undocumented)
-    data: FunnelDataPoint[];
+    connectedCallback(): void;
+    // (undocumented)
+    data: FunnelChartDataPoint[];
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
     disconnectedCallback(): void;
     // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
     protected _getHostAriaLabel(): string;
     // (undocumented)
     group: SVGGElement;
-    // (undocumented)
-    height: number;
-    // (undocumented)
-    protected heightChanged(): void;
     // (undocumented)
     orientation: 'vertical' | 'horizontal';
     // (undocumented)
@@ -126,24 +224,38 @@ export class FunnelChart extends ChartBase {
     protected _performRender(): void;
     // (undocumented)
     svgElement: SVGSVGElement;
-    // (undocumented)
-    width: number;
-    // (undocumented)
-    protected widthChanged(): void;
+    tooltipRenderer: TooltipRenderer<FunnelChartDataPoint> | undefined;
+}
+
+// @public
+export interface FunnelChartDataPoint {
+    color?: string;
+    stage: string;
+    subValues?: FunnelChartSubValue[];
+    value?: number;
 }
 
 // @public (undocumented)
 export const FunnelChartDefinition: FASTElementDefinition<typeof FunnelChart>;
 
 // @public
+export type FunnelChartOrientation = 'vertical' | 'horizontal';
+
+// @public
 export const FunnelChartStyles: ElementStyles;
+
+// @public
+export interface FunnelChartSubValue {
+    category: string;
+    color: string;
+    value: number;
+}
 
 // Warning: (ae-internal-missing-underscore) The name "FunnelChartTemplate" should be prefixed with an underscore because the declaration is marked as @internal
 //
 // @internal (undocumented)
 export const FunnelChartTemplate: ElementViewTemplate<FunnelChart>;
 
-// Warning: (ae-forgotten-export) The symbol "CartesianChartBase" needs to be exported by the entry point index.d.ts
 // Warning: (ae-missing-release-tag) "GanttChart" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
@@ -157,11 +269,11 @@ export class GanttChart extends CartesianChartBase {
     // (undocumented)
     protected barHeightChanged(): void;
     // (undocumented)
+    protected _buildDefaultTooltipHTML(_dataPoint: unknown): string;
+    // (undocumented)
     protected _clearTooltip(): void;
     // (undocumented)
     connectedCallback(): void;
-    // Warning: (ae-forgotten-export) The symbol "GanttChartDataPoint" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     data: GanttChartDataPoint[];
     // (undocumented)
@@ -174,10 +286,6 @@ export class GanttChart extends CartesianChartBase {
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
-    // (undocumented)
-    height?: number | string;
-    // (undocumented)
-    protected heightChanged(): void;
     // (undocumented)
     protected _performRender(): void;
     // (undocumented)
@@ -192,14 +300,9 @@ export class GanttChart extends CartesianChartBase {
     get tooltipInlineTransform(): "translateX(50%)" | "translateX(-50%)";
     // Warning: (ae-forgotten-export) The symbol "GanttTooltipProps" needs to be exported by the entry point index.d.ts
     tooltipProps: GanttTooltipProps;
-    // Warning: (ae-forgotten-export) The symbol "TooltipProps" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void;
-    // (undocumented)
-    width?: number | string;
-    // (undocumented)
-    protected widthChanged(): void;
+    tooltipRenderer: TooltipRenderer<GanttChartDataPoint> | undefined;
     // (undocumented)
     xAxisTickCount?: number | string;
     // (undocumented)
@@ -218,6 +321,22 @@ export class GanttChart extends CartesianChartBase {
     yAxisTickCount?: number | string;
     // (undocumented)
     protected yAxisTickCountChanged(): void;
+}
+
+// @public
+export interface GanttChartDataPoint {
+    callOutAccessibilityData?: AccessibilityData;
+    color?: string;
+    gradient?: [string, string];
+    legend?: string;
+    onClick?: VoidFunction;
+    x: {
+        start: Date | number | string;
+        end: Date | number | string;
+    };
+    xAxisCalloutData?: string;
+    y: number | string;
+    yAxisCalloutData?: string;
 }
 
 // @public (undocumented)
@@ -240,6 +359,8 @@ export class GaugeChart extends ChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;
     // (undocumented)
+    protected _applyHostDimensions(): void;
+    // (undocumented)
     chartValue: number;
     // (undocumented)
     protected chartValueChanged(): void;
@@ -247,6 +368,10 @@ export class GaugeChart extends ChartBase {
     chartValueFormat?: GaugeValueFormat;
     // (undocumented)
     protected chartValueFormatChanged(): void;
+    chartValueFormatFn?: (sweepFraction: [number, number]) => string;
+    chartValueFormatTemplate?: string;
+    // (undocumented)
+    protected chartValueFormatTemplateChanged(): void;
     // (undocumented)
     connectedCallback(): void;
     // (undocumented)
@@ -255,6 +380,8 @@ export class GaugeChart extends ChartBase {
     enableGradient: boolean;
     // (undocumented)
     protected enableGradientChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
     // Warning: (ae-forgotten-export) The symbol "GaugeTooltipProps" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -263,10 +390,6 @@ export class GaugeChart extends ChartBase {
     protected _getHostAriaLabel(): string;
     // (undocumented)
     group: SVGGElement;
-    // (undocumented)
-    height: number;
-    // (undocumented)
-    protected heightChanged(): void;
     // (undocumented)
     hideMinMax: boolean;
     // (undocumented)
@@ -295,10 +418,6 @@ export class GaugeChart extends ChartBase {
     variant?: GaugeChartVariant;
     // (undocumented)
     protected variantChanged(): void;
-    // (undocumented)
-    width: number;
-    // (undocumented)
-    protected widthChanged(): void;
 }
 
 // @public (undocumented)
@@ -306,6 +425,7 @@ export const GaugeChartDefinition: FASTElementDefinition<typeof GaugeChart>;
 
 // @public
 export interface GaugeChartSegment {
+    ariaLabel?: string;
     color?: string;
     gradient?: [string, string];
     legend: string;
@@ -326,10 +446,75 @@ export type GaugeChartVariant = 'single-segment' | 'multiple-segments';
 // @public
 export type GaugeValueFormat = 'percentage' | 'fraction';
 
+// @public (undocumented)
+export class GroupedVerticalBarChart extends CartesianChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    barWidth?: number | string;
+    // (undocumented)
+    protected barWidthChanged(): void;
+    // (undocumented)
+    protected _buildDefaultTooltipHTML(): string;
+    // (undocumented)
+    protected _clearTooltip(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: GroupedVerticalBarChartData[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    get tooltipInlineTransform(): string;
+    // Warning: (ae-forgotten-export) The symbol "TooltipState_2" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    tooltipProps: TooltipState_2;
+}
+
+// @public (undocumented)
+export interface GroupedVerticalBarChartData {
+    // (undocumented)
+    series: GroupedVerticalBarChartDataPoint[];
+    // (undocumented)
+    xAxisPoint: string;
+}
+
+// @public (undocumented)
+export interface GroupedVerticalBarChartDataPoint {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    data: number;
+    // (undocumented)
+    key: string;
+}
+
+// @public (undocumented)
+export const GroupedVerticalBarChartDefinition: FASTElementDefinition<typeof GroupedVerticalBarChart>;
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const GroupedVerticalBarChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const GroupedVerticalBarChartTemplate: ElementViewTemplate<GroupedVerticalBarChart>;
+
 // @public
 export class HeatMapChart extends CartesianChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;
+    // (undocumented)
+    protected _applyHostDimensions(): void;
     // (undocumented)
     connectedCallback(): void;
     // (undocumented)
@@ -365,18 +550,32 @@ export class HeatMapChart extends CartesianChartBase {
     width?: number | string;
     // (undocumented)
     protected widthChanged(): void;
+    xAxisCategoryOrder?: AxisCategoryOrder;
+    // (undocumented)
+    protected xAxisCategoryOrderChanged(): void;
     xAxisDateFormatString?: string;
     // (undocumented)
     protected xAxisDateFormatStringChanged(): void;
     xAxisNumberFormatString?: string;
     // (undocumented)
     protected xAxisNumberFormatStringChanged(): void;
+    xAxisStringFormatter?: (key: string) => string;
+    xAxisStringLabels?: Record<string, string>;
+    // (undocumented)
+    protected xAxisStringLabelsChanged(): void;
+    yAxisCategoryOrder?: AxisCategoryOrder;
+    // (undocumented)
+    protected yAxisCategoryOrderChanged(): void;
     yAxisDateFormatString?: string;
     // (undocumented)
     protected yAxisDateFormatStringChanged(): void;
     yAxisNumberFormatString?: string;
     // (undocumented)
     protected yAxisNumberFormatStringChanged(): void;
+    yAxisStringFormatter?: (key: string) => string;
+    yAxisStringLabels?: Record<string, string>;
+    // (undocumented)
+    protected yAxisStringLabelsChanged(): void;
 }
 
 // @public
@@ -429,8 +628,6 @@ export class HorizontalBarChart extends ChartBase {
     protected chartDataModeChanged(): void;
     // (undocumented)
     connectedCallback(): void;
-    // Warning: (ae-forgotten-export) The symbol "HorizontalBarChartProps" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     data: HorizontalBarChartProps[];
     // (undocumented)
@@ -444,29 +641,46 @@ export class HorizontalBarChart extends ChartBase {
     // (undocumented)
     protected _getHostAriaLabel(): string;
     // (undocumented)
-    height?: number | string;
-    // (undocumented)
-    protected heightChanged(): void;
-    // (undocumented)
     hideRatio: boolean;
     // (undocumented)
     protected hideRatioChanged(): void;
     // (undocumented)
-    protected _performRender(): void;
-    // Warning: (ae-forgotten-export) The symbol "Variant" needs to be exported by the entry point index.d.ts
-    //
+    hideRatioPerBar?: boolean[];
     // (undocumented)
-    variant?: Variant;
+    protected hideRatioPerBarChanged(): void;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    showLegendForSinglePointBar: boolean;
+    // (undocumented)
+    protected showLegendForSinglePointBarChanged(): void;
+    tooltipRenderer: TooltipRenderer<HorizontalBarChartDataPoint> | undefined;
+    // (undocumented)
+    variant?: HorizontalBarChartVariant;
     // (undocumented)
     protected variantChanged(): void;
-    // (undocumented)
-    width?: number | string;
-    // (undocumented)
-    protected widthChanged(): void;
+}
+
+// @public
+export interface HorizontalBarChartDataPoint {
+    color?: string;
+    data: number;
+    gradient?: [string, string];
+    legend: string;
+    onClick?: VoidFunction;
+    total?: number;
 }
 
 // @public (undocumented)
 export const HorizontalBarChartDefinition: FASTElementDefinition<typeof HorizontalBarChart>;
+
+// @public
+export interface HorizontalBarChartProps {
+    benchmarkData?: number;
+    chartData: HorizontalBarChartDataPoint[];
+    chartDataText?: string;
+    chartSeriesTitle?: string;
+}
 
 // @public
 export const HorizontalBarChartStyles: ElementStyles;
@@ -475,6 +689,9 @@ export const HorizontalBarChartStyles: ElementStyles;
 //
 // @internal (undocumented)
 export const HorizontalBarChartTemplate: ElementViewTemplate<HorizontalBarChart>;
+
+// @public
+export type HorizontalBarChartVariant = 'part-to-whole' | 'absolute-scale' | 'single-bar';
 
 // Warning: (ae-missing-release-tag) "HorizontalBarChartWithAxis" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -489,11 +706,11 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     // (undocumented)
     protected barHeightChanged(): void;
     // (undocumented)
+    protected _buildDefaultTooltipHTML(_dataPoint: unknown): string;
+    // (undocumented)
     protected _clearTooltip(): void;
     // (undocumented)
     connectedCallback(): void;
-    // Warning: (ae-forgotten-export) The symbol "HorizontalBarChartWithAxisDataPoint" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     data: HorizontalBarChartWithAxisDataPoint[];
     // (undocumented)
@@ -506,10 +723,6 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
-    // (undocumented)
-    height?: number | string;
-    // (undocumented)
-    protected heightChanged(): void;
     // (undocumented)
     protected _performRender(): void;
     // (undocumented)
@@ -526,14 +739,11 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     tooltipProps: HBCWATooltipProps;
     // (undocumented)
     protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void;
+    tooltipRenderer: TooltipRenderer<HorizontalBarChartWithAxisDataPoint> | undefined;
     // (undocumented)
     useSingleColor: boolean;
     // (undocumented)
     protected useSingleColorChanged(): void;
-    // (undocumented)
-    width?: number | string;
-    // (undocumented)
-    protected widthChanged(): void;
     // (undocumented)
     xAxisTickCount?: number | string;
     // (undocumented)
@@ -552,6 +762,19 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     protected yAxisTickCountChanged(): void;
 }
 
+// @public
+export interface HorizontalBarChartWithAxisDataPoint {
+    callOutAccessibilityData?: AccessibilityData;
+    color?: string;
+    gradient?: [string, string];
+    legend?: string;
+    onClick?: VoidFunction;
+    x: number;
+    xAxisCalloutData?: string;
+    y: number | string;
+    yAxisCalloutData?: string;
+}
+
 // @public (undocumented)
 export const HorizontalBarChartWithAxisDefinition: FASTElementDefinition<typeof HorizontalBarChartWithAxis>;
 
@@ -564,6 +787,542 @@ export const HorizontalBarChartWithAxisStyles: ElementStyles;
 //
 // @public (undocumented)
 export const HorizontalBarChartWithAxisTemplate: ElementViewTemplate<HorizontalBarChartWithAxis>;
+
+// @public (undocumented)
+export class LineChart extends CartesianChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    protected _buildDefaultTooltipHTML(): string;
+    // (undocumented)
+    protected _clearTooltip(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: LineChartSeries[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    showMarkers: boolean;
+    // (undocumented)
+    protected showMarkersChanged(): void;
+    // (undocumented)
+    get tooltipInlineTransform(): string;
+    // Warning: (ae-forgotten-export) The symbol "TooltipState_3" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    tooltipProps: TooltipState_3;
+}
+
+// @public (undocumented)
+export interface LineChartDataPoint {
+    // (undocumented)
+    x: number | Date;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+export const LineChartDefinition: FASTElementDefinition<typeof LineChart>;
+
+// @public (undocumented)
+export interface LineChartSeries {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    data: LineChartDataPoint[];
+    // (undocumented)
+    legend: string;
+}
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const LineChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const LineChartTemplate: ElementViewTemplate<LineChart>;
+
+// @public (undocumented)
+export class PolarChart extends ChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: PolarChartSeries[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    showMarkers: boolean;
+    // (undocumented)
+    protected showMarkersChanged(): void;
+}
+
+// @public (undocumented)
+export interface PolarChartDataPoint {
+    // (undocumented)
+    x: string;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+export const PolarChartDefinition: FASTElementDefinition<typeof PolarChart>;
+
+// @public (undocumented)
+export interface PolarChartSeries {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    data: PolarChartDataPoint[];
+    // (undocumented)
+    legend: string;
+}
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const PolarChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const PolarChartTemplate: ElementViewTemplate<PolarChart>;
+
+// @public (undocumented)
+export class SankeyChart extends ChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: SankeyChartData;
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    pathColor?: string;
+    // (undocumented)
+    protected pathColorChanged(): void;
+    // (undocumented)
+    protected _performRender(): void;
+}
+
+// @public (undocumented)
+export interface SankeyChartData {
+    // (undocumented)
+    links: SankeyChartLink[];
+    // (undocumented)
+    nodes: SankeyChartNode[];
+}
+
+// @public (undocumented)
+export const SankeyChartDefinition: FASTElementDefinition<typeof SankeyChart>;
+
+// @public (undocumented)
+export interface SankeyChartLink {
+    // (undocumented)
+    source: number;
+    // (undocumented)
+    target: number;
+    // (undocumented)
+    value: number;
+}
+
+// @public (undocumented)
+export interface SankeyChartNode {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    name: string;
+}
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const SankeyChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const SankeyChartTemplate: ElementViewTemplate<SankeyChart>;
+
+// @public (undocumented)
+export class ScatterChart extends CartesianChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    protected _buildDefaultTooltipHTML(): string;
+    // (undocumented)
+    protected _clearTooltip(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: ScatterChartSeries[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    get tooltipInlineTransform(): string;
+    // Warning: (ae-forgotten-export) The symbol "TooltipState_4" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    tooltipProps: TooltipState_4;
+}
+
+// @public (undocumented)
+export interface ScatterChartDataPoint {
+    // (undocumented)
+    size?: number;
+    // (undocumented)
+    x: number;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+export const ScatterChartDefinition: FASTElementDefinition<typeof ScatterChart>;
+
+// @public (undocumented)
+export interface ScatterChartSeries {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    data: ScatterChartDataPoint[];
+    // (undocumented)
+    legend: string;
+}
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const ScatterChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const ScatterChartTemplate: ElementViewTemplate<ScatterChart>;
+
+// @public (undocumented)
+export class SparklineChart extends ChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    protected colorChanged(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: SparklineDataPoint[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    variant: SparklineVariant;
+    // (undocumented)
+    protected variantChanged(): void;
+}
+
+// @public (undocumented)
+export const SparklineChartDefinition: FASTElementDefinition<typeof SparklineChart>;
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const SparklineChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const SparklineChartTemplate: ElementViewTemplate<SparklineChart>;
+
+// @public (undocumented)
+export interface SparklineDataPoint {
+    // (undocumented)
+    x: number | Date | string;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+export type SparklineVariant = 'line' | 'area';
+
+// @public (undocumented)
+export class StackedBarChart extends ChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    barHeight?: number | string;
+    // (undocumented)
+    protected barHeightChanged(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: StackedBarChartData;
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    hideNumberDisplay: boolean;
+    // (undocumented)
+    protected hideNumberDisplayChanged(): void;
+    // (undocumented)
+    protected _performRender(): void;
+}
+
+// @public (undocumented)
+export interface StackedBarChartData {
+    // (undocumented)
+    chartData: StackedBarChartDataPoint[];
+    // (undocumented)
+    chartTitle?: string;
+}
+
+// @public (undocumented)
+export interface StackedBarChartDataPoint {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    data: number;
+    // (undocumented)
+    gradient?: [string, string];
+    // (undocumented)
+    legend: string;
+    // (undocumented)
+    onClick?: VoidFunction;
+    // (undocumented)
+    placeHolder?: boolean;
+}
+
+// @public (undocumented)
+export const StackedBarChartDefinition: FASTElementDefinition<typeof StackedBarChart>;
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const StackedBarChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const StackedBarChartTemplate: ElementViewTemplate<StackedBarChart>;
+
+// @public (undocumented)
+export class TreeChart extends ChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: TreeChartDataPoint;
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    nodeHeight?: number | string;
+    // (undocumented)
+    protected nodeHeightChanged(): void;
+    // (undocumented)
+    nodeWidth?: number | string;
+    // (undocumented)
+    protected nodeWidthChanged(): void;
+    // (undocumented)
+    protected _performRender(): void;
+}
+
+// @public (undocumented)
+export interface TreeChartDataPoint {
+    // (undocumented)
+    children?: TreeChartDataPoint[];
+    // (undocumented)
+    fill?: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    subname?: string;
+}
+
+// @public (undocumented)
+export const TreeChartDefinition: FASTElementDefinition<typeof TreeChart>;
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const TreeChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const TreeChartTemplate: ElementViewTemplate<TreeChart>;
+
+// @public (undocumented)
+export class VerticalBarChart extends CartesianChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    barWidth?: number | string;
+    // (undocumented)
+    protected barWidthChanged(): void;
+    // (undocumented)
+    protected _buildDefaultTooltipHTML(): string;
+    // (undocumented)
+    protected _clearTooltip(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: VerticalBarChartDataPoint[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    get tooltipInlineTransform(): string;
+    // Warning: (ae-forgotten-export) The symbol "TooltipState_5" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    tooltipProps: TooltipState_5;
+    // (undocumented)
+    useSingleColor: boolean;
+    // (undocumented)
+    protected useSingleColorChanged(): void;
+}
+
+// @public (undocumented)
+export interface VerticalBarChartDataPoint {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    legend?: string;
+    // (undocumented)
+    onClick?: VoidFunction;
+    // (undocumented)
+    x: string | number;
+    // (undocumented)
+    y: number;
+}
+
+// @public (undocumented)
+export const VerticalBarChartDefinition: FASTElementDefinition<typeof VerticalBarChart>;
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const VerticalBarChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const VerticalBarChartTemplate: ElementViewTemplate<VerticalBarChart>;
+
+// @public (undocumented)
+export class VerticalStackedBarChart extends CartesianChartBase {
+    // (undocumented)
+    protected _applyActiveLegendState(): void;
+    // (undocumented)
+    barGapMax?: number | string;
+    // (undocumented)
+    protected barGapMaxChanged(): void;
+    // (undocumented)
+    barWidth?: number | string;
+    // (undocumented)
+    protected barWidthChanged(): void;
+    // (undocumented)
+    protected _buildDefaultTooltipHTML(): string;
+    // (undocumented)
+    protected _clearTooltip(): void;
+    // (undocumented)
+    connectedCallback(): void;
+    // (undocumented)
+    data: VerticalStackedBarChartProps[];
+    // (undocumented)
+    protected dataChanged(): void;
+    // (undocumented)
+    protected _enableResizeObserver: boolean;
+    // (undocumented)
+    protected _getHostAriaLabel(): string;
+    // (undocumented)
+    protected _performRender(): void;
+    // (undocumented)
+    get tooltipInlineTransform(): string;
+    // Warning: (ae-forgotten-export) The symbol "TooltipState_6" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    tooltipProps: TooltipState_6;
+}
+
+// @public (undocumented)
+export interface VerticalStackedBarChartDataPoint {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    data: number;
+    // (undocumented)
+    legend: string;
+}
+
+// @public (undocumented)
+export const VerticalStackedBarChartDefinition: FASTElementDefinition<typeof VerticalStackedBarChart>;
+
+// @public (undocumented)
+export interface VerticalStackedBarChartProps {
+    // (undocumented)
+    chartData: VerticalStackedBarChartDataPoint[];
+    // (undocumented)
+    xAxisPoint: string | number;
+}
+
+// Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const VerticalStackedBarChartStyles: ElementStyles;
+
+// Warning: (ae-missing-release-tag) "template" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const VerticalStackedBarChartTemplate: ElementViewTemplate<VerticalStackedBarChart>;
 
 // (No @packageDocumentation comment for this package)
 
