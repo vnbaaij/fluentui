@@ -1,12 +1,24 @@
 import { attr } from '@microsoft/fast-element';
 import { extent } from 'd3-array';
-import { axisBottom, axisLeft, type Axis, type AxisDomain } from 'd3-axis';
+import { type Axis, axisBottom, type AxisDomain, axisLeft } from 'd3-axis';
 import { format } from 'd3-format';
 import { scaleLinear, type ScaleLinear } from 'd3-scale';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
-import { formatLocaleNumber, getColorFromToken, getNextColor, jsonConverter, SVG_NAMESPACE_URI, wrapText } from '../utils/chart-helpers.js';
-import type { ScatterChartDataPoint, ScatterChartSeries } from './scatter-chart.options.js';
+import {
+  type CartesianChartMargins,
+  getDirectionalMargins,
+  getPrimaryYAxisLayout,
+} from '../utils/cartesian-axis-helpers.js';
+import {
+  formatLocaleNumber,
+  getColorFromToken,
+  getNextColor,
+  jsonConverter,
+  SVG_NAMESPACE_URI,
+  wrapText,
+} from '../utils/chart-helpers.js';
+import type { ScatterChartSeries } from './scatter-chart.options.js';
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
@@ -18,7 +30,6 @@ type ScaleLike<Domain extends AxisDomain> = {
   bandwidth?: () => number;
   (value: Domain): number | undefined;
 };
-type NormalizedPoint = ScatterChartDataPoint & { xLabel: string; yLabel: string };
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
 
@@ -74,10 +85,11 @@ const renderBottomAxis = (
   formatter: (value: number) => string,
   innerWidth: number,
   innerHeight: number,
+  margins: CartesianChartMargins,
 ): void => {
   const group = createSvgElement<SVGGElement>('g');
   group.classList.add('x-axis');
-  group.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top + innerHeight})`);
+  group.setAttribute('transform', `translate(${margins.left}, ${margins.top + innerHeight})`);
 
   const domain = createSvgElement<SVGLineElement>('line');
   domain.classList.add('axis-domain');
@@ -148,17 +160,21 @@ const renderLeftAxis = (
   axis: Axis<number>,
   formatter: (value: number) => string,
   innerHeight: number,
+  innerWidth: number,
+  margins: CartesianChartMargins,
+  isRTL: boolean,
 ): void => {
+  const tickPadding = toNumber(chart.tickPadding, 6);
+  const layout = getPrimaryYAxisLayout(isRTL, margins, innerWidth, innerHeight, tickPadding);
   const group = createSvgElement<SVGGElement>('g');
   group.classList.add('y-axis');
-  group.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top})`);
+  group.setAttribute('transform', `translate(${layout.axisX}, ${margins.top})`);
 
   const domain = createSvgElement<SVGLineElement>('line');
   domain.classList.add('axis-domain');
   domain.setAttribute('y2', String(innerHeight));
   group.appendChild(domain);
 
-  const tickPadding = toNumber(chart.tickPadding, 6);
   getTickValues(axis, scale).forEach(value => {
     const tick = createSvgElement<SVGGElement>('g');
     tick.classList.add('tick');
@@ -166,12 +182,12 @@ const renderLeftAxis = (
 
     const line = createSvgElement<SVGLineElement>('line');
     line.classList.add('axis-tick-line');
-    line.setAttribute('x2', '-6');
+    line.setAttribute('x2', String(layout.tickLineX2));
     tick.appendChild(line);
 
     const text = createSvgElement<SVGTextElement>('text');
     text.classList.add('y-axis-text');
-    text.setAttribute('x', String(-(6 + tickPadding)));
+    text.setAttribute('x', String(layout.tickLabelX));
     text.setAttribute('text-anchor', 'end');
     text.setAttribute('dominant-baseline', 'middle');
     text.textContent = formatter(value);
@@ -183,10 +199,10 @@ const renderLeftAxis = (
   if (chart.yAxisTitle) {
     const title = createSvgElement<SVGTextElement>('text');
     title.classList.add('y-axis-title');
-    title.setAttribute('x', String(-innerHeight / 2));
+    title.setAttribute('x', String(layout.titleX));
     title.setAttribute('y', '-42');
     title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('transform', 'rotate(-90)');
+    title.setAttribute('transform', layout.titleRotation);
     title.textContent = chart.yAxisTitle;
     group.appendChild(title);
   }
@@ -196,7 +212,7 @@ const renderLeftAxis = (
 
 /** @public */
 export class ScatterChart extends CartesianChartBase {
-  declare public tooltipProps: TooltipState;
+  public declare tooltipProps: TooltipState;
 
   @attr({ converter: jsonConverter })
   public data!: ScatterChartSeries[];
@@ -275,8 +291,9 @@ export class ScatterChart extends CartesianChartBase {
 
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
     const height = toNumber(this.height, 300);
-    const innerWidth = Math.max(width - defaultMargins.left - defaultMargins.right, 1);
-    const innerHeight = Math.max(height - defaultMargins.top - defaultMargins.bottom, 1);
+    const margins = getDirectionalMargins(defaultMargins, this._isRTL);
+    const innerWidth = Math.max(width - margins.left - margins.right, 1);
+    const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
 
     const xExtent = extent(normalizedSeries.flatMap(series => series.data.map(point => point.x)));
     const yExtent = extent(normalizedSeries.flatMap(series => series.data.map(point => point.y)));
@@ -307,7 +324,7 @@ export class ScatterChart extends CartesianChartBase {
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
     const plotGroup = createSvgElement<SVGGElement>('g');
-    plotGroup.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top})`);
+    plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
     svg.appendChild(plotGroup);
 
     const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
@@ -342,8 +359,8 @@ export class ScatterChart extends CartesianChartBase {
             xValue: point.xLabel,
             yValue: point.yLabel,
             color: series.color,
-            xPos: svgRect.left - hostRect.left + defaultMargins.left + xScale(point.x),
-            yPos: svgRect.top - hostRect.top + defaultMargins.top + yScale(point.y),
+            xPos: svgRect.left - hostRect.left + margins.left + xScale(point.x),
+            yPos: svgRect.top - hostRect.top + margins.top + yScale(point.y),
           };
         });
         circle.addEventListener('mouseleave', () => this._clearTooltip());
@@ -359,6 +376,7 @@ export class ScatterChart extends CartesianChartBase {
       value => formatNumberValue(value, this.xAxisTickFormat, this.culture),
       innerWidth,
       innerHeight,
+      margins,
     );
     renderLeftAxis(
       svg,
@@ -367,6 +385,9 @@ export class ScatterChart extends CartesianChartBase {
       yAxis as unknown as Axis<number>,
       value => formatNumberValue(value, this.yAxisTickFormat, this.culture),
       innerHeight,
+      innerWidth,
+      margins,
+      this._isRTL,
     );
 
     this.chartContainer.appendChild(svg);
