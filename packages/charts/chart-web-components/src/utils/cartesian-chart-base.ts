@@ -1,4 +1,5 @@
 import { attr } from '@microsoft/fast-element';
+import type { AxisCategoryOrder } from './chart-options.js';
 import { ChartBase } from './chart-base.js';
 import { jsonConverter } from './chart-helpers.js';
 
@@ -105,6 +106,27 @@ export abstract class CartesianChartBase extends ChartBase {
   @attr({ attribute: 'y-axis-tick-values', converter: jsonConverter })
   public yAxisTickValues?: number[];
 
+  /**
+   * Preferred tick count for x-axis auto-generated ticks.
+   * When not set, each chart keeps its existing default.
+   */
+  @attr({ attribute: 'x-axis-tick-count' })
+  public xAxisTickCount?: number | string;
+
+  /**
+   * Preferred tick count for y-axis auto-generated ticks.
+   * When not set, each chart keeps its existing default.
+   */
+  @attr({ attribute: 'y-axis-tick-count' })
+  public yAxisTickCount?: number | string;
+
+  /**
+   * Optional order strategy for categorical x-axis domains.
+   * Charts with non-categorical x-axes ignore this.
+   */
+  @attr({ attribute: 'x-axis-category-order' })
+  public xAxisCategoryOrder: AxisCategoryOrder = 'default';
+
   /** Width in pixels of the SVG stroke drawn on each bar. When set, an outline is applied. */
   @attr({ attribute: 'stroke-width' })
   public strokeWidth?: number | string;
@@ -166,6 +188,9 @@ export abstract class CartesianChartBase extends ChartBase {
       'tickValues',
       'tickFormat',
       'yAxisTickValues',
+      'xAxisTickCount',
+      'yAxisTickCount',
+      'xAxisCategoryOrder',
       'strokeWidth',
       'showXAxisLabelsTooltip',
       'hideTickOverlap',
@@ -251,6 +276,18 @@ export abstract class CartesianChartBase extends ChartBase {
   }
 
   protected yAxisTickValuesChanged() {
+    this._requestRender();
+  }
+
+  protected xAxisTickCountChanged() {
+    this._requestRender();
+  }
+
+  protected yAxisTickCountChanged() {
+    this._requestRender();
+  }
+
+  protected xAxisCategoryOrderChanged() {
     this._requestRender();
   }
 

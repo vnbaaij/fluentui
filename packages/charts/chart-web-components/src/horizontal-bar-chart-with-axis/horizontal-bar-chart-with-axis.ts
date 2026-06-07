@@ -8,8 +8,9 @@ import {
   lightenColor,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
-import type { HorizontalBarChartWithAxisDataPoint } from './horizontal-bar-chart-with-axis.options.js';
 import type { AxisCategoryOrder, Legend, TooltipProps, TooltipRenderer } from '../utils/chart-options.js';
+import { sortCategoryGroups } from '../utils/cartesian-axis-shared.js';
+import type { HorizontalBarChartWithAxisDataPoint } from './horizontal-bar-chart-with-axis.options.js';
 
 type HBCWATooltipProps = TooltipProps & {
   xLabel: string;
@@ -107,15 +108,6 @@ const formatAxisNumber = (value: number, culture?: string) => {
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-const getMedian = (values: number[]) => {
-  if (values.length === 0) {
-    return 0;
-  }
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
-};
 
 const truncateText = (text: string, maxLength: number) => {
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
@@ -591,57 +583,12 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
   }
 
   private _sortCategoricalGroups(groups: GroupedSeries[]): GroupedSeries[] {
-    const order = this.yAxisCategoryOrder || 'default';
-    if (order === 'default' || order === 'data') {
-      const reversed = [...this.data].reverse();
-      const orderedKeys = new Set(reversed.map(point => String(point.y)));
-      return Array.from(orderedKeys)
-        .map(key => groups.find(group => group.key === key)!)
-        .filter(Boolean);
-    }
-
-    const aggregate = (group: GroupedSeries) => {
-      const values = group.points.map(point => point.x);
-      switch (order) {
-        case 'category ascending':
-        case 'category descending':
-          return 0;
-        case 'total ascending':
-        case 'total descending':
-        case 'sum ascending':
-        case 'sum descending':
-          return values.reduce((sum, value) => sum + value, 0);
-        case 'min ascending':
-        case 'min descending':
-          return Math.min(...values);
-        case 'max ascending':
-        case 'max descending':
-          return Math.max(...values);
-        case 'mean ascending':
-        case 'mean descending':
-          return values.reduce((sum, value) => sum + value, 0) / values.length;
-        case 'median ascending':
-        case 'median descending':
-          return getMedian(values);
-        default:
-          return 0;
-      }
-    };
-
-    const sorted = [...groups];
-    if (order.startsWith('category')) {
-      sorted.sort((left, right) => left.key.localeCompare(right.key));
-      if (order.endsWith('descending')) {
-        sorted.reverse();
-      }
-      return sorted;
-    }
-
-    sorted.sort((left, right) => aggregate(left) - aggregate(right));
-    if (order.endsWith('descending')) {
-      sorted.reverse();
-    }
-    return sorted;
+    return sortCategoryGroups(
+      groups,
+      this.yAxisCategoryOrder,
+      [...this.data].reverse().map(point => String(point.y)),
+      group => group.points.map(point => point.x),
+    ) as GroupedSeries[];
   }
 
   private _getChartHeight(groupCount: number, numericYAxis: boolean, yValues: number[]) {

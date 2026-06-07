@@ -11,6 +11,13 @@ import {
   getPrimaryYAxisLayout,
 } from '../utils/cartesian-axis-helpers.js';
 import {
+  applyAxisTickConfig,
+  type AxisScaleLike,
+  getAxisPosition,
+  getAxisTickValues,
+  sortCategoryGroups,
+} from '../utils/cartesian-axis-shared.js';
+import {
   formatLocaleNumber,
   getColorFromToken,
   getNextColor,
@@ -24,12 +31,7 @@ const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
 
 type TooltipState = TooltipProps & { xValue: string };
-type ScaleLike<Domain extends AxisDomain> = {
-  domain(): Domain[];
-  ticks?: (count?: number) => Domain[];
-  bandwidth?: () => number;
-  (value: Domain): number | undefined;
-};
+type ScaleLike<Domain extends AxisDomain> = AxisScaleLike<Domain>;
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
 
@@ -60,23 +62,6 @@ const formatNumberValue = (value: number, specifier: string | undefined, culture
   return formatLocaleNumber(value, culture);
 };
 
-const getTickValues = <Domain extends AxisDomain>(axis: Axis<Domain>, scale: ScaleLike<Domain>): Domain[] => {
-  const explicit = axis.tickValues();
-  if (explicit) {
-    return Array.from(explicit as Iterable<Domain>);
-  }
-  if (typeof scale.ticks === 'function') {
-    const [count] = axis.tickArguments() as [number?];
-    return scale.ticks(count);
-  }
-  return scale.domain();
-};
-
-const getPosition = <Domain extends AxisDomain>(scale: ScaleLike<Domain>, value: Domain): number => {
-  const start = scale(value) ?? 0;
-  return typeof scale.bandwidth === 'function' ? start + scale.bandwidth() / 2 : start;
-};
-
 const renderBottomAxis = (
   svg: SVGSVGElement,
   chart: GroupedVerticalBarChart,
@@ -99,10 +84,10 @@ const renderBottomAxis = (
   const tickPadding = toNumber(chart.tickPadding, 6);
   let previousRight = Number.NEGATIVE_INFINITY;
 
-  getTickValues(axis, scale as ScaleLike<string>).forEach(value => {
+  getAxisTickValues(axis, scale as ScaleLike<string>).forEach(value => {
     const tick = createSvgElement<SVGGElement>('g');
     tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(${getPosition(scale as ScaleLike<string>, value)}, 0)`);
+    tick.setAttribute('transform', `translate(${getAxisPosition(scale as ScaleLike<string>, value)}, 0)`);
 
     const line = createSvgElement<SVGLineElement>('line');
     line.classList.add('axis-tick-line');
@@ -129,7 +114,7 @@ const renderBottomAxis = (
       wrapText(text, Math.max(scale.bandwidth(), 1));
     } else if (chart.hideTickOverlap && !chart.rotateXAxisLabels) {
       const box = text.getBBox();
-      const left = getPosition(scale as ScaleLike<string>, value) + box.x;
+      const left = getAxisPosition(scale as ScaleLike<string>, value) + box.x;
       const right = left + box.width;
       if (left < previousRight) {
         tick.style.display = 'none';
@@ -173,10 +158,10 @@ const renderLeftAxis = (
   domain.setAttribute('y2', String(innerHeight));
   group.appendChild(domain);
 
-  getTickValues(axis, scale as ScaleLike<number>).forEach(value => {
+  getAxisTickValues(axis, scale as ScaleLike<number>).forEach(value => {
     const tick = createSvgElement<SVGGElement>('g');
     tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(0, ${getPosition(scale as ScaleLike<number>, value)})`);
+    tick.setAttribute('transform', `translate(0, ${getAxisPosition(scale as ScaleLike<number>, value)})`);
 
     const line = createSvgElement<SVGLineElement>('line');
     line.classList.add('axis-tick-line');
@@ -290,7 +275,19 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
 
-    const groupDomain = groups.map(group => group.xAxisPoint);
+    const groupedByCategory = new Map<string, number[]>();
+    groups.forEach(group => {
+      groupedByCategory.set(
+        group.xAxisPoint,
+        group.series.map(point => point.data),
+      );
+    });
+    const groupDomain = sortCategoryGroups(
+      Array.from(groupedByCategory.entries()).map(([key, values]) => ({ key, points: values })),
+      this.xAxisCategoryOrder,
+      groups.map(group => group.xAxisPoint),
+      group => group.points,
+    ).map(group => group.key);
     const keyDomain = Array.from(new Set(groups.flatMap(group => group.series.map(point => point.key))));
     const xScale = scaleBand<string>().domain(groupDomain).range([0, innerWidth]).padding(0.1);
     const innerScale = scaleBand<string>().domain(keyDomain).range([0, xScale.bandwidth()]).padding(0.05);
@@ -319,10 +316,13 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     svg.appendChild(plotGroup);
 
     const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6));
-    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
-    if (this.yAxisTickValues?.length) {
-      yAxis.tickValues(this.yAxisTickValues);
-    }
+    applyAxisTickConfig(
+      xAxis,
+      this.xAxisTickCount,
+      this.tickValues?.map(value => String(value)),
+    );
+    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
+    applyAxisTickConfig(yAxis, this.yAxisTickCount ?? 6, this.yAxisTickValues);
 
     groups.forEach(group => {
       const groupX = xScale(group.xAxisPoint) ?? 0;

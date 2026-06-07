@@ -50,4 +50,19 @@ test.describe('VerticalBarChart', () => {
     const element = page.locator('fluent-vertical-bar-chart');
     await expect(element.locator('.y-axis .axis-tick-line').first()).toHaveAttribute('x2', '6');
   });
+
+  test('Should support x-axis category order', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-bar-chart
+        data='${JSON.stringify(data)}'
+        width='500'
+        height='300'
+        x-axis-category-order='category descending'
+      ></fluent-vertical-bar-chart>
+    `);
+    const tickLabelsLocator = page.locator('fluent-vertical-bar-chart .x-axis .axis-text');
+    await expect(tickLabelsLocator).toHaveCount(4);
+    const tickLabels = await tickLabelsLocator.allTextContents();
+    expect(tickLabels).toEqual(['Q4', 'Q3', 'Q2', 'Q1']);
+  });
 });

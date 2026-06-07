@@ -11,8 +11,9 @@ import {
   parseDateOrNumber,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
-import type { GanttChartDataPoint } from './gantt-chart.options.js';
 import type { AxisCategoryOrder, Legend, TooltipProps, TooltipRenderer } from '../utils/chart-options.js';
+import { sortCategoryGroups } from '../utils/cartesian-axis-shared.js';
+import type { GanttChartDataPoint } from './gantt-chart.options.js';
 
 type GanttTooltipProps = TooltipProps & {
   xLabel: string;
@@ -81,15 +82,6 @@ const formatAxisNumber = (value: number, culture?: string) => {
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-const getMedian = (values: number[]) => {
-  if (values.length === 0) {
-    return 0;
-  }
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
-};
 
 const truncateText = (text: string, maxLength: number) => {
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
@@ -548,64 +540,12 @@ export class GanttChart extends CartesianChartBase {
   }
 
   private _sortCategoricalGroups(groups: GroupedSeries[]): GroupedSeries[] {
-    const order = this.yAxisCategoryOrder || 'default';
-    if (order === 'default' || order === 'data') {
-      // Collect first-appearance order (data order) — index 0 maps to the top of the chart.
-      const seen = new Set<string>();
-      const orderedKeys: string[] = [];
-      for (const point of this.data) {
-        const key = String(point.y);
-        if (!seen.has(key)) {
-          seen.add(key);
-          orderedKeys.push(key);
-        }
-      }
-      return orderedKeys.map(key => groups.find(group => group.key === key)!).filter(Boolean);
-    }
-
-    // Aggregate by total duration of bars in the group
-    const aggregate = (group: GroupedSeries) => {
-      const durations = group.points.map(point => +parseDateOrNumber(point.x.end) - +parseDateOrNumber(point.x.start));
-      switch (order) {
-        case 'category ascending':
-        case 'category descending':
-          return 0;
-        case 'total ascending':
-        case 'total descending':
-        case 'sum ascending':
-        case 'sum descending':
-          return durations.reduce((sum, value) => sum + value, 0);
-        case 'min ascending':
-        case 'min descending':
-          return Math.min(...durations);
-        case 'max ascending':
-        case 'max descending':
-          return Math.max(...durations);
-        case 'mean ascending':
-        case 'mean descending':
-          return durations.reduce((sum, value) => sum + value, 0) / durations.length;
-        case 'median ascending':
-        case 'median descending':
-          return getMedian(durations);
-        default:
-          return 0;
-      }
-    };
-
-    const sorted = [...groups];
-    if (order.startsWith('category')) {
-      sorted.sort((left, right) => left.key.localeCompare(right.key));
-      if (order.endsWith('descending')) {
-        sorted.reverse();
-      }
-      return sorted;
-    }
-
-    sorted.sort((left, right) => aggregate(left) - aggregate(right));
-    if (order.endsWith('descending')) {
-      sorted.reverse();
-    }
-    return sorted;
+    return sortCategoryGroups(
+      groups,
+      this.yAxisCategoryOrder,
+      this.data.map(point => String(point.y)),
+      group => group.points.map(point => +parseDateOrNumber(point.x.end) - +parseDateOrNumber(point.x.start)),
+    ) as GroupedSeries[];
   }
 
   private _getChartHeight(groupCount: number, numericYAxis: boolean, yValues: number[]) {
