@@ -17,6 +17,7 @@ export const styles = css`
       'title'
       'chart';
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
     width: 100%;
     height: 100%;
     position: relative;

@@ -27,6 +27,7 @@ export const styles = css`
       'chart'
       'legend';
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
     width: 100%;
     height: 100%;
     position: relative;
@@ -42,6 +43,7 @@ export const styles = css`
 
   .chart-container {
     grid-area: chart;
+    
   }
 
   fluent-chart-legend {

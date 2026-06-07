@@ -27,6 +27,7 @@ export const styles: ElementStyles = css`
       'chart'
       'legend';
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
     position: relative;
     width: 100%;
   }
@@ -143,15 +144,13 @@ export const styles: ElementStyles = css`
     font-weight: 600;
   }
 
+  .scatter-point {
+    opacity: 0.9;
+  }
 
-.scatter-point {
-  opacity: 0.9;
-}
-
-.scatter-point.inactive {
-  opacity: 0.1;
-}
-
+  .scatter-point.inactive {
+    opacity: 0.1;
+  }
 
   ${tooltipBaseStyles}
 
