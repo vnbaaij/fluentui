@@ -1,0 +1,468 @@
+- generic [ref=e3]:
+  - navigation "Global" [ref=e6]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - link "Skip to canvas" [ref=e12] [cursor=pointer]:
+          - /url: "#storybook-preview-wrapper"
+        - link "Fluent UI React Components" [ref=e14] [cursor=pointer]:
+          - /url: https://github.com/microsoft/fluentui
+          - img "Fluent UI React Components" [ref=e15]
+        - button "Shortcuts" [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+      - generic [ref=e21]: Search for components
+      - combobox "Search for components" [ref=e23]:
+        - generic:
+          - img
+        - searchbox "Search for components" [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e27]:
+          - generic [ref=e29]:
+            - img
+            - generic [ref=e30]:
+              - button "Concepts" [expanded] [ref=e31] [cursor=pointer]:
+                - img [ref=e33]
+                - text: Concepts
+              - button "Collapse" [ref=e35] [cursor=pointer]:
+                - img [ref=e36]
+            - link "Introduction" [ref=e39] [cursor=pointer]:
+              - /url: /react/?path=/docs/concepts-introduction--docs
+              - img [ref=e41]
+              - text: Introduction
+            - button "Developer" [ref=e44] [cursor=pointer]:
+              - generic [ref=e45]:
+                - img [ref=e47]
+                - img [ref=e49]
+              - text: Developer
+            - button "Migration" [ref=e52] [cursor=pointer]:
+              - generic [ref=e53]:
+                - img [ref=e55]
+                - img [ref=e57]
+              - text: Migration
+            - button "Recipes" [ref=e60] [cursor=pointer]:
+              - generic [ref=e61]:
+                - img [ref=e63]
+                - img [ref=e65]
+              - text: Recipes
+            - link "Package Maturity Levels" [ref=e68] [cursor=pointer]:
+              - /url: /react/?path=/docs/concepts-package-maturity-levels--docs
+              - img [ref=e70]
+              - text: Package Maturity Levels
+            - generic [ref=e72]:
+              - button "Theme" [expanded] [ref=e73] [cursor=pointer]:
+                - img [ref=e75]
+                - text: Theme
+              - button "Collapse" [ref=e77] [cursor=pointer]:
+                - img [ref=e78]
+            - link "Border Radii" [ref=e81] [cursor=pointer]:
+              - /url: /react/?path=/docs/theme-border-radii--docs
+              - img [ref=e83]
+              - text: Border Radii
+            - link "Colors" [ref=e86] [cursor=pointer]:
+              - /url: /react/?path=/docs/theme-colors--docs
+              - img [ref=e88]
+              - text: Colors
+            - link "Fonts" [ref=e91] [cursor=pointer]:
+              - /url: /react/?path=/docs/theme-fonts--docs
+              - img [ref=e93]
+              - text: Fonts
+            - link "Shadows" [ref=e96] [cursor=pointer]:
+              - /url: /react/?path=/docs/theme-shadows--docs
+              - img [ref=e98]
+              - text: Shadows
+            - link "Spacing" [ref=e101] [cursor=pointer]:
+              - /url: /react/?path=/docs/theme-spacing--docs
+              - img [ref=e103]
+              - text: Spacing
+            - link "Stroke Widths" [ref=e106] [cursor=pointer]:
+              - /url: /react/?path=/docs/theme-stroke-widths--docs
+              - img [ref=e108]
+              - text: Stroke Widths
+            - link "Typography" [ref=e111] [cursor=pointer]:
+              - /url: /react/?path=/docs/theme-typography--docs
+              - img [ref=e113]
+              - text: Typography
+            - link "Theme Designer" [ref=e116] [cursor=pointer]:
+              - /url: /react/?path=/docs/theme-theme-designer--docs
+              - img [ref=e118]
+              - text: Theme Designer
+            - generic [ref=e120]:
+              - button "Components" [expanded] [ref=e121] [cursor=pointer]:
+                - img [ref=e123]
+                - text: Components
+              - button "Collapse" [ref=e125] [cursor=pointer]:
+                - img [ref=e126]
+            - link "Accordion" [ref=e129] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-accordion--docs
+              - img [ref=e131]
+              - text: Accordion
+            - link "Avatar" [ref=e134] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-avatar--docs
+              - img [ref=e136]
+              - text: Avatar
+            - link "AvatarGroup" [ref=e139] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-avatargroup--docs
+              - img [ref=e141]
+              - text: AvatarGroup
+            - button "Badge" [ref=e144] [cursor=pointer]:
+              - generic [ref=e145]:
+                - img [ref=e147]
+                - img [ref=e149]
+              - text: Badge
+            - link "Breadcrumb" [ref=e152] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-breadcrumb--docs
+              - img [ref=e154]
+              - text: Breadcrumb
+            - button "Button" [ref=e157] [cursor=pointer]:
+              - generic [ref=e158]:
+                - img [ref=e160]
+                - img [ref=e162]
+              - text: Button
+            - button "Card" [ref=e165] [cursor=pointer]:
+              - generic [ref=e166]:
+                - img [ref=e168]
+                - img [ref=e170]
+              - text: Card
+            - button "Carousel" [ref=e173] [cursor=pointer]:
+              - generic [ref=e174]:
+                - img [ref=e176]
+                - img [ref=e178]
+              - text: Carousel
+            - link "Checkbox" [ref=e181] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-checkbox--docs
+              - img [ref=e183]
+              - text: Checkbox
+            - link "ColorPicker" [ref=e186] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-colorpicker--docs
+              - img [ref=e188]
+              - text: ColorPicker
+            - link "Combobox" [ref=e191] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-combobox--docs
+              - img [ref=e193]
+              - text: Combobox
+            - link "DataGrid" [ref=e196] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-datagrid--docs
+              - img [ref=e198]
+              - text: DataGrid
+            - link "Dialog" [ref=e201] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-dialog--docs
+              - img [ref=e203]
+              - text: Dialog
+            - link "Divider" [ref=e206] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-divider--docs
+              - img [ref=e208]
+              - text: Divider
+            - link "Drawer" [ref=e211] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-drawer--docs
+              - img [ref=e213]
+              - text: Drawer
+            - link "Dropdown" [ref=e216] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-dropdown--docs
+              - img [ref=e218]
+              - text: Dropdown
+            - link "Field" [ref=e221] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-field--docs
+              - img [ref=e223]
+              - text: Field
+            - link "FluentProvider" [ref=e226] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-fluentprovider--docs
+              - img [ref=e228]
+              - text: FluentProvider
+            - link "Image" [ref=e231] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-image--docs
+              - img [ref=e233]
+              - text: Image
+            - link "InfoLabel" [ref=e236] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-infolabel--docs
+              - img [ref=e238]
+              - text: InfoLabel
+            - link "Input" [ref=e241] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-input--docs
+              - img [ref=e243]
+              - text: Input
+            - link "Label" [ref=e246] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-label--docs
+              - img [ref=e248]
+              - text: Label
+            - link "Link" [ref=e251] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-link--docs
+              - img [ref=e253]
+              - text: Link
+            - link "List" [ref=e256] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-list--docs
+              - img [ref=e258]
+              - text: List
+            - button "Menu" [ref=e261] [cursor=pointer]:
+              - generic [ref=e262]:
+                - img [ref=e264]
+                - img [ref=e266]
+              - text: Menu
+            - link "MessageBar" [ref=e269] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-messagebar--docs
+              - img [ref=e271]
+              - text: MessageBar
+            - link "Nav" [ref=e274] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-nav--docs
+              - img [ref=e276]
+              - text: Nav
+            - link "Overflow" [ref=e279] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-overflow--docs
+              - img [ref=e281]
+              - text: Overflow
+            - link "Persona" [ref=e284] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-persona--docs
+              - img [ref=e286]
+              - text: Persona
+            - link "Popover" [ref=e289] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-popover--docs
+              - img [ref=e291]
+              - text: Popover
+            - button "Portal" [ref=e294] [cursor=pointer]:
+              - generic [ref=e295]:
+                - img [ref=e297]
+                - img [ref=e299]
+              - text: Portal
+            - link "ProgressBar" [ref=e302] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-progressbar--docs
+              - img [ref=e304]
+              - text: ProgressBar
+            - link "RadioGroup" [ref=e307] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-radiogroup--docs
+              - img [ref=e309]
+              - text: RadioGroup
+            - link "Rating" [ref=e312] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-rating--docs
+              - img [ref=e314]
+              - text: Rating
+            - link "RatingDisplay" [ref=e317] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-ratingdisplay--docs
+              - img [ref=e319]
+              - text: RatingDisplay
+            - link "SearchBox" [ref=e322] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-searchbox--docs
+              - img [ref=e324]
+              - text: SearchBox
+            - link "Select" [ref=e327] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-select--docs
+              - img [ref=e329]
+              - text: Select
+            - link "Skeleton" [ref=e332] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-skeleton--docs
+              - img [ref=e334]
+              - text: Skeleton
+            - link "Slider" [ref=e337] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-slider--docs
+              - img [ref=e339]
+              - text: Slider
+            - link "SpinButton" [ref=e342] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-spinbutton--docs
+              - img [ref=e344]
+              - text: SpinButton
+            - link "Spinner" [ref=e347] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-spinner--docs
+              - img [ref=e349]
+              - text: Spinner
+            - link "SwatchPicker" [ref=e352] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-swatchpicker--docs
+              - img [ref=e354]
+              - text: SwatchPicker
+            - link "Switch" [ref=e357] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-switch--docs
+              - img [ref=e359]
+              - text: Switch
+            - link "Table" [ref=e362] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-table--docs
+              - img [ref=e364]
+              - text: Table
+            - link "TabList" [ref=e367] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-tablist--docs
+              - img [ref=e369]
+              - text: TabList
+            - button "Tag" [ref=e372] [cursor=pointer]:
+              - generic [ref=e373]:
+                - img [ref=e375]
+                - img [ref=e377]
+              - text: Tag
+            - link "TagPicker" [ref=e380] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-tagpicker--docs
+              - img [ref=e382]
+              - text: TagPicker
+            - link "TeachingPopover" [ref=e385] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-teachingpopover--docs
+              - img [ref=e387]
+              - text: TeachingPopover
+            - link "Text" [ref=e390] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-text--docs
+              - img [ref=e392]
+              - text: Text
+            - link "Textarea" [ref=e395] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-textarea--docs
+              - img [ref=e397]
+              - text: Textarea
+            - link "Toast" [ref=e400] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-toast--docs
+              - img [ref=e402]
+              - text: Toast
+            - link "Toolbar" [ref=e405] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-toolbar--docs
+              - img [ref=e407]
+              - text: Toolbar
+            - link "Tooltip" [ref=e410] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-tooltip--docs
+              - img [ref=e412]
+              - text: Tooltip
+            - link "Tree" [ref=e415] [cursor=pointer]:
+              - /url: /react/?path=/docs/components-tree--docs
+              - img [ref=e417]
+              - text: Tree
+            - generic [ref=e419]:
+              - button "Compat Components" [expanded] [ref=e420] [cursor=pointer]:
+                - img [ref=e422]
+                - text: Compat Components
+              - button "Collapse" [ref=e424] [cursor=pointer]:
+                - img [ref=e425]
+            - link "Calendar" [ref=e428] [cursor=pointer]:
+              - /url: /react/?path=/docs/compat-components-calendar--docs
+              - img [ref=e430]
+              - text: Calendar
+            - link "DatePicker" [ref=e433] [cursor=pointer]:
+              - /url: /react/?path=/docs/compat-components-datepicker--docs
+              - img [ref=e435]
+              - text: DatePicker
+            - link "TimePicker" [ref=e438] [cursor=pointer]:
+              - /url: /react/?path=/docs/compat-components-timepicker--docs
+              - img [ref=e440]
+              - text: TimePicker
+            - generic [ref=e442]:
+              - button "Preview Components" [expanded] [ref=e443] [cursor=pointer]:
+                - img [ref=e445]
+                - text: Preview Components
+              - button "Collapse" [ref=e447] [cursor=pointer]:
+                - img [ref=e448]
+            - button "Menu" [ref=e451] [cursor=pointer]:
+              - generic [ref=e452]:
+                - img [ref=e454]
+                - img [ref=e456]
+              - text: Menu
+            - generic [ref=e458]:
+              - button "Motion" [expanded] [ref=e459] [cursor=pointer]:
+                - img [ref=e461]
+                - text: Motion
+              - button "Collapse" [ref=e463] [cursor=pointer]:
+                - img [ref=e464]
+            - button "APIs" [ref=e467] [cursor=pointer]:
+              - generic [ref=e468]:
+                - img [ref=e470]
+                - img [ref=e472]
+              - text: APIs
+            - button "Choreography (preview)" [ref=e475] [cursor=pointer]:
+              - generic [ref=e476]:
+                - img [ref=e478]
+                - img [ref=e480]
+              - text: Choreography (preview)
+            - button "Components (preview)" [ref=e483] [cursor=pointer]:
+              - generic [ref=e484]:
+                - img [ref=e486]
+                - img [ref=e488]
+              - text: Components (preview)
+            - link "Introduction" [ref=e491] [cursor=pointer]:
+              - /url: /react/?path=/docs/motion-introduction--docs
+              - img [ref=e493]
+              - text: Introduction
+            - link "Migration" [ref=e496] [cursor=pointer]:
+              - /url: /react/?path=/docs/motion-migration--docs
+              - img [ref=e498]
+              - text: Migration
+            - link "Tokens" [ref=e501] [cursor=pointer]:
+              - /url: /react/?path=/docs/motion-tokens--docs
+              - img [ref=e503]
+              - text: Tokens
+            - button "Using motion slots" [ref=e506] [cursor=pointer]:
+              - generic [ref=e507]:
+                - img [ref=e509]
+                - img [ref=e511]
+              - text: Using motion slots
+            - generic [ref=e513]:
+              - button "Utilities" [expanded] [ref=e514] [cursor=pointer]:
+                - img [ref=e516]
+                - text: Utilities
+              - button "Collapse" [ref=e518] [cursor=pointer]:
+                - img [ref=e519]
+            - button "ARIA live" [ref=e522] [cursor=pointer]:
+              - generic [ref=e523]:
+                - img [ref=e525]
+                - img [ref=e527]
+              - text: ARIA live
+            - button "Focus Management" [ref=e530] [cursor=pointer]:
+              - generic [ref=e531]:
+                - img [ref=e533]
+                - img [ref=e535]
+              - text: Focus Management
+            - button "Positioning" [ref=e538] [cursor=pointer]:
+              - generic [ref=e539]:
+                - img [ref=e541]
+                - img [ref=e543]
+              - text: Positioning
+            - button "Theme" [ref=e546] [cursor=pointer]:
+              - generic [ref=e547]:
+                - img [ref=e549]
+                - img [ref=e551]
+              - text: Theme
+            - generic [ref=e553]:
+              - button "Migration Shims" [expanded] [ref=e554] [cursor=pointer]:
+                - img [ref=e556]
+                - text: Migration Shims
+              - button "Collapse" [ref=e558] [cursor=pointer]:
+                - img [ref=e559]
+            - button "V0" [ref=e562] [cursor=pointer]:
+              - generic [ref=e563]:
+                - img [ref=e565]
+                - img [ref=e567]
+              - text: V0
+            - button "V8" [ref=e570] [cursor=pointer]:
+              - generic [ref=e571]:
+                - img [ref=e573]
+                - img [ref=e575]
+              - text: V8
+          - generic "Show Fluent System Icons stories" [ref=e577]:
+            - button "Fluent System Icons" [ref=e578] [cursor=pointer]:
+              - img [ref=e580]
+              - generic "Fluent System Icons" [ref=e582]
+            - complementary [ref=e583]:
+              - button "toggle indicator" [ref=e585] [cursor=pointer]:
+                - img [ref=e586]
+          - generic "Show Contributors Packages stories" [ref=e588]:
+            - button "Contributors Packages" [ref=e589] [cursor=pointer]:
+              - img [ref=e591]
+              - generic "Contributors Packages" [ref=e593]
+            - complementary [ref=e594]:
+              - button "toggle indicator" [ref=e596] [cursor=pointer]:
+                - img [ref=e597]
+          - generic "Show Charts v9 stories" [ref=e599]:
+            - button "Charts v9" [ref=e600] [cursor=pointer]:
+              - img [ref=e602]
+              - generic "Charts v9" [ref=e604]
+            - complementary [ref=e605]:
+              - button "toggle indicator" [ref=e607] [cursor=pointer]:
+                - img [ref=e608]
+        - text: / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
+  - main [ref=e611]:
+    - region "Toolbar" [ref=e612]:
+      - generic [ref=e613]: Toolbar
+      - generic [ref=e614]:
+        - generic [ref=e615]:
+          - button "Apply outlines to the preview" [ref=e616] [cursor=pointer]:
+            - img [ref=e617]
+          - 'button "Theme: Web Light" [ref=e620] [cursor=pointer]':
+            - img [ref=e621]
+            - generic [ref=e623]: "Theme: Web Light"
+          - 'button "Direction: LTR" [ref=e624] [cursor=pointer]':
+            - generic [ref=e625]: "Direction: LTR"
+          - button "Toggle React Strict mode" [ref=e626] [cursor=pointer]:
+            - img [ref=e627]
+        - button "Go full screen" [ref=e631] [cursor=pointer]:
+          - img [ref=e632]
+    - generic [ref=e636]:
+      - link "Skip to sidebar" [ref=e637] [cursor=pointer]:
+        - /url: "#charts-heatmapchart--docs"
+      - iframe [ref=e638]:
+        

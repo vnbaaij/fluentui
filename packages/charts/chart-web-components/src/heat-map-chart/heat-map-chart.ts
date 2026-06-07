@@ -154,19 +154,19 @@ export class HeatMapChart extends CartesianChartBase {
 
   /**
    * Sort order for x-axis category labels.
-   * Supports all 14 AxisCategoryOrder modes. Default: `'alphabetical'` (mirrors `sortOrder` for backward compat).
+   * Supports all 14 AxisCategoryOrder modes. Default: `'default'`.
    * When set, takes precedence over `sortOrder` for the x-axis.
    */
   @attr({ attribute: 'x-axis-category-order' })
-  public xAxisCategoryOrder?: AxisCategoryOrder;
+  public override xAxisCategoryOrder: AxisCategoryOrder = 'default';
 
   /**
    * Sort order for y-axis category labels.
-   * Supports all 14 AxisCategoryOrder modes.
+   * Supports all 14 AxisCategoryOrder modes. Default: `'default'`.
    * When set, takes precedence over `sortOrder` for the y-axis.
    */
   @attr({ attribute: 'y-axis-category-order' })
-  public yAxisCategoryOrder?: AxisCategoryOrder;
+  public yAxisCategoryOrder: AxisCategoryOrder = 'default';
 
   /**
    * Optional JS function to map x-axis string keys to display labels.
