@@ -550,7 +550,7 @@ export class HeatMapChart extends CartesianChartBase {
     width?: number | string;
     // (undocumented)
     protected widthChanged(): void;
-    xAxisCategoryOrder?: AxisCategoryOrder;
+    xAxisCategoryOrder: AxisCategoryOrder;
     // (undocumented)
     protected xAxisCategoryOrderChanged(): void;
     xAxisDateFormatString?: string;
@@ -563,7 +563,7 @@ export class HeatMapChart extends CartesianChartBase {
     xAxisStringLabels?: Record<string, string>;
     // (undocumented)
     protected xAxisStringLabelsChanged(): void;
-    yAxisCategoryOrder?: AxisCategoryOrder;
+    yAxisCategoryOrder: AxisCategoryOrder;
     // (undocumented)
     protected yAxisCategoryOrderChanged(): void;
     yAxisDateFormatString?: string;

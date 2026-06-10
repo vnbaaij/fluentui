@@ -1,18 +1,31 @@
-
 import { test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
 import type { VerticalStackedBarChartProps } from './vertical-stacked-bar-chart.options.js';
 
 const data: VerticalStackedBarChartProps[] = [
-  { xAxisPoint: 'Q1', chartData: [{ legend: 'A', data: 30, color: '#637cef' }, { legend: 'B', data: 20 }] },
-  { xAxisPoint: 'Q2', chartData: [{ legend: 'A', data: 40 }, { legend: 'B', data: 35 }] },
+  {
+    xAxisPoint: 'Q1',
+    chartData: [
+      { legend: 'A', data: 30, color: '#637cef' },
+      { legend: 'B', data: 20 },
+    ],
+  },
+  {
+    xAxisPoint: 'Q2',
+    chartData: [
+      { legend: 'A', data: 40 },
+      { legend: 'B', data: 35 },
+    ],
+  },
 ];
 
 test.describe('VerticalStackedBarChart', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(fixtureURL('components-verticalstackedbarchart--basic'));
     await page.setContent(/* html */ `
-      <fluent-vertical-stacked-bar-chart data='${JSON.stringify(data)}' width='600' height='350'></fluent-vertical-stacked-bar-chart>
+      <fluent-vertical-stacked-bar-chart data='${JSON.stringify(
+        data,
+      )}' width='600' height='350'></fluent-vertical-stacked-bar-chart>
     `);
     await page.waitForFunction(() => customElements.whenDefined('fluent-vertical-stacked-bar-chart'));
   });
@@ -35,5 +48,54 @@ test.describe('VerticalStackedBarChart', () => {
       ];
     });
     await expect(element.locator('.bar')).toHaveCount(1);
+  });
+
+  test('Should honor width updates from attribute', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    await element.evaluate(node => {
+      node.setAttribute('width', '420');
+    });
+
+    await expect(element.locator('svg')).toHaveAttribute('width', '420');
+  });
+
+  test('Should reduce visual gap when bar-gap-max is set', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    const getFirstStackBarWidth = async (): Promise<number> => {
+      const widthValue = await element.locator('.bar').first().getAttribute('width');
+      return Number(widthValue ?? 0);
+    };
+
+    const defaultBarWidth = await getFirstStackBarWidth();
+
+    await element.evaluate(node => {
+      node.setAttribute('bar-gap-max', '0');
+    });
+
+    await page.waitForFunction(previousWidth => {
+      const bar = document.querySelector('fluent-vertical-stacked-bar-chart')?.shadowRoot?.querySelector('.bar');
+      if (!(bar instanceof SVGRectElement)) {
+        return false;
+      }
+      const width = Number(bar.getAttribute('width') ?? 0);
+      return width > previousWidth;
+    }, defaultBarWidth);
+
+    const widenedBarWidth = await getFirstStackBarWidth();
+    expect(widenedBarWidth).toBeGreaterThan(defaultBarWidth);
+  });
+
+  test('Should render primary y-axis on right in RTL', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div dir="rtl">
+        <fluent-vertical-stacked-bar-chart data='${JSON.stringify(
+          data,
+        )}' width='600' height='350'></fluent-vertical-stacked-bar-chart>
+      </div>
+    `);
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await expect(element.locator('.y-axis .axis-tick-line').first()).toHaveAttribute('x2', '6');
   });
 });

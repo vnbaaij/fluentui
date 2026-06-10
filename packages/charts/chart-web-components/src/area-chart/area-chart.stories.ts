@@ -1,4 +1,3 @@
-
 import { html } from '@microsoft/fast-element';
 import { FluentDesignSystem } from '@fluentui/web-components';
 import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
@@ -51,24 +50,48 @@ const multipleData: AreaChartSeries[] = [
     legend: 'legend1',
     color: 'qualitative.4',
     data: [
-      { x: 20, y: 9 }, { x: 25, y: 14 }, { x: 30, y: 14 }, { x: 35, y: 23 }, { x: 40, y: 20 },
-      { x: 45, y: 31 }, { x: 50, y: 29 }, { x: 55, y: 27 }, { x: 60, y: 37 }, { x: 65, y: 51 },
+      { x: 20, y: 9 },
+      { x: 25, y: 14 },
+      { x: 30, y: 14 },
+      { x: 35, y: 23 },
+      { x: 40, y: 20 },
+      { x: 45, y: 31 },
+      { x: 50, y: 29 },
+      { x: 55, y: 27 },
+      { x: 60, y: 37 },
+      { x: 65, y: 51 },
     ],
   },
   {
     legend: 'legend2',
     color: 'qualitative.5',
     data: [
-      { x: 20, y: 21 }, { x: 25, y: 25 }, { x: 30, y: 10 }, { x: 35, y: 10 }, { x: 40, y: 14 },
-      { x: 45, y: 18 }, { x: 50, y: 9 }, { x: 55, y: 23 }, { x: 60, y: 7 }, { x: 65, y: 55 },
+      { x: 20, y: 21 },
+      { x: 25, y: 25 },
+      { x: 30, y: 10 },
+      { x: 35, y: 10 },
+      { x: 40, y: 14 },
+      { x: 45, y: 18 },
+      { x: 50, y: 9 },
+      { x: 55, y: 23 },
+      { x: 60, y: 7 },
+      { x: 65, y: 55 },
     ],
   },
   {
     legend: 'legend3',
     color: 'qualitative.6',
     data: [
-      { x: 20, y: 30 }, { x: 25, y: 35 }, { x: 30, y: 33 }, { x: 35, y: 40 }, { x: 40, y: 10 },
-      { x: 45, y: 40 }, { x: 50, y: 34 }, { x: 55, y: 40 }, { x: 60, y: 60 }, { x: 65, y: 40 },
+      { x: 20, y: 30 },
+      { x: 25, y: 35 },
+      { x: 30, y: 33 },
+      { x: 35, y: 40 },
+      { x: 40, y: 10 },
+      { x: 45, y: 40 },
+      { x: 50, y: 34 },
+      { x: 55, y: 40 },
+      { x: 60, y: 60 },
+      { x: 65, y: 40 },
     ],
   },
 ];
@@ -78,10 +101,21 @@ const negativeData: AreaChartSeries[] = [
   {
     legend: 'legend1',
     data: [
-      { x: 20, y: 7000 }, { x: 25, y: -9000 }, { x: 30, y: 13000 }, { x: 35, y: -15000 },
-      { x: 40, y: 11000 }, { x: 45, y: -8760 }, { x: 50, y: 3500 }, { x: 55, y: -20000 },
-      { x: 60, y: 17000 }, { x: 65, y: -1000 }, { x: 70, y: 12000 }, { x: 75, y: -6876 },
-      { x: 80, y: 12000 }, { x: 85, y: -7000 }, { x: 90, y: 10000 },
+      { x: 20, y: 7000 },
+      { x: 25, y: -9000 },
+      { x: 30, y: 13000 },
+      { x: 35, y: -15000 },
+      { x: 40, y: 11000 },
+      { x: 45, y: -8760 },
+      { x: 50, y: 3500 },
+      { x: 55, y: -20000 },
+      { x: 60, y: 17000 },
+      { x: 65, y: -1000 },
+      { x: 70, y: 12000 },
+      { x: 75, y: -6876 },
+      { x: 80, y: 12000 },
+      { x: 85, y: -7000 },
+      { x: 90, y: 10000 },
     ],
   },
 ];
@@ -92,24 +126,48 @@ const allNegativeData: AreaChartSeries[] = [
     legend: 'legend1',
     color: 'qualitative.4',
     data: [
-      { x: 20, y: -9 }, { x: 25, y: -14 }, { x: 30, y: -14 }, { x: 35, y: -23 }, { x: 40, y: -20 },
-      { x: 45, y: -31 }, { x: 50, y: -29 }, { x: 55, y: -27 }, { x: 60, y: -37 }, { x: 65, y: -51 },
+      { x: 20, y: -9 },
+      { x: 25, y: -14 },
+      { x: 30, y: -14 },
+      { x: 35, y: -23 },
+      { x: 40, y: -20 },
+      { x: 45, y: -31 },
+      { x: 50, y: -29 },
+      { x: 55, y: -27 },
+      { x: 60, y: -37 },
+      { x: 65, y: -51 },
     ],
   },
   {
     legend: 'legend2',
     color: 'qualitative.5',
     data: [
-      { x: 20, y: -21 }, { x: 25, y: -25 }, { x: 30, y: -10 }, { x: 35, y: -10 }, { x: 40, y: -14 },
-      { x: 45, y: -18 }, { x: 50, y: -9 }, { x: 55, y: -23 }, { x: 60, y: -7 }, { x: 65, y: -55 },
+      { x: 20, y: -21 },
+      { x: 25, y: -25 },
+      { x: 30, y: -10 },
+      { x: 35, y: -10 },
+      { x: 40, y: -14 },
+      { x: 45, y: -18 },
+      { x: 50, y: -9 },
+      { x: 55, y: -23 },
+      { x: 60, y: -7 },
+      { x: 65, y: -55 },
     ],
   },
   {
     legend: 'legend3',
     color: 'qualitative.6',
     data: [
-      { x: 20, y: -30 }, { x: 25, y: -35 }, { x: 30, y: -33 }, { x: 35, y: -40 }, { x: 40, y: -10 },
-      { x: 45, y: -40 }, { x: 50, y: -34 }, { x: 55, y: -40 }, { x: 60, y: -60 }, { x: 65, y: -40 },
+      { x: 20, y: -30 },
+      { x: 25, y: -35 },
+      { x: 30, y: -33 },
+      { x: 35, y: -40 },
+      { x: 40, y: -10 },
+      { x: 45, y: -40 },
+      { x: 50, y: -34 },
+      { x: 55, y: -40 },
+      { x: 60, y: -60 },
+      { x: 65, y: -40 },
     ],
   },
 ];
@@ -120,24 +178,48 @@ const multipleNegativeData: AreaChartSeries[] = [
     legend: 'legend1',
     color: 'qualitative.4',
     data: [
-      { x: 20, y: -9 }, { x: 25, y: 14 }, { x: 30, y: -14 }, { x: 35, y: 23 }, { x: 40, y: -20 },
-      { x: 45, y: 31 }, { x: 50, y: -29 }, { x: 55, y: 27 }, { x: 60, y: -37 }, { x: 65, y: 51 },
+      { x: 20, y: -9 },
+      { x: 25, y: 14 },
+      { x: 30, y: -14 },
+      { x: 35, y: 23 },
+      { x: 40, y: -20 },
+      { x: 45, y: 31 },
+      { x: 50, y: -29 },
+      { x: 55, y: 27 },
+      { x: 60, y: -37 },
+      { x: 65, y: 51 },
     ],
   },
   {
     legend: 'legend2',
     color: 'qualitative.5',
     data: [
-      { x: 20, y: 21 }, { x: 25, y: -25 }, { x: 30, y: 10 }, { x: 35, y: -10 }, { x: 40, y: 14 },
-      { x: 45, y: -18 }, { x: 50, y: 9 }, { x: 55, y: -23 }, { x: 60, y: 7 }, { x: 65, y: -55 },
+      { x: 20, y: 21 },
+      { x: 25, y: -25 },
+      { x: 30, y: 10 },
+      { x: 35, y: -10 },
+      { x: 40, y: 14 },
+      { x: 45, y: -18 },
+      { x: 50, y: 9 },
+      { x: 55, y: -23 },
+      { x: 60, y: 7 },
+      { x: 65, y: -55 },
     ],
   },
   {
     legend: 'legend3',
     color: 'qualitative.6',
     data: [
-      { x: 20, y: 30 }, { x: 25, y: 35 }, { x: 30, y: -33 }, { x: 35, y: 40 }, { x: 40, y: 10 },
-      { x: 45, y: -40 }, { x: 50, y: 34 }, { x: 55, y: 40 }, { x: 60, y: -60 }, { x: 65, y: 40 },
+      { x: 20, y: 30 },
+      { x: 25, y: 35 },
+      { x: 30, y: -33 },
+      { x: 35, y: 40 },
+      { x: 40, y: 10 },
+      { x: 45, y: -40 },
+      { x: 50, y: 34 },
+      { x: 55, y: 40 },
+      { x: 60, y: -60 },
+      { x: 65, y: 40 },
     ],
   },
 ];
@@ -149,27 +231,32 @@ const customAccessibilityData: AreaChartSeries[] = [
     color: 'qualitative.8',
     data: [
       {
-        x: 20, y: 9,
+        x: 20,
+        y: 9,
         xAxisCalloutAccessibilityData: { ariaLabel: 'x-Axis 20' },
         callOutAccessibilityData: { ariaLabel: 'Point 1 of 5 in First series. X value 20 Y value $9' },
       },
       {
-        x: 40, y: 20,
+        x: 40,
+        y: 20,
         xAxisCalloutAccessibilityData: { ariaLabel: 'x-Axis 40' },
         callOutAccessibilityData: { ariaLabel: 'Point 2 of 5 in First series. X value 40 Y value $20' },
       },
       {
-        x: 55, y: 27,
+        x: 55,
+        y: 27,
         xAxisCalloutAccessibilityData: { ariaLabel: 'x-Axis 55' },
         callOutAccessibilityData: { ariaLabel: 'Point 3 of 5 in First series. X value 55 Y value $27' },
       },
       {
-        x: 60, y: 37,
+        x: 60,
+        y: 37,
         xAxisCalloutAccessibilityData: { ariaLabel: 'x-Axis 60' },
         callOutAccessibilityData: { ariaLabel: 'Point 4 of 5 in First series. X value 60 Y value $37' },
       },
       {
-        x: 65, y: 51,
+        x: 65,
+        y: 51,
         xAxisCalloutAccessibilityData: { ariaLabel: 'x-Axis 65' },
         callOutAccessibilityData: { ariaLabel: 'Point 5 of 5 in First series. X value 65 Y value $51' },
       },
@@ -180,24 +267,39 @@ const customAccessibilityData: AreaChartSeries[] = [
     color: 'qualitative.9',
     data: [
       {
-        x: 20, y: 21,
-        callOutAccessibilityData: { ariaLabel: 'First of 5 points in Second series. X coordinate is 20 and Y coordinate is $21' },
+        x: 20,
+        y: 21,
+        callOutAccessibilityData: {
+          ariaLabel: 'First of 5 points in Second series. X coordinate is 20 and Y coordinate is $21',
+        },
       },
       {
-        x: 40, y: 25,
-        callOutAccessibilityData: { ariaLabel: 'Second of 5 points in Second series. X coordinate is 40 and Y coordinate is $25' },
+        x: 40,
+        y: 25,
+        callOutAccessibilityData: {
+          ariaLabel: 'Second of 5 points in Second series. X coordinate is 40 and Y coordinate is $25',
+        },
       },
       {
-        x: 55, y: 23,
-        callOutAccessibilityData: { ariaLabel: 'Third of 5 points in Second series. X coordinate is 55 and Y coordinate is $23' },
+        x: 55,
+        y: 23,
+        callOutAccessibilityData: {
+          ariaLabel: 'Third of 5 points in Second series. X coordinate is 55 and Y coordinate is $23',
+        },
       },
       {
-        x: 60, y: 7,
-        callOutAccessibilityData: { ariaLabel: 'Fourth of 5 points in Second series. X coordinate is 60 and Y coordinate is $7' },
+        x: 60,
+        y: 7,
+        callOutAccessibilityData: {
+          ariaLabel: 'Fourth of 5 points in Second series. X coordinate is 60 and Y coordinate is $7',
+        },
       },
       {
-        x: 65, y: 55,
-        callOutAccessibilityData: { ariaLabel: 'Fifth of 5 points in Second series. X coordinate is 65 and Y coordinate is $55' },
+        x: 65,
+        y: 55,
+        callOutAccessibilityData: {
+          ariaLabel: 'Fifth of 5 points in Second series. X coordinate is 65 and Y coordinate is $55',
+        },
       },
     ],
   },
@@ -206,24 +308,39 @@ const customAccessibilityData: AreaChartSeries[] = [
     color: 'qualitative.10',
     data: [
       {
-        x: 20, y: 30,
-        callOutAccessibilityData: { ariaLabel: 'First of 5 points in Third series. X coordinate is 20 and Y coordinate is $30' },
+        x: 20,
+        y: 30,
+        callOutAccessibilityData: {
+          ariaLabel: 'First of 5 points in Third series. X coordinate is 20 and Y coordinate is $30',
+        },
       },
       {
-        x: 40, y: 35,
-        callOutAccessibilityData: { ariaLabel: 'Second of 5 points in Third series. X coordinate is 40 and Y coordinate is $35' },
+        x: 40,
+        y: 35,
+        callOutAccessibilityData: {
+          ariaLabel: 'Second of 5 points in Third series. X coordinate is 40 and Y coordinate is $35',
+        },
       },
       {
-        x: 55, y: 33,
-        callOutAccessibilityData: { ariaLabel: 'Third of 5 points in Third series. X coordinate is 55 and Y coordinate is $33' },
+        x: 55,
+        y: 33,
+        callOutAccessibilityData: {
+          ariaLabel: 'Third of 5 points in Third series. X coordinate is 55 and Y coordinate is $33',
+        },
       },
       {
-        x: 60, y: 40,
-        callOutAccessibilityData: { ariaLabel: 'Fourth of 5 points in Third series. X coordinate is 60 and Y coordinate is $40' },
+        x: 60,
+        y: 40,
+        callOutAccessibilityData: {
+          ariaLabel: 'Fourth of 5 points in Third series. X coordinate is 60 and Y coordinate is $40',
+        },
       },
       {
-        x: 65, y: 10,
-        callOutAccessibilityData: { ariaLabel: 'Fifth of 5 points in Third series. X coordinate is 65 and Y coordinate is $10' },
+        x: 65,
+        y: 10,
+        callOutAccessibilityData: {
+          ariaLabel: 'Fifth of 5 points in Third series. X coordinate is 65 and Y coordinate is $10',
+        },
       },
     ],
   },
@@ -312,12 +429,6 @@ export const StandardAttributes: Story<AreaChart> = () => {
     }).element,
   );
 
-  toggleControls.appendChild(
-    createSwitchField('Enable Gradient', 'area-sa-enable-gradient', false, checked => {
-      chart.toggleAttribute('enable-gradient', checked);
-    }).element,
-  );
-
   container.appendChild(chart);
   return container;
 };
@@ -334,6 +445,60 @@ export const Multiple: Story<AreaChart> = () => {
 };
 Multiple.parameters = { docs: { story: { height: '420px' } } };
 
+export const EnableGradient: Story<AreaChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-area-chart') as AreaChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Area chart chart attributes example';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('x-axis-title', 'Number of days');
+  chart.setAttribute('y-axis-title', 'Variation of stock market prices');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  controls.appendChild(
+    createSwitchField('Enable Gradient', 'area-ca-enable-gradient', false, checked => {
+      chart.toggleAttribute('enable-gradient', checked);
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+EnableGradient.storyName = 'Gradient';
+EnableGradient.parameters = { docs: { story: { height: '420px' } } };
+
+export const TooltipRendererStory: Story<AreaChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent = 'Hover over a point — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-area-chart') as AreaChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Area chart custom tooltipRenderer';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('x-axis-title', 'Number of days');
+  chart.setAttribute('y-axis-title', 'Variation of stock market prices');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '420px' } } };
+
 export const CustomAccessibility: Story<AreaChart> = () => {
   const chart = document.createElement('fluent-area-chart') as AreaChart;
   chart.data = customAccessibilityData;
@@ -347,6 +512,14 @@ CustomAccessibility.storyName = 'Custom Accessibility';
 CustomAccessibility.parameters = { docs: { story: { height: '420px' } } };
 
 export const Negative: Story<AreaChart> = () => {
+  const container = document.createElement('div');
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  let showAxisTitles = true;
+
   const chart = document.createElement('fluent-area-chart') as AreaChart;
   chart.data = negativeData;
   chart.chartTitle = 'Area chart Negative y example';
@@ -354,7 +527,22 @@ export const Negative: Story<AreaChart> = () => {
   chart.setAttribute('height', '300');
   chart.setAttribute('x-axis-title', 'Number of days');
   chart.setAttribute('y-axis-title', 'Variation of stock market prices');
-  return chart;
+
+  controls.appendChild(
+    createSwitchField('Hide Axis titles', 'area-negative-axis-titles', showAxisTitles, checked => {
+      showAxisTitles = checked;
+      if (showAxisTitles) {
+        chart.setAttribute('x-axis-title', 'Number of days');
+        chart.setAttribute('y-axis-title', 'Variation of stock market prices');
+      } else {
+        chart.removeAttribute('x-axis-title');
+        chart.removeAttribute('y-axis-title');
+      }
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
 };
 Negative.storyName = 'Negative Y Values';
 Negative.parameters = { docs: { story: { height: '420px' } } };
@@ -561,4 +749,3 @@ export const RTL: Story<AreaChart> = renderComponent(html<StoryArgs<AreaChart>>`
   </div>
 `);
 RTL.parameters = { docs: { story: { height: '420px' } } };
-

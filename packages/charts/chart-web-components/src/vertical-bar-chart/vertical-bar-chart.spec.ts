@@ -1,4 +1,3 @@
-
 import { test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
 import type { VerticalBarChartDataPoint } from './vertical-bar-chart.options.js';
@@ -40,5 +39,30 @@ test.describe('VerticalBarChart', () => {
       (node as HTMLElement & { data: VerticalBarChartDataPoint[] }).data = [{ x: 'Q1', y: 10 }];
     });
     await expect(element.locator('.bar')).toHaveCount(1);
+  });
+
+  test('Should render primary y-axis on right in RTL', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div dir="rtl">
+        <fluent-vertical-bar-chart data='${JSON.stringify(data)}' width='500' height='300'></fluent-vertical-bar-chart>
+      </div>
+    `);
+    const element = page.locator('fluent-vertical-bar-chart');
+    await expect(element.locator('.y-axis .axis-tick-line').first()).toHaveAttribute('x2', '6');
+  });
+
+  test('Should support x-axis category order', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-bar-chart
+        data='${JSON.stringify(data)}'
+        width='500'
+        height='300'
+        x-axis-category-order='category descending'
+      ></fluent-vertical-bar-chart>
+    `);
+    const tickLabelsLocator = page.locator('fluent-vertical-bar-chart .x-axis .axis-text');
+    await expect(tickLabelsLocator).toHaveCount(4);
+    const tickLabels = await tickLabelsLocator.allTextContents();
+    expect(tickLabels).toEqual(['Q4', 'Q3', 'Q2', 'Q1']);
   });
 });

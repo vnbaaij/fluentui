@@ -2,6 +2,7 @@ import { FluentDesignSystem } from '@fluentui/web-components';
 import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
+  createDropdownField,
   createSliderField,
   createSwitchField,
   ensureDefinition,
@@ -159,22 +160,6 @@ export const StandardAttributes: Story<VerticalStackedBarChart> = () => {
   });
   sliderControls.appendChild(heightControl.element);
 
-  const barGapMaxControl = createSliderField('Bar Gap Max', 'vsbar-sa-bar-gap-max', 5, 0, 20, nextValue => {
-    barGapMaxControl.setValue(nextValue);
-    chart.setAttribute('bar-gap-max', `${nextValue}`);
-  });
-  sliderControls.appendChild(barGapMaxControl.element);
-
-  const barWidthControl = createSliderField('Bar Width', 'vsbar-sa-bar-width', 0, 0, 60, nextValue => {
-    barWidthControl.setValue(nextValue);
-    if (nextValue === 0) {
-      chart.removeAttribute('bar-width');
-    } else {
-      chart.setAttribute('bar-width', `${nextValue}`);
-    }
-  });
-  sliderControls.appendChild(barWidthControl.element);
-
   toggleControls.appendChild(
     createSwitchField('Hide Legends', 'vsbar-sa-hide-legends', false, checked => {
       chart.toggleAttribute('hide-legends', checked);
@@ -209,4 +194,178 @@ export const StandardAttributes: Story<VerticalStackedBarChart> = () => {
   return container;
 };
 StandardAttributes.storyName = 'Standard Attributes';
-StandardAttributes.parameters = { docs: { story: { height: '680px' } } };
+StandardAttributes.parameters = { docs: { story: { height: '560px' } } };
+
+export const ChartAttributes: Story<VerticalStackedBarChart> = () => {
+  const container = document.createElement('div');
+
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  container.appendChild(sliderControls);
+
+  const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Vertical stacked bar chart chart attributes example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const barGapMaxControl = createSliderField('Bar Gap Max', 'vsbar-ca-bar-gap-max', 5, 0, 20, nextValue => {
+    barGapMaxControl.setValue(nextValue);
+    chart.setAttribute('bar-gap-max', `${nextValue}`);
+  });
+  sliderControls.appendChild(barGapMaxControl.element);
+
+  const barWidthControl = createSliderField('Bar Width', 'vsbar-ca-bar-width', 0, 0, 60, nextValue => {
+    barWidthControl.setValue(nextValue);
+    if (nextValue === 0) {
+      chart.removeAttribute('bar-width');
+    } else {
+      chart.setAttribute('bar-width', `${nextValue}`);
+    }
+  });
+  sliderControls.appendChild(barWidthControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+ChartAttributes.storyName = 'Chart Attributes';
+ChartAttributes.parameters = { docs: { story: { height: '560px' } } };
+
+export const TooltipRendererStory: Story<VerticalStackedBarChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a stack segment — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Vertical stacked bar chart custom tooltipRenderer';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '470px' } } };
+
+export const Culture: Story<VerticalStackedBarChart> = () => {
+  const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Vertical stacked bar chart culture example (de-DE)';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('culture', 'de-DE');
+  return chart;
+};
+Culture.parameters = { docs: { story: { height: '470px' } } };
+
+export const TitleAlign: Story<VerticalStackedBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const aligns = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof aligns)[number] = 'start';
+
+  const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Vertical stacked bar chart title align example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  controls.appendChild(
+    createDropdownField('Title align', 'vsbar-title-align', [...aligns], currentAlign, nextAlign => {
+      currentAlign = nextAlign as (typeof aligns)[number];
+      if (currentAlign === 'start') {
+        chart.removeAttribute('title-align');
+      } else {
+        chart.setAttribute('title-align', currentAlign);
+      }
+    }).element,
+  );
+
+  return container;
+};
+TitleAlign.parameters = { docs: { story: { height: '470px' } } };
+
+export const TitleAndLegendPositions: Story<VerticalStackedBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const legendPositions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentLegendPosition: (typeof legendPositions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Vertical stacked bar chart title and legend positions example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  controls.appendChild(
+    createDropdownField(
+      'Title position',
+      'vsbar-title-position',
+      [...titlePositions],
+      currentTitlePosition,
+      nextTitlePosition => {
+        currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+        if (currentTitlePosition === 'top') {
+          chart.removeAttribute('title-position');
+        } else {
+          chart.setAttribute('title-position', currentTitlePosition);
+        }
+      },
+    ).element,
+  );
+  controls.appendChild(
+    createDropdownField(
+      'Legend position',
+      'vsbar-legend-position',
+      [...legendPositions],
+      currentLegendPosition,
+      nextLegendPosition => {
+        currentLegendPosition = nextLegendPosition as (typeof legendPositions)[number];
+        if (currentLegendPosition === 'bottom') {
+          chart.removeAttribute('legend-position');
+        } else {
+          chart.setAttribute('legend-position', currentLegendPosition);
+        }
+      },
+    ).element,
+  );
+
+  return container;
+};
+TitleAndLegendPositions.parameters = { docs: { story: { height: '470px' } } };
+
+export const RTL: Story<VerticalStackedBarChart> = () => {
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute('dir', 'rtl');
+  const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Vertical stacked bar chart RTL example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  wrapper.appendChild(chart);
+  return wrapper;
+};
+RTL.parameters = { docs: { story: { height: '470px' } } };

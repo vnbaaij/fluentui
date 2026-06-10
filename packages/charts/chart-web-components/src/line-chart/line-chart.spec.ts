@@ -1,11 +1,24 @@
-
 import { test } from '@playwright/test';
 import { expect, fixtureURL } from '../helpers.tests.js';
 import type { LineChartSeries } from './line-chart.options.js';
 
 const data: LineChartSeries[] = [
-  { legend: 'Series A', data: [{ x: 0, y: 10 }, { x: 1, y: 20 }, { x: 2, y: 15 }] },
-  { legend: 'Series B', data: [{ x: 0, y: 5 }, { x: 1, y: 12 }, { x: 2, y: 18 }] },
+  {
+    legend: 'Series A',
+    data: [
+      { x: 0, y: 10 },
+      { x: 1, y: 20 },
+      { x: 2, y: 15 },
+    ],
+  },
+  {
+    legend: 'Series B',
+    data: [
+      { x: 0, y: 5 },
+      { x: 1, y: 12 },
+      { x: 2, y: 18 },
+    ],
+  },
 ];
 
 test.describe('LineChart', () => {
@@ -37,9 +50,25 @@ test.describe('LineChart', () => {
     const element = page.locator('fluent-line-chart');
     await element.evaluate(node => {
       (node as HTMLElement & { data: LineChartSeries[] }).data = [
-        { legend: 'Only Series', data: [{ x: 0, y: 10 }, { x: 1, y: 12 }] },
+        {
+          legend: 'Only Series',
+          data: [
+            { x: 0, y: 10 },
+            { x: 1, y: 12 },
+          ],
+        },
       ];
     });
     await expect(element.locator('.line-path')).toHaveCount(1);
+  });
+
+  test('Should render primary y-axis on right in RTL', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div dir="rtl">
+        <fluent-line-chart data='${JSON.stringify(data)}' width='600' height='300'></fluent-line-chart>
+      </div>
+    `);
+    const element = page.locator('fluent-line-chart');
+    await expect(element.locator('.y-axis .axis-tick-line').first()).toHaveAttribute('x2', '6');
   });
 });

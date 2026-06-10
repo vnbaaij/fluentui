@@ -1,42 +1,36 @@
 import { attr } from '@microsoft/fast-element';
 import { max } from 'd3-array';
-import { axisBottom, axisLeft, type Axis, type AxisDomain } from 'd3-axis';
+import { type Axis, axisBottom, axisLeft } from 'd3-axis';
 import { format } from 'd3-format';
-import { scaleBand, scaleLinear, type ScaleBand, type ScaleLinear } from 'd3-scale';
+import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear } from 'd3-scale';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
-import { formatLocaleNumber, getColorFromToken, getNextColor, jsonConverter, SVG_NAMESPACE_URI, wrapText } from '../utils/chart-helpers.js';
+import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
+import {
+  applyAxisTickConfig,
+  computePreparedNumericYAxis,
+  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  renderBottomAxisShared,
+  renderPrimaryYAxisShared,
+  sortCategoryGroups,
+  toAxisNumber as toNumber,
+  toOptionalAxisNumber as toOptionalNumber,
+} from '../utils/cartesian-axis-shared.js';
+import {
+  formatLocaleNumber,
+  getColorFromToken,
+  getNextColor,
+  jsonConverter,
+  SVG_NAMESPACE_URI,
+} from '../utils/chart-helpers.js';
 import type { VerticalStackedBarChartProps } from './vertical-stacked-bar-chart.options.js';
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
 
 type TooltipState = TooltipProps & { xValue: string };
-type ScaleLike<Domain extends AxisDomain> = {
-  domain(): Domain[];
-  ticks?: (count?: number) => Domain[];
-  bandwidth?: () => number;
-  step?: () => number;
-  (value: Domain): number | undefined;
-};
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
-
-const toNumber = (value: number | string | undefined, fallback: number): number => {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const toOptionalNumber = (value: number | string | undefined): number | undefined => {
-  if (value === undefined || value === null || value === '') {
-    return undefined;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
 
 const formatNumberValue = (value: number, specifier: string | undefined, culture: string | undefined): string => {
   if (specifier) {
@@ -49,152 +43,9 @@ const formatNumberValue = (value: number, specifier: string | undefined, culture
   return formatLocaleNumber(value, culture);
 };
 
-const getTickValues = <Domain extends AxisDomain>(axis: Axis<Domain>, scale: ScaleLike<Domain>): Domain[] => {
-  const explicit = axis.tickValues();
-  if (explicit) {
-    return Array.from(explicit as Iterable<Domain>);
-  }
-  if (typeof scale.ticks === 'function') {
-    const [count] = axis.tickArguments() as [number?];
-    return scale.ticks(count);
-  }
-  return scale.domain();
-};
-
-const getPosition = <Domain extends AxisDomain>(scale: ScaleLike<Domain>, value: Domain): number => {
-  const start = scale(value) ?? 0;
-  return typeof scale.bandwidth === 'function' ? start + scale.bandwidth() / 2 : start;
-};
-
-const renderBottomAxis = (
-  svg: SVGSVGElement,
-  chart: VerticalStackedBarChart,
-  scale: ScaleBand<string>,
-  axis: Axis<string>,
-  innerWidth: number,
-  innerHeight: number,
-): void => {
-  const group = createSvgElement<SVGGElement>('g');
-  group.classList.add('x-axis');
-  group.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top + innerHeight})`);
-
-  const domain = createSvgElement<SVGLineElement>('line');
-  domain.classList.add('axis-domain');
-  domain.setAttribute('x1', '0');
-  domain.setAttribute('x2', String(innerWidth));
-  group.appendChild(domain);
-
-  const tickPadding = toNumber(chart.tickPadding, 6);
-  let previousRight = Number.NEGATIVE_INFINITY;
-
-  getTickValues(axis, scale as ScaleLike<string>).forEach(value => {
-    const tick = createSvgElement<SVGGElement>('g');
-    tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(${getPosition(scale as ScaleLike<string>, value)}, 0)`);
-
-    const line = createSvgElement<SVGLineElement>('line');
-    line.classList.add('axis-tick-line');
-    line.setAttribute('y2', '6');
-    tick.appendChild(line);
-
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add('axis-text');
-    text.setAttribute('y', String(6 + tickPadding));
-    text.setAttribute('text-anchor', chart.rotateXAxisLabels ? 'start' : 'middle');
-    text.textContent = value;
-    if (chart.rotateXAxisLabels) {
-      text.setAttribute('transform', 'rotate(45)');
-    }
-    if (chart.showXAxisLabelsTooltip) {
-      const title = createSvgElement<SVGTitleElement>('title');
-      title.textContent = value;
-      text.appendChild(title);
-    }
-    tick.appendChild(text);
-    group.appendChild(tick);
-
-    if (chart.wrapXAxisLabels) {
-      wrapText(text, Math.max(scale.bandwidth(), 1));
-    } else if (chart.hideTickOverlap && !chart.rotateXAxisLabels) {
-      const box = text.getBBox();
-      const left = getPosition(scale as ScaleLike<string>, value) + box.x;
-      const right = left + box.width;
-      if (left < previousRight) {
-        tick.style.display = 'none';
-      } else {
-        previousRight = right + 4;
-      }
-    }
-  });
-
-  if (chart.xAxisTitle) {
-    const title = createSvgElement<SVGTextElement>('text');
-    title.classList.add('x-axis-title');
-    title.setAttribute('x', String(innerWidth / 2));
-    title.setAttribute('y', '42');
-    title.setAttribute('text-anchor', 'middle');
-    title.textContent = chart.xAxisTitle;
-    group.appendChild(title);
-  }
-
-  svg.appendChild(group);
-};
-
-const renderLeftAxis = (
-  svg: SVGSVGElement,
-  chart: VerticalStackedBarChart,
-  scale: ScaleLinear<number, number>,
-  axis: Axis<number>,
-  innerHeight: number,
-): void => {
-  const group = createSvgElement<SVGGElement>('g');
-  group.classList.add('y-axis');
-  group.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top})`);
-
-  const domain = createSvgElement<SVGLineElement>('line');
-  domain.classList.add('axis-domain');
-  domain.setAttribute('y2', String(innerHeight));
-  group.appendChild(domain);
-
-  const tickPadding = toNumber(chart.tickPadding, 6);
-  getTickValues(axis, scale as ScaleLike<number>).forEach(value => {
-    const tick = createSvgElement<SVGGElement>('g');
-    tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(0, ${getPosition(scale as ScaleLike<number>, value)})`);
-
-    const line = createSvgElement<SVGLineElement>('line');
-    line.classList.add('axis-tick-line');
-    line.setAttribute('x2', '-6');
-    tick.appendChild(line);
-
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add('y-axis-text');
-    text.setAttribute('x', String(-(6 + tickPadding)));
-    text.setAttribute('text-anchor', 'end');
-    text.setAttribute('dominant-baseline', 'middle');
-    text.textContent = formatNumberValue(value, chart.yAxisTickFormat, chart.culture);
-    tick.appendChild(text);
-
-    group.appendChild(tick);
-  });
-
-  if (chart.yAxisTitle) {
-    const title = createSvgElement<SVGTextElement>('text');
-    title.classList.add('y-axis-title');
-    title.setAttribute('x', String(-innerHeight / 2));
-    title.setAttribute('y', '-42');
-    title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('transform', 'rotate(-90)');
-    title.textContent = chart.yAxisTitle;
-    group.appendChild(title);
-  }
-
-  svg.appendChild(group);
-};
-
 /** @public */
 export class VerticalStackedBarChart extends CartesianChartBase {
-  declare public tooltipProps: TooltipState;
+  public declare tooltipProps: TooltipState;
 
   @attr({ converter: jsonConverter })
   public data!: VerticalStackedBarChartProps[];
@@ -275,19 +126,36 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       return;
     }
 
-    const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 600);
+    const requestedChartWidth = toOptionalNumber(this.width);
+    const measuredWidth = this.chartContainer.getBoundingClientRect().width;
+    const width = requestedChartWidth ?? (measuredWidth || toNumber(this.width, 600));
     const height = toNumber(this.height, 350);
-    const innerWidth = Math.max(width - defaultMargins.left - defaultMargins.right, 1);
-    const innerHeight = Math.max(height - defaultMargins.top - defaultMargins.bottom, 1);
-    const domain = stacks.map(stack => String(stack.xAxisPoint));
+    const margins = getDirectionalMargins(defaultMargins, this._isRTL);
+    const innerWidth = Math.max(width - margins.left - margins.right, 1);
+    const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
+    const groupsByCategory = new Map<string, number[]>();
+    stacks.forEach(stack => {
+      groupsByCategory.set(
+        String(stack.xAxisPoint),
+        stack.chartData.map(point => point.data),
+      );
+    });
+    const domain = sortCategoryGroups(
+      Array.from(groupsByCategory.entries()).map(([key, values]) => ({ key, points: values })),
+      this.xAxisCategoryOrder,
+      stacks.map(stack => String(stack.xAxisPoint)),
+      group => group.points,
+    ).map(group => group.key);
     const xScale = scaleBand<string>().domain(domain).range([0, innerWidth]).padding(0.2);
-    const maxTotal = max(stacks, stack => stack.chartData.reduce((sum, point) => sum + Math.max(point.data, 0), 0)) ?? 0;
-    const yScale = scaleLinear()
-      .domain([toOptionalNumber(this.yMinValue) ?? 0, toOptionalNumber(this.yMaxValue) ?? Math.max(maxTotal, 1)])
-      .range([innerHeight, 0]);
-    if (this.roundedTicks) {
-      yScale.nice();
-    }
+    const maxTotal =
+      max(stacks, stack => stack.chartData.reduce((sum, point) => sum + Math.max(point.data, 0), 0)) ?? 0;
+    const preparedYAxis = computePreparedNumericYAxis({
+      minValue: toOptionalNumber(this.yMinValue) ?? 0,
+      maxValue: toOptionalNumber(this.yMaxValue) ?? Math.max(maxTotal, 1),
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      roundedTicks: this.roundedTicks,
+    });
+    const yScale = scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
 
     const legendNames = Array.from(new Set(stacks.flatMap(stack => stack.chartData.map(point => point.legend))));
     const colorMap = new Map<string, string>();
@@ -303,14 +171,21 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
     const plotGroup = createSvgElement<SVGGElement>('g');
-    plotGroup.setAttribute('transform', `translate(${defaultMargins.left}, ${defaultMargins.top})`);
+    plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
     svg.appendChild(plotGroup);
 
     const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6));
-    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
-    if (this.yAxisTickValues?.length) {
-      yAxis.tickValues(this.yAxisTickValues);
-    }
+    applyAxisTickConfig(
+      xAxis,
+      this.xAxisTickCount,
+      this.tickValues?.map(value => String(value)),
+    );
+    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
+    applyAxisTickConfig(
+      yAxis,
+      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickValues ?? preparedYAxis.tickValues,
+    );
 
     const gapMax = toOptionalNumber(this.barGapMax);
     stacks.forEach(stack => {
@@ -318,10 +193,12 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       const step = xScale.step();
       let actualWidth = xScale.bandwidth();
       if (gapMax !== undefined) {
-        actualWidth = Math.min(actualWidth, Math.max(step - gapMax, 1));
+        // bar-gap-max is a cap for the visual gap between adjacent stacks.
+        // Grow bars into the band padding area when needed to satisfy the cap.
+        actualWidth = Math.min(Math.max(actualWidth, Math.max(step - gapMax, 1)), step);
       }
       const requestedWidth = toOptionalNumber(this.barWidth);
-      actualWidth = Math.min(requestedWidth ?? actualWidth, xScale.bandwidth());
+      actualWidth = Math.min(Math.max(requestedWidth ?? actualWidth, 1), step);
       const offset = (xScale.bandwidth() - actualWidth) / 2;
 
       let start = 0;
@@ -356,8 +233,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
             xValue: String(stack.xAxisPoint),
             yValue: formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
             color,
-            xPos: svgRect.left - hostRect.left + defaultMargins.left + x + offset + actualWidth / 2,
-            yPos: svgRect.top - hostRect.top + defaultMargins.top + top,
+            xPos: svgRect.left - hostRect.left + margins.left + x + offset + actualWidth / 2,
+            yPos: svgRect.top - hostRect.top + margins.top + top,
           };
         });
         rect.addEventListener('mouseleave', () => this._clearTooltip());
@@ -366,8 +243,35 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       });
     });
 
-    renderBottomAxis(svg, this, xScale, xAxis, innerWidth, innerHeight);
-    renderLeftAxis(svg, this, yScale, yAxis as unknown as Axis<number>, innerHeight);
+    renderBottomAxisShared({
+      svg,
+      scale: xScale,
+      axis: xAxis,
+      formatter: value => value,
+      axisLeft: margins.left,
+      axisTop: margins.top,
+      innerWidth,
+      innerHeight,
+      tickPadding: toNumber(this.tickPadding, 6),
+      rotateXAxisLabels: this.rotateXAxisLabels,
+      wrapXAxisLabels: this.wrapXAxisLabels,
+      hideTickOverlap: this.hideTickOverlap,
+      showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
+      xAxisTitle: this.xAxisTitle,
+    });
+    renderPrimaryYAxisShared({
+      svg,
+      scale: yScale,
+      axis: yAxis as unknown as Axis<number>,
+      formatter: value => formatNumberValue(value, this.yAxisTickFormat, this.culture),
+      axisStartX: margins.left,
+      axisTop: margins.top,
+      innerHeight,
+      innerWidth,
+      tickPadding: toNumber(this.tickPadding, 6),
+      isRTL: this._isRTL,
+      yAxisTitle: this.yAxisTitle,
+    });
 
     this.chartContainer.appendChild(svg);
     this.legends = legendNames.map(legend => ({ legend, color: colorMap.get(legend) ?? getNextColor(0, 0) }));

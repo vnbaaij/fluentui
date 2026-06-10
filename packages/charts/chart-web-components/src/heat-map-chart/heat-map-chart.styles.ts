@@ -40,6 +40,7 @@ export const styles: ElementStyles = css`
       'chart'
       'legend';
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
     position: relative;
     width: 100%;
   }
@@ -189,10 +190,9 @@ export const styles: ElementStyles = css`
   }
 
   .heat-cell:focus .heat-rect {
-    outline: ${strokeWidthThick} solid ${colorStrokeFocus2};
-    outline-offset: 2px;
     stroke: ${colorStrokeFocus1};
     stroke-width: ${strokeWidthThickest};
+    filter: drop-shadow(0 0 ${strokeWidthThick} ${colorStrokeFocus2});
   }
 
   /* ── Live region (screen-reader announcements) ─────────────── */

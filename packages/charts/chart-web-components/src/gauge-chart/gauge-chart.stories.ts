@@ -60,8 +60,6 @@ export const StandardAttributes: Story<FluentGaugeChart> = () => {
   const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
   chart.setAttribute('chart-title', basicTitle);
   chart.setAttribute('segments', JSON.stringify(multiSegments));
-  chart.setAttribute('chart-value', '50');
-  chart.setAttribute('max-value', '100');
   chart.setAttribute('width', `${width}`);
   chart.setAttribute('height', `${height}`);
   chart.setAttribute('style', 'margin-top:20px;');
@@ -116,6 +114,91 @@ export const StandardAttributes: Story<FluentGaugeChart> = () => {
 StandardAttributes.storyName = 'Standard Attributes';
 StandardAttributes.parameters = { docs: { story: { height: '420px' } } };
 
+export const ChartAttributes: Story<FluentGaugeChart> = () => {
+  const container = document.createElement('div');
+
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  container.appendChild(sliderControls);
+
+  const toggleControls = document.createElement('div');
+  toggleControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(toggleControls);
+
+  const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
+  chart.setAttribute('chart-title', 'Gauge chart chart attributes example');
+  chart.setAttribute('segments', JSON.stringify(multiSegments));
+  chart.setAttribute('chart-value', '50');
+  chart.setAttribute('max-value', '100');
+  chart.setAttribute('width', '252');
+  chart.setAttribute('height', '173');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const valueControl = createSliderField('Chart value', 'gauge-ca-value', 50, 0, 100, nextValue => {
+    valueControl.setValue(nextValue);
+    chart.setAttribute('chart-value', `${nextValue}`);
+  });
+  sliderControls.appendChild(valueControl.element);
+
+  const maxValueControl = createSliderField('Max value', 'gauge-ca-max-value', 100, 1, 200, nextValue => {
+    maxValueControl.setValue(nextValue);
+    chart.setAttribute('max-value', `${nextValue}`);
+  });
+  sliderControls.appendChild(maxValueControl.element);
+
+  const valueFormatControl = createDropdownField(
+    'Chart value format',
+    'gauge-ca-value-format',
+    ['default', 'fraction'],
+    'default',
+    nextValue => {
+      if (nextValue === 'default') {
+        chart.removeAttribute('chart-value-format');
+      } else {
+        chart.setAttribute('chart-value-format', nextValue);
+      }
+    },
+  );
+  sliderControls.appendChild(valueFormatControl.element);
+
+  const sublabelInput = createTextInputField('Sublabel', 'gauge-ca-sublabel', '', nextValue => {
+    if (nextValue) {
+      chart.setAttribute('sublabel', nextValue);
+    } else {
+      chart.removeAttribute('sublabel');
+    }
+  });
+  sliderControls.appendChild(sublabelInput.element);
+
+  const variantControl = createDropdownField(
+    'Variant',
+    'gauge-ca-variant',
+    ['multiple-segments', 'single-segment'],
+    'multiple-segments',
+    nextValue => {
+      chart.setAttribute('variant', nextValue);
+    },
+  );
+  toggleControls.appendChild(variantControl.element);
+
+  toggleControls.appendChild(
+    createSwitchField('Hide Min/Max', 'gauge-ca-hide-min-max', false, checked => {
+      chart.toggleAttribute('hide-min-max', checked);
+    }).element,
+  );
+
+  toggleControls.appendChild(
+    createSwitchField('Enable Gradient', 'gauge-ca-enable-gradient', false, checked => {
+      chart.toggleAttribute('enable-gradient', checked);
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+ChartAttributes.storyName = 'Chart Attributes';
+ChartAttributes.parameters = { docs: { story: { height: '520px' } } };
+
 export const SingleSegment: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
     chart-title="Storage capacity"
@@ -127,7 +210,6 @@ export const SingleSegment: Story<FluentGaugeChart> = renderComponent(html<Story
   >
   </fluent-gauge-chart>
 `);
-
 
 SingleSegment.parameters = { docs: { story: { height: '320px' } } };
 export const FractionFormat: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
@@ -141,7 +223,6 @@ export const FractionFormat: Story<FluentGaugeChart> = renderComponent(html<Stor
   </fluent-gauge-chart>
 `);
 
-
 FractionFormat.parameters = { docs: { story: { height: '320px' } } };
 export const HideMinMax: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
@@ -153,7 +234,6 @@ export const HideMinMax: Story<FluentGaugeChart> = renderComponent(html<StoryArg
   >
   </fluent-gauge-chart>
 `);
-
 
 HideMinMax.parameters = { docs: { story: { height: '320px' } } };
 export const WithSublabel: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
@@ -168,7 +248,6 @@ export const WithSublabel: Story<FluentGaugeChart> = renderComponent(html<StoryA
   </fluent-gauge-chart>
 `);
 
-
 WithSublabel.parameters = { docs: { story: { height: '320px' } } };
 export const RoundedCorners: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
@@ -181,7 +260,6 @@ export const RoundedCorners: Story<FluentGaugeChart> = renderComponent(html<Stor
   </fluent-gauge-chart>
 `);
 
-
 RoundedCorners.parameters = { docs: { story: { height: '320px' } } };
 export const HideLegends: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
@@ -193,7 +271,6 @@ export const HideLegends: Story<FluentGaugeChart> = renderComponent(html<StoryAr
   >
   </fluent-gauge-chart>
 `);
-
 
 HideLegends.parameters = { docs: { story: { height: '320px' } } };
 export const Sizing: Story<FluentGaugeChart> = () => {
@@ -339,7 +416,6 @@ export const WithSublabelAndTitle: Story<FluentGaugeChart> = renderComponent(htm
   </fluent-gauge-chart>
 `);
 
-
 WithSublabelAndTitle.parameters = { docs: { story: { height: '360px' } } };
 export const MultipleLegendSelection: Story<FluentGaugeChart> = () => {
   const container = document.createElement('div');
@@ -444,7 +520,6 @@ export const FormatTemplate: Story<FluentGaugeChart> = renderComponent(html<Stor
   </fluent-gauge-chart>
 `);
 
-
 FormatTemplate.parameters = { docs: { story: { height: '320px' } } };
 export const SegmentAriaLabels: Story<FluentGaugeChart> = renderComponent(html<StoryArgs<FluentGaugeChart>>`
   <fluent-gauge-chart
@@ -456,8 +531,36 @@ export const SegmentAriaLabels: Story<FluentGaugeChart> = renderComponent(html<S
   </fluent-gauge-chart>
 `);
 
-
 SegmentAriaLabels.parameters = { docs: { story: { height: '320px' } } };
+
+export const TooltipRendererStory: Story<FluentGaugeChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a gauge segment — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
+  chart.setAttribute('chart-title', 'Gauge chart custom tooltipRenderer');
+  chart.setAttribute('segments', JSON.stringify(multiSegments));
+  chart.setAttribute('chart-value', '50');
+  chart.setAttribute('max-value', '100');
+  chart.setAttribute('width', '252');
+  chart.setAttribute('height', '173');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '320px' } } };
+
 export const Culture: Story<FluentGaugeChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');

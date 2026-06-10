@@ -1,7 +1,8 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
+import { FluentDesignSystem } from '@fluentui/web-components';
 import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
+  createDropdownField,
   createSliderField,
   createSwitchField,
   ensureDefinition,
@@ -65,6 +66,7 @@ export const Basic: Story<LineChart> = () => {
   chart.setAttribute('height', '300');
   chart.setAttribute('x-axis-title', 'Values of each category');
   chart.setAttribute('y-axis-title', 'Different categories of mail flow');
+  chart.setAttribute('y-axis-tick-label-max-width', '28');
   return chart;
 };
 Basic.parameters = { docs: { story: { height: '420px' } } };
@@ -130,17 +132,154 @@ export const StandardAttributes: Story<LineChart> = () => {
     }).element,
   );
 
-  toggleControls.appendChild(
-    createSwitchField('Show Markers', 'line-sa-show-markers', false, checked => {
-      chart.toggleAttribute('show-markers', checked);
-    }).element,
-  );
-
   container.appendChild(chart);
   return container;
 };
 StandardAttributes.storyName = 'Standard Attributes';
 StandardAttributes.parameters = { docs: { story: { height: '540px' } } };
+
+export const TooltipRendererStory: Story<LineChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a line point — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-line-chart') as LineChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Line chart custom tooltipRenderer';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('x-axis-title', 'Values of each category');
+  chart.setAttribute('y-axis-title', 'Different categories of mail flow');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '420px' } } };
+
+export const Culture: Story<LineChart> = () => {
+  const chart = document.createElement('fluent-line-chart') as LineChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Line chart culture example (de-DE)';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('culture', 'de-DE');
+  chart.setAttribute('x-axis-title', 'Values of each category');
+  chart.setAttribute('y-axis-title', 'Different categories of mail flow');
+  return chart;
+};
+Culture.parameters = { docs: { story: { height: '420px' } } };
+
+export const TitleAlign: Story<LineChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const aligns = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof aligns)[number] = 'start';
+
+  const chart = document.createElement('fluent-line-chart') as LineChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Line chart title align example';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  controls.appendChild(
+    createDropdownField('Title align', 'line-title-align', [...aligns], currentAlign, nextAlign => {
+      currentAlign = nextAlign as (typeof aligns)[number];
+      if (currentAlign === 'start') {
+        chart.removeAttribute('title-align');
+      } else {
+        chart.setAttribute('title-align', currentAlign);
+      }
+    }).element,
+  );
+
+  return container;
+};
+TitleAlign.parameters = { docs: { story: { height: '420px' } } };
+
+export const TitleAndLegendPositions: Story<LineChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const legendPositions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentLegendPosition: (typeof legendPositions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-line-chart') as LineChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Line chart title and legend positions example';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  controls.appendChild(
+    createDropdownField(
+      'Title position',
+      'line-title-position',
+      [...titlePositions],
+      currentTitlePosition,
+      nextTitlePosition => {
+        currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+        if (currentTitlePosition === 'top') {
+          chart.removeAttribute('title-position');
+        } else {
+          chart.setAttribute('title-position', currentTitlePosition);
+        }
+      },
+    ).element,
+  );
+
+  controls.appendChild(
+    createDropdownField(
+      'Legend position',
+      'line-legend-position',
+      [...legendPositions],
+      currentLegendPosition,
+      nextLegendPosition => {
+        currentLegendPosition = nextLegendPosition as (typeof legendPositions)[number];
+        if (currentLegendPosition === 'bottom') {
+          chart.removeAttribute('legend-position');
+        } else {
+          chart.setAttribute('legend-position', currentLegendPosition);
+        }
+      },
+    ).element,
+  );
+
+  return container;
+};
+TitleAndLegendPositions.parameters = { docs: { story: { height: '420px' } } };
+
+export const RTL: Story<LineChart> = () => {
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute('dir', 'rtl');
+  const chart = document.createElement('fluent-line-chart') as LineChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Line chart RTL example';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  wrapper.appendChild(chart);
+  return wrapper;
+};
+RTL.parameters = { docs: { story: { height: '420px' } } };
 
 export const ShowMarkers: Story<LineChart> = () => {
   const chart = document.createElement('fluent-line-chart') as LineChart;
@@ -151,4 +290,5 @@ export const ShowMarkers: Story<LineChart> = () => {
   chart.setAttribute('show-markers', '');
   return chart;
 };
+ShowMarkers.storyName = 'Chart Attributes';
 ShowMarkers.parameters = { docs: { story: { height: '420px' } } };

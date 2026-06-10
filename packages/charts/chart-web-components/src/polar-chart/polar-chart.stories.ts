@@ -2,6 +2,7 @@ import { FluentDesignSystem } from '@fluentui/web-components';
 import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
+  createDropdownField,
   createSliderField,
   createSwitchField,
   ensureDefinition,
@@ -117,17 +118,149 @@ export const StandardAttributes: Story<PolarChart> = () => {
     }).element,
   );
 
-  toggleControls.appendChild(
-    createSwitchField('Show Markers', 'polar-sa-show-markers', false, checked => {
-      chart.toggleAttribute('show-markers', checked);
-    }).element,
-  );
-
   container.appendChild(chart);
   return container;
 };
 StandardAttributes.storyName = 'Standard Attributes';
 StandardAttributes.parameters = { docs: { story: { height: '420px' } } };
+
+export const TooltipRendererStory: Story<PolarChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a radar point — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Polar chart custom tooltipRenderer';
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '570px' } } };
+
+export const Culture: Story<PolarChart> = () => {
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Academic Performance (de-DE)';
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  chart.setAttribute('culture', 'de-DE');
+  return chart;
+};
+Culture.parameters = { docs: { story: { height: '570px' } } };
+
+export const TitleAlign: Story<PolarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const aligns = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof aligns)[number] = 'start';
+
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Polar chart title align example';
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  controls.appendChild(
+    createDropdownField('Title align', 'polar-title-align', [...aligns], currentAlign, nextAlign => {
+      currentAlign = nextAlign as (typeof aligns)[number];
+      if (currentAlign === 'start') {
+        chart.removeAttribute('title-align');
+      } else {
+        chart.setAttribute('title-align', currentAlign);
+      }
+    }).element,
+  );
+
+  return container;
+};
+TitleAlign.parameters = { docs: { story: { height: '570px' } } };
+
+export const TitleAndLegendPositions: Story<PolarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const legendPositions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentLegendPosition: (typeof legendPositions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Polar chart title and legend positions example';
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  controls.appendChild(
+    createDropdownField(
+      'Title position',
+      'polar-title-position',
+      [...titlePositions],
+      currentTitlePosition,
+      nextTitlePosition => {
+        currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+        if (currentTitlePosition === 'top') {
+          chart.removeAttribute('title-position');
+        } else {
+          chart.setAttribute('title-position', currentTitlePosition);
+        }
+      },
+    ).element,
+  );
+  controls.appendChild(
+    createDropdownField(
+      'Legend position',
+      'polar-legend-position',
+      [...legendPositions],
+      currentLegendPosition,
+      nextLegendPosition => {
+        currentLegendPosition = nextLegendPosition as (typeof legendPositions)[number];
+        if (currentLegendPosition === 'bottom') {
+          chart.removeAttribute('legend-position');
+        } else {
+          chart.setAttribute('legend-position', currentLegendPosition);
+        }
+      },
+    ).element,
+  );
+
+  return container;
+};
+TitleAndLegendPositions.parameters = { docs: { story: { height: '570px' } } };
+
+export const RTL: Story<PolarChart> = () => {
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute('dir', 'rtl');
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Polar chart RTL example';
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  wrapper.appendChild(chart);
+  return wrapper;
+};
+RTL.parameters = { docs: { story: { height: '570px' } } };
 
 export const ShowMarkers: Story<PolarChart> = () => {
   const chart = document.createElement('fluent-polar-chart') as PolarChart;
@@ -138,4 +271,5 @@ export const ShowMarkers: Story<PolarChart> = () => {
   chart.setAttribute('show-markers', '');
   return chart;
 };
+ShowMarkers.storyName = 'Chart Attributes';
 ShowMarkers.parameters = { docs: { story: { height: '570px' } } };
