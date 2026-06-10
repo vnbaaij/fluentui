@@ -74,6 +74,15 @@ test.describe('VerticalStackedBarChart', () => {
       node.setAttribute('bar-gap-max', '0');
     });
 
+    await page.waitForFunction(previousWidth => {
+      const bar = document.querySelector('fluent-vertical-stacked-bar-chart')?.shadowRoot?.querySelector('.bar');
+      if (!(bar instanceof SVGRectElement)) {
+        return false;
+      }
+      const width = Number(bar.getAttribute('width') ?? 0);
+      return width > previousWidth;
+    }, defaultBarWidth);
+
     const widenedBarWidth = await getFirstStackBarWidth();
     expect(widenedBarWidth).toBeGreaterThan(defaultBarWidth);
   });

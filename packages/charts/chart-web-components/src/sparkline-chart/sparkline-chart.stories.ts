@@ -3,6 +3,7 @@ import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
+  createTextInputField,
   ensureDefinition,
   type Meta,
   type Story,
@@ -44,7 +45,6 @@ export const StandardAttributes: Story<SparklineChart> = () => {
 
   const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
   chart.data = sampleData;
-  chart.variant = 'line';
   chart.setAttribute('width', `${width}`);
   chart.setAttribute('height', `${height}`);
   chart.setAttribute('style', 'margin-top:20px;');
@@ -68,6 +68,68 @@ export const StandardAttributes: Story<SparklineChart> = () => {
 };
 StandardAttributes.storyName = 'Standard Attributes';
 StandardAttributes.parameters = { docs: { story: { height: '260px' } } };
+
+export const ChartAttributes: Story<SparklineChart> = () => {
+  const container = document.createElement('div');
+
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
+  chart.data = sampleData;
+  chart.setAttribute('width', '220');
+  chart.setAttribute('height', '60');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const variantControl = createDropdownField('Variant', 'sparkline-ca-variant', ['line', 'area'], 'line', nextValue => {
+    chart.variant = nextValue as SparklineChart['variant'];
+  });
+  controls.appendChild(variantControl.element);
+
+  const colorInput = createTextInputField('Color', 'sparkline-ca-color', '', nextValue => {
+    if (nextValue) {
+      chart.color = nextValue;
+      chart.setAttribute('color', nextValue);
+    } else {
+      chart.color = undefined;
+      chart.removeAttribute('color');
+    }
+  });
+  controls.appendChild(colorInput.element);
+
+  container.appendChild(chart);
+  return container;
+};
+ChartAttributes.storyName = 'Chart Attributes';
+ChartAttributes.parameters = { docs: { story: { height: '260px' } } };
+
+export const TooltipRendererStory: Story<SparklineChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over the sparkline — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
+  chart.data = sampleData;
+  chart.chartTitle = 'Sparkline chart custom tooltipRenderer';
+  chart.variant = 'line';
+  chart.setAttribute('width', '220');
+  chart.setAttribute('height', '60');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '160px' } } };
 
 export const Culture: Story<SparklineChart> = () => {
   const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;

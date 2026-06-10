@@ -8,7 +8,10 @@ import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
+  applyAxisTickConfig,
   type AxisScaleLike,
+  computePreparedNumericYAxis,
+  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   renderSecondaryYAxisShared,
@@ -336,10 +339,16 @@ export class AreaChart extends CartesianChartBase {
       return primaryStackedLayers[primaryIdx++];
     });
 
-    // Compute the actual range of all stacked y values (lower and upper bounds) to support
-    // negative data correctly — matches React's _getMinMaxOfYAxis() behaviour.
-    // Only primary series contribute to the left axis domain.
-    // Always include 0 so positive-only charts start at zero and all-negative charts end at zero.
+    // Compute primary-axis raw and stacked ranges.
+    // React AreaChart uses raw min/max for the base range and a stacked `maxOfYVal`
+    // override in tonexty mode for the primary axis.
+    const primaryRawValues = normalizedSeries
+      .filter((_, i) => !isSecondaryByIndex[i])
+      .flatMap(series => series.data.map(point => point.y));
+    const rawPrimaryMin = primaryRawValues.length > 0 ? Math.min(...primaryRawValues) : 0;
+    const rawPrimaryMax = primaryRawValues.length > 0 ? Math.max(...primaryRawValues) : 1;
+
+    // Compute the stacked upper/lower bounds for primary layers.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const primaryLayersForDomain = primaryStackedLayers.length > 0 ? primaryStackedLayers : secondaryStackedLayers;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -349,11 +358,21 @@ export class AreaChart extends CartesianChartBase {
     );
     const stackedDataMin = allPrimaryValues.length > 0 ? Math.min(...allPrimaryValues) : 0;
     const stackedDataMax = allPrimaryValues.length > 0 ? Math.max(...allPrimaryValues) : 1;
-    let yMin = toOptionalNumber(this.yMinValue) ?? Math.min(0, stackedDataMin);
-    let yMax = toOptionalNumber(this.yMaxValue) ?? Math.max(0, stackedDataMax);
+    const maxOfYVal = hasSecondaryY ? rawPrimaryMax : stackedDataMax;
+    const yTickCount = toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT);
+
+    let yMin = toOptionalNumber(this.yMinValue) ?? Math.min(0, rawPrimaryMin, stackedDataMin);
+    let yMax = toOptionalNumber(this.yMaxValue) ?? Math.max(0, maxOfYVal);
     if (yMin === yMax) {
       yMax += 1;
     }
+
+    const preparedPrimaryYAxis = computePreparedNumericYAxis({
+      minValue: yMin,
+      maxValue: yMax,
+      tickCount: yTickCount,
+      roundedTicks: this.roundedTicks,
+    });
 
     let xScale: ContinuousScale;
     let xFormatter: (value: AxisDomain) => string;
@@ -395,13 +414,13 @@ export class AreaChart extends CartesianChartBase {
       xFormatter = value => formatNumberValue(Number(value), this.xAxisTickFormat, this.culture);
     }
 
-    const yScale = scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
-    if (this.roundedTicks) {
-      yScale.nice();
-    }
+    const yScale = scaleLinear()
+      .domain([preparedPrimaryYAxis.domainMin, preparedPrimaryYAxis.domainMax])
+      .range([innerHeight, 0]);
 
     // Secondary Y axis scale: derived from secondary series raw values only.
     let yScaleSecondary = yScale; // fallback: same as primary when no secondary series
+    let preparedSecondaryYAxis = preparedPrimaryYAxis;
     if (hasSecondaryY) {
       const secValues = seriesData
         .flatMap((s, i) => (isSecondaryByIndex[i] ? s.data.map(p => p.y) : []))
@@ -411,10 +430,15 @@ export class AreaChart extends CartesianChartBase {
       if (secMin === secMax) {
         secMax += 1;
       }
-      yScaleSecondary = scaleLinear().domain([secMin, secMax]).range([innerHeight, 0]);
-      if (this.roundedTicks) {
-        yScaleSecondary.nice();
-      }
+      preparedSecondaryYAxis = computePreparedNumericYAxis({
+        minValue: secMin,
+        maxValue: secMax,
+        tickCount: yTickCount,
+        roundedTicks: this.roundedTicks,
+      });
+      yScaleSecondary = scaleLinear()
+        .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
+        .range([innerHeight, 0]);
     }
 
     normalizedSeries.forEach((series, si) => {
@@ -457,10 +481,12 @@ export class AreaChart extends CartesianChartBase {
       }
     }
 
-    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
-    if (this.yAxisTickValues?.length) {
-      yAxis.tickValues(this.yAxisTickValues);
-    }
+    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
+    applyAxisTickConfig(
+      yAxis,
+      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickValues ?? preparedPrimaryYAxis.tickValues,
+    );
 
     // Pre-compute a lookup map from x-value key → all series entries at that x.
     // This mirrors React's calloutData() utility: group all series by their x value
@@ -567,10 +593,12 @@ export class AreaChart extends CartesianChartBase {
     // Hover elements: vertical intercept line + one dot per series (matching React's behaviour).
     const hoverLine = createSvgElement<SVGLineElement>('line');
     hoverLine.classList.add('hover-line');
-    hoverLine.setAttribute('y1', '0');
-    hoverLine.setAttribute('y2', String(innerHeight));
+    const hoverLineY1 = defaultMargins.top / 2;
+    const hoverLineY2 = height - defaultMargins.bottom / 2;
+    hoverLine.setAttribute('y1', String(hoverLineY1));
+    hoverLine.setAttribute('y2', String(hoverLineY2));
     hoverLine.style.display = 'none';
-    plotGroup.appendChild(hoverLine);
+    svg.appendChild(hoverLine);
 
     const hoverDots = normalizedSeries.map(series => {
       const dot = createSvgElement<SVGCircleElement>('circle');
@@ -642,8 +670,9 @@ export class AreaChart extends CartesianChartBase {
       const cx = xScale(nearestDataPoint.xVal as never) ?? 0;
 
       // Position the vertical intercept line.
-      hoverLine.setAttribute('x1', String(cx));
-      hoverLine.setAttribute('x2', String(cx));
+      const svgX = leftMargin + cx;
+      hoverLine.setAttribute('x1', String(svgX));
+      hoverLine.setAttribute('x2', String(svgX));
       hoverLine.style.display = '';
 
       // Position hover dots at the top of each stacked layer; collect tooltip entries.
@@ -749,7 +778,12 @@ export class AreaChart extends CartesianChartBase {
     }
 
     if (hasSecondaryY) {
-      const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
+      const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6));
+      applyAxisTickConfig(
+        yAxisSecondary,
+        this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+        preparedSecondaryYAxis.tickValues,
+      );
       renderSecondaryYAxisShared({
         svg,
         scale: yScaleSecondary as AxisScaleLike<number>,

@@ -131,6 +131,34 @@ export const StandardAttributes: Story<ScatterChart> = () => {
 StandardAttributes.storyName = 'Standard Attributes';
 StandardAttributes.parameters = { docs: { story: { height: '560px' } } };
 
+export const TooltipRendererStory: Story<ScatterChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a bubble — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-scatter-chart') as ScatterChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Scatter chart custom tooltipRenderer';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('x-axis-title', 'Days since project start');
+  chart.setAttribute('y-axis-title', 'Revenue in dollars');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '470px' } } };
+
 export const Culture: Story<ScatterChart> = () => {
   const chart = document.createElement('fluent-scatter-chart') as ScatterChart;
   chart.data = basicData;

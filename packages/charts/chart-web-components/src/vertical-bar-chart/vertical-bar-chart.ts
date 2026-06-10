@@ -8,6 +8,8 @@ import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
 import {
   applyAxisTickConfig,
+  computePreparedNumericYAxis,
+  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   sortCategoryGroups,
@@ -142,12 +144,13 @@ export class VerticalBarChart extends CartesianChartBase {
     ).map(group => group.key);
     const xScale = scaleBand<string>().domain(xDomain).range([0, innerWidth]).padding(0.2);
     const maxY = max(points, point => point.y) ?? 0;
-    const yScale = scaleLinear()
-      .domain([toOptionalNumber(this.yMinValue) ?? 0, toOptionalNumber(this.yMaxValue) ?? Math.max(maxY, 1)])
-      .range([innerHeight, 0]);
-    if (this.roundedTicks) {
-      yScale.nice();
-    }
+    const preparedYAxis = computePreparedNumericYAxis({
+      minValue: toOptionalNumber(this.yMinValue) ?? 0,
+      maxValue: toOptionalNumber(this.yMaxValue) ?? Math.max(maxY, 1),
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      roundedTicks: this.roundedTicks,
+    });
+    const yScale = scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
 
     const svg = createSvgElement<SVGSVGElement>('svg');
     svg.classList.add('chart-svg');
@@ -166,7 +169,11 @@ export class VerticalBarChart extends CartesianChartBase {
       this.tickValues?.map(value => String(value)),
     );
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
-    applyAxisTickConfig(yAxis, this.yAxisTickCount ?? 6, this.yAxisTickValues);
+    applyAxisTickConfig(
+      yAxis,
+      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickValues ?? preparedYAxis.tickValues,
+    );
 
     const singleColor = this.useSingleColor
       ? points[0].color

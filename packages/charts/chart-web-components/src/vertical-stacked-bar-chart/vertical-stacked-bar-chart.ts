@@ -8,6 +8,8 @@ import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
 import {
   applyAxisTickConfig,
+  computePreparedNumericYAxis,
+  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   sortCategoryGroups,
@@ -126,7 +128,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
 
     const requestedChartWidth = toOptionalNumber(this.width);
     const measuredWidth = this.chartContainer.getBoundingClientRect().width;
-    const width = requestedChartWidth ?? measuredWidth || toNumber(this.width, 600);
+    const width = requestedChartWidth ?? (measuredWidth || toNumber(this.width, 600));
     const height = toNumber(this.height, 350);
     const margins = getDirectionalMargins(defaultMargins, this._isRTL);
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
@@ -147,12 +149,13 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     const xScale = scaleBand<string>().domain(domain).range([0, innerWidth]).padding(0.2);
     const maxTotal =
       max(stacks, stack => stack.chartData.reduce((sum, point) => sum + Math.max(point.data, 0), 0)) ?? 0;
-    const yScale = scaleLinear()
-      .domain([toOptionalNumber(this.yMinValue) ?? 0, toOptionalNumber(this.yMaxValue) ?? Math.max(maxTotal, 1)])
-      .range([innerHeight, 0]);
-    if (this.roundedTicks) {
-      yScale.nice();
-    }
+    const preparedYAxis = computePreparedNumericYAxis({
+      minValue: toOptionalNumber(this.yMinValue) ?? 0,
+      maxValue: toOptionalNumber(this.yMaxValue) ?? Math.max(maxTotal, 1),
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      roundedTicks: this.roundedTicks,
+    });
+    const yScale = scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
 
     const legendNames = Array.from(new Set(stacks.flatMap(stack => stack.chartData.map(point => point.legend))));
     const colorMap = new Map<string, string>();
@@ -178,7 +181,11 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       this.tickValues?.map(value => String(value)),
     );
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
-    applyAxisTickConfig(yAxis, this.yAxisTickCount ?? 6, this.yAxisTickValues);
+    applyAxisTickConfig(
+      yAxis,
+      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickValues ?? preparedYAxis.tickValues,
+    );
 
     const gapMax = toOptionalNumber(this.barGapMax);
     stacks.forEach(stack => {

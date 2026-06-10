@@ -89,16 +89,6 @@ export const StandardAttributes: Story<VerticalBarChart> = () => {
   });
   sliderControls.appendChild(heightControl.element);
 
-  const barWidthControl = createSliderField('Bar Width', 'vbar-sa-bar-width', 0, 0, 60, nextValue => {
-    barWidthControl.setValue(nextValue);
-    if (nextValue === 0) {
-      chart.removeAttribute('bar-width');
-    } else {
-      chart.setAttribute('bar-width', `${nextValue}`);
-    }
-  });
-  sliderControls.appendChild(barWidthControl.element);
-
   toggleControls.appendChild(
     createSwitchField('Hide Legends', 'vbar-sa-hide-legends', false, checked => {
       chart.toggleAttribute('hide-legends', checked);
@@ -129,8 +119,42 @@ export const StandardAttributes: Story<VerticalBarChart> = () => {
     }).element,
   );
 
+  container.appendChild(chart);
+  return container;
+};
+StandardAttributes.storyName = 'Standard Attributes';
+StandardAttributes.parameters = { docs: { story: { height: '560px' } } };
+
+export const ChartAttributes: Story<VerticalBarChart> = () => {
+  const container = document.createElement('div');
+
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  container.appendChild(sliderControls);
+
+  const toggleControls = document.createElement('div');
+  toggleControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(toggleControls);
+
+  const chart = document.createElement('fluent-vertical-bar-chart') as VerticalBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Vertical bar chart chart attributes example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const barWidthControl = createSliderField('Bar Width', 'vbar-ca-bar-width', 0, 0, 60, nextValue => {
+    barWidthControl.setValue(nextValue);
+    if (nextValue === 0) {
+      chart.removeAttribute('bar-width');
+    } else {
+      chart.setAttribute('bar-width', `${nextValue}`);
+    }
+  });
+  sliderControls.appendChild(barWidthControl.element);
+
   toggleControls.appendChild(
-    createSwitchField('Use Single Color', 'vbar-sa-single-color', false, checked => {
+    createSwitchField('Use Single Color', 'vbar-ca-single-color', false, checked => {
       chart.toggleAttribute('use-single-color', checked);
     }).element,
   );
@@ -138,8 +162,36 @@ export const StandardAttributes: Story<VerticalBarChart> = () => {
   container.appendChild(chart);
   return container;
 };
-StandardAttributes.storyName = 'Standard Attributes';
-StandardAttributes.parameters = { docs: { story: { height: '680px' } } };
+ChartAttributes.storyName = 'Chart Attributes';
+ChartAttributes.parameters = { docs: { story: { height: '560px' } } };
+
+export const TooltipRendererStory: Story<VerticalBarChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a bar — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-vertical-bar-chart') as VerticalBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Vertical bar chart custom tooltipRenderer';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('x-axis-title', 'Days since project start');
+  chart.setAttribute('y-axis-title', 'Revenue in dollars');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '470px' } } };
 
 export const Culture: Story<VerticalBarChart> = () => {
   const chart = document.createElement('fluent-vertical-bar-chart') as VerticalBarChart;

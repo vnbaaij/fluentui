@@ -7,7 +7,10 @@ import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
 import {
+  applyAxisTickConfig,
   type AxisScaleLike,
+  computePreparedNumericYAxis,
+  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   toAxisNumber as toNumber,
@@ -141,10 +144,17 @@ export class ScatterChart extends CartesianChartBase {
     }
 
     const xScale: ScaleLinear<number, number> = scaleLinear().domain([xMin, xMax]).range([0, innerWidth]);
-    const yScale: ScaleLinear<number, number> = scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
+    const preparedYAxis = computePreparedNumericYAxis({
+      minValue: yMin,
+      maxValue: yMax,
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      roundedTicks: this.roundedTicks,
+    });
+    const yScale: ScaleLinear<number, number> = scaleLinear()
+      .domain([preparedYAxis.domainMin, preparedYAxis.domainMax])
+      .range([innerHeight, 0]);
     if (this.roundedTicks) {
       xScale.nice();
-      yScale.nice();
     }
 
     const svg = createSvgElement<SVGSVGElement>('svg');
@@ -162,10 +172,12 @@ export class ScatterChart extends CartesianChartBase {
       xAxis.tickValues(this.tickValues.map(value => Number(value)));
     }
 
-    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
-    if (this.yAxisTickValues?.length) {
-      yAxis.tickValues(this.yAxisTickValues);
-    }
+    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
+    applyAxisTickConfig(
+      yAxis,
+      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickValues ?? preparedYAxis.tickValues,
+    );
 
     normalizedSeries.forEach(series => {
       series.data.forEach(point => {

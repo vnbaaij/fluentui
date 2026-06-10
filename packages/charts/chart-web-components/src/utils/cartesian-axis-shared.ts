@@ -1,6 +1,9 @@
 import type { Axis, AxisDomain } from 'd3-axis';
+import { nice as d3Nice, ticks as d3Ticks } from 'd3-array';
 import type { AxisCategoryOrder } from './chart-options.js';
 import { SVG_NAMESPACE_URI, wrapText } from './chart-helpers.js';
+
+export const DEFAULT_REACT_NUMERIC_Y_TICK_COUNT = 4;
 
 export type AxisScaleLike<Domain extends AxisDomain> = {
   domain(): Domain[];
@@ -57,6 +60,107 @@ export const toOptionalAxisNumber = (value: number | string | undefined): number
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const handleFloatingPointPrecisionError = (value: number): number => {
+  const rounded = Math.round(value);
+  return Math.abs(value - rounded) < 1e-6 ? rounded : value;
+};
+
+const isPowerOf10 = (value: number): boolean => {
+  const absValue = Math.abs(value);
+  if (absValue === 0) {
+    return false;
+  }
+  const exponent = Math.log10(absValue);
+  return Math.abs(exponent - Math.round(exponent)) < 1e-9;
+};
+
+const calculateRoundedTicks = (minValue: number, maxValue: number, tickCount: number): number[] => {
+  const finalMin = minValue >= 0 && minValue === maxValue ? 0 : minValue;
+  const finalMax = minValue < 0 && minValue === maxValue ? 0 : maxValue;
+  const niced = d3Nice(finalMin, finalMax, tickCount);
+  const ticks = d3Ticks(niced[0], niced[niced.length - 1], tickCount).map(handleFloatingPointPrecisionError);
+  if (ticks.length > 0 && ticks[ticks.length - 1] > finalMax && isPowerOf10(finalMax)) {
+    ticks.pop();
+  }
+  return ticks;
+};
+
+const prepareNumericDatapoints = (
+  maxValue: number,
+  minValue: number,
+  tickCount: number,
+  isIntegralDataset: boolean,
+): number[] => {
+  const span = maxValue - minValue;
+  let interval = isIntegralDataset
+    ? Math.ceil(span / tickCount)
+    : span / tickCount >= 1
+    ? Math.ceil(span / tickCount)
+    : span / tickCount;
+
+  if (!Number.isFinite(interval) || interval <= 0) {
+    interval = 1;
+  }
+
+  const points: number[] = [minValue < 0 && maxValue >= 0 ? 0 : minValue];
+  if (points[0] === minValue) {
+    points.push(minValue + interval);
+  }
+
+  if (minValue < 0 && maxValue >= 0) {
+    while (points[points.length - 1] > minValue) {
+      points.push(points[points.length - 1] - interval);
+    }
+    points.reverse();
+  }
+
+  while (points[points.length - 1] < maxValue) {
+    points.push(points[points.length - 1] + interval);
+  }
+
+  return points.map(handleFloatingPointPrecisionError);
+};
+
+export type PreparedNumericYAxisOptions = {
+  minValue: number;
+  maxValue: number;
+  tickCount?: number;
+  isIntegralDataset?: boolean;
+  roundedTicks?: boolean;
+};
+
+export type PreparedNumericYAxis = {
+  domainMin: number;
+  domainMax: number;
+  tickValues: number[];
+};
+
+export const computePreparedNumericYAxis = ({
+  minValue,
+  maxValue,
+  tickCount = DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  isIntegralDataset = false,
+  roundedTicks = false,
+}: PreparedNumericYAxisOptions): PreparedNumericYAxis => {
+  const safeTickCount =
+    Number.isFinite(tickCount) && tickCount > 0 ? Math.floor(tickCount) : DEFAULT_REACT_NUMERIC_Y_TICK_COUNT;
+  const low = Math.min(minValue, maxValue);
+  let high = Math.max(minValue, maxValue);
+  if (low === high) {
+    high = low < 0 ? 0 : low + 1;
+  }
+
+  const tickValues = roundedTicks
+    ? calculateRoundedTicks(low, high, safeTickCount)
+    : prepareNumericDatapoints(high, low, safeTickCount, isIntegralDataset);
+
+  return {
+    domainMin: tickValues[0] ?? low,
+    domainMax: tickValues[tickValues.length - 1] ?? high,
+    tickValues,
+  };
 };
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>

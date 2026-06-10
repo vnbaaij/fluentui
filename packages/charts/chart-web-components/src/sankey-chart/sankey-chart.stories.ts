@@ -130,20 +130,39 @@ export const StandardAttributes: Story<SankeyChart> = () => {
     }).element,
   );
 
-  const pathColorInput = createTextInputField('Path Color', 'sankey-sa-path-color', '', value => {
+  container.appendChild(chart);
+  return container;
+};
+StandardAttributes.storyName = 'Standard Attributes';
+StandardAttributes.parameters = { docs: { story: { height: '460px' } } };
+
+export const ChartAttributes: Story<SankeyChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-sankey-chart') as SankeyChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Sankey chart chart attributes example';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const pathColorInput = createTextInputField('Path Color', 'sankey-ca-path-color', '', value => {
     if (value) {
       chart.setAttribute('path-color', value);
     } else {
       chart.removeAttribute('path-color');
     }
   });
-  toggleControls.appendChild(pathColorInput.element);
+  controls.appendChild(pathColorInput.element);
 
   container.appendChild(chart);
   return container;
 };
-StandardAttributes.storyName = 'Standard Attributes';
-StandardAttributes.parameters = { docs: { story: { height: '460px' } } };
+ChartAttributes.storyName = 'Chart Attributes';
+ChartAttributes.parameters = { docs: { story: { height: '470px' } } };
 
 export const Culture: Story<SankeyChart> = () => {
   const chart = document.createElement('fluent-sankey-chart') as SankeyChart;

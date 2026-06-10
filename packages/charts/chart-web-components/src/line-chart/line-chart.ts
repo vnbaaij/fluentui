@@ -9,7 +9,10 @@ import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
 import {
+  applyAxisTickConfig,
   type AxisScaleLike,
+  computePreparedNumericYAxis,
+  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   toAxisNumber as toNumber,
@@ -227,10 +230,14 @@ export class LineChart extends CartesianChartBase {
       xFormatter = value => formatNumberValue(Number(value), this.xAxisTickFormat, this.culture);
     }
 
-    const yScale = scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
-    if (this.roundedTicks) {
-      yScale.nice();
-    }
+    const preparedYAxis = computePreparedNumericYAxis({
+      minValue: yMin,
+      maxValue: yMax,
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      roundedTicks: this.roundedTicks,
+    });
+
+    const yScale = scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
 
     normalizedSeries.forEach(series => {
       series.data.forEach(point => {
@@ -261,10 +268,12 @@ export class LineChart extends CartesianChartBase {
       }
     }
 
-    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
-    if (this.yAxisTickValues?.length) {
-      yAxis.tickValues(this.yAxisTickValues);
-    }
+    const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
+    applyAxisTickConfig(
+      yAxis,
+      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickValues ?? preparedYAxis.tickValues,
+    );
 
     const showTooltipForPoint = (legend: string, color: string, point: NormalizedPoint) => {
       if (!this._shouldShowTooltip(legend) || this.hideTooltip) {

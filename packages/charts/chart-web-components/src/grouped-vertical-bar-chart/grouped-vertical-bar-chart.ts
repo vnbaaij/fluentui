@@ -8,6 +8,8 @@ import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
 import {
   applyAxisTickConfig,
+  computePreparedNumericYAxis,
+  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   sortCategoryGroups,
@@ -140,12 +142,13 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     const xScale = scaleBand<string>().domain(groupDomain).range([0, innerWidth]).padding(0.1);
     const innerScale = scaleBand<string>().domain(keyDomain).range([0, xScale.bandwidth()]).padding(0.05);
     const maxY = max(groups.flatMap(group => group.series.map(point => point.data))) ?? 0;
-    const yScale = scaleLinear()
-      .domain([toOptionalNumber(this.yMinValue) ?? 0, toOptionalNumber(this.yMaxValue) ?? Math.max(maxY, 1)])
-      .range([innerHeight, 0]);
-    if (this.roundedTicks) {
-      yScale.nice();
-    }
+    const preparedYAxis = computePreparedNumericYAxis({
+      minValue: toOptionalNumber(this.yMinValue) ?? 0,
+      maxValue: toOptionalNumber(this.yMaxValue) ?? Math.max(maxY, 1),
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      roundedTicks: this.roundedTicks,
+    });
+    const yScale = scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
 
     const colorMap = new Map<string, string>();
     keyDomain.forEach((key, index) => {
@@ -170,7 +173,11 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
       this.tickValues?.map(value => String(value)),
     );
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
-    applyAxisTickConfig(yAxis, this.yAxisTickCount ?? 6, this.yAxisTickValues);
+    applyAxisTickConfig(
+      yAxis,
+      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickValues ?? preparedYAxis.tickValues,
+    );
 
     groups.forEach(group => {
       const groupX = xScale(group.xAxisPoint) ?? 0;

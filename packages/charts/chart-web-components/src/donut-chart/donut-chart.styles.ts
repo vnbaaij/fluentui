@@ -58,7 +58,6 @@ export const styles = css`
 
   .chart-container {
     grid-area: chart;
-    min-height: 0;
   }
 
   fluent-chart-legend {

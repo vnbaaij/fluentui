@@ -118,17 +118,37 @@ export const StandardAttributes: Story<PolarChart> = () => {
     }).element,
   );
 
-  toggleControls.appendChild(
-    createSwitchField('Show Markers', 'polar-sa-show-markers', false, checked => {
-      chart.toggleAttribute('show-markers', checked);
-    }).element,
-  );
-
   container.appendChild(chart);
   return container;
 };
 StandardAttributes.storyName = 'Standard Attributes';
 StandardAttributes.parameters = { docs: { story: { height: '420px' } } };
+
+export const TooltipRendererStory: Story<PolarChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a radar point — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Polar chart custom tooltipRenderer';
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '570px' } } };
 
 export const Culture: Story<PolarChart> = () => {
   const chart = document.createElement('fluent-polar-chart') as PolarChart;
@@ -251,4 +271,5 @@ export const ShowMarkers: Story<PolarChart> = () => {
   chart.setAttribute('show-markers', '');
   return chart;
 };
+ShowMarkers.storyName = 'Chart Attributes';
 ShowMarkers.parameters = { docs: { story: { height: '570px' } } };

@@ -75,6 +75,40 @@ export const StandardAttributes: Story<TreeChart> = () => {
 StandardAttributes.storyName = 'Standard Attributes';
 StandardAttributes.parameters = { docs: { story: { height: '520px' } } };
 
+export const TooltipRendererStory: Story<TreeChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a node — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-tree-chart') as TreeChart;
+  chart.data = {
+    name: 'CEO',
+    fill: '#637cef',
+    children: [
+      { name: 'CTO', fill: '#0078d4', children: [{ name: 'Dev Lead', fill: '#005a9e' }] },
+      { name: 'CFO', fill: '#e3008c' },
+      { name: 'COO', fill: '#107c10' },
+    ],
+  };
+  chart.chartTitle = 'Tree chart custom tooltipRenderer';
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '300');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '420px' } } };
+
 export const Culture: Story<TreeChart> = () => {
   const chart = document.createElement('fluent-tree-chart') as TreeChart;
   chart.data = {
