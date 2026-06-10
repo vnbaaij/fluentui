@@ -1,8 +1,15 @@
 import { attr } from '@microsoft/fast-element';
+import { type Axis, axisBottom, axisLeft } from 'd3-axis';
 import { type ScaleBand, scaleBand, scaleLinear } from 'd3-scale';
 import { format as d3Format } from 'd3-format';
 import { timeFormat as d3TimeFormat } from 'd3-time-format';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
+import {
+  type AxisScaleLike,
+  renderBandYAxisShared,
+  renderBottomAxisShared,
+  toOptionalAxisNumber as toOptionalNumber,
+} from '../utils/cartesian-axis-shared.js';
 import { getColorFromToken, jsonConverter, SVG_NAMESPACE_URI } from '../utils/chart-helpers.js';
 import type { AxisCategoryOrder, Legend, TooltipProps } from '../utils/chart-options.js';
 import type { HeatMapChartData, HeatMapChartDataPoint, HeatMapSortOrder } from './heat-map-chart.options.js';
@@ -148,6 +155,10 @@ export class HeatMapChart extends CartesianChartBase {
   @attr({ attribute: 'y-axis-number-format-string' })
   public yAxisNumberFormatString?: string;
 
+  /** Max width in px for y-axis tick labels before truncating with ellipsis. */
+  @attr({ attribute: 'y-axis-tick-label-max-width' })
+  public yAxisTickLabelMaxWidth?: number | string;
+
   /** Sort order for string axis labels. Default: `'alphabetical'`. */
   @attr({ attribute: 'sort-order' })
   public sortOrder: HeatMapSortOrder = 'alphabetical';
@@ -223,6 +234,7 @@ export class HeatMapChart extends CartesianChartBase {
       'yAxisDateFormatString',
       'xAxisNumberFormatString',
       'yAxisNumberFormatString',
+      'yAxisTickLabelMaxWidth',
       'sortOrder',
       'xAxisCategoryOrder',
       'yAxisCategoryOrder',
@@ -303,6 +315,10 @@ export class HeatMapChart extends CartesianChartBase {
   }
 
   protected yAxisNumberFormatStringChanged(): void {
+    this._requestRender();
+  }
+
+  protected yAxisTickLabelMaxWidthChanged(): void {
     this._requestRender();
   }
 
@@ -606,11 +622,15 @@ export class HeatMapChart extends CartesianChartBase {
       const yKey = axisValueToKey(p.y, yType);
       const xLabel =
         xType === 'string'
-          ? this.xAxisStringFormatter?.(xKey) ?? this.xAxisStringLabels?.[xKey] ?? formatAxisKey(xKey, xType, xDateFormat, xNumFormat)
+          ? this.xAxisStringFormatter?.(xKey) ??
+            this.xAxisStringLabels?.[xKey] ??
+            formatAxisKey(xKey, xType, xDateFormat, xNumFormat)
           : formatAxisKey(xKey, xType, xDateFormat, xNumFormat);
       const yLabel =
         yType === 'string'
-          ? this.yAxisStringFormatter?.(yKey) ?? this.yAxisStringLabels?.[yKey] ?? formatAxisKey(yKey, yType, yDateFormat, yNumFormat)
+          ? this.yAxisStringFormatter?.(yKey) ??
+            this.yAxisStringLabels?.[yKey] ??
+            formatAxisKey(yKey, yType, yDateFormat, yNumFormat)
           : formatAxisKey(yKey, yType, yDateFormat, yNumFormat);
       map.set(`${xLabel}|${yLabel}`, p);
     });
@@ -696,8 +716,36 @@ export class HeatMapChart extends CartesianChartBase {
 
     // ── Axes ──────────────────────────────────────────────────────────────────
 
-    this._renderXAxis(g, xScale, innerHeight, xLabels);
-    this._renderYAxis(g, yScale, yLabels, isRTL, innerWidth);
+    const xAxis = axisBottom(xScale).tickPadding(8);
+    renderBottomAxisShared({
+      svg,
+      scale: xScale as AxisScaleLike<string>,
+      axis: xAxis as Axis<string>,
+      formatter: value => value,
+      axisLeft: marginLeft,
+      axisTop: MARGIN_TOP,
+      innerWidth,
+      innerHeight,
+      tickPadding: 8,
+      showTickLines: false,
+    });
+
+    const yAxis = axisLeft(yScale).tickPadding(0);
+    renderBandYAxisShared({
+      svg,
+      scale: yScale as AxisScaleLike<string>,
+      axis: yAxis as Axis<string>,
+      formatter: value => value,
+      axisX: marginLeft,
+      axisTop: MARGIN_TOP,
+      innerHeight,
+      isRTL,
+      tickPadding: 0,
+      showTickLines: false,
+      ltrLabelX: -6,
+      rtlLabelX: innerWidth + 6,
+      tickLabelMaxWidth: toOptionalNumber(this.yAxisTickLabelMaxWidth),
+    });
 
     // ── Grid cells ────────────────────────────────────────────────────────────
 
@@ -828,63 +876,6 @@ export class HeatMapChart extends CartesianChartBase {
     this.chartContainer.appendChild(svg);
     this._applyActiveLegendState();
     this._applyLegendButtonState();
-  }
-
-  private _renderXAxis(g: SVGGElement, xScale: ScaleBand<string>, innerHeight: number, xLabels: string[]): void {
-    // Axis line
-    const axisDomain = createSvgElement<SVGLineElement>('line');
-    axisDomain.setAttribute('class', 'axis-domain');
-    axisDomain.setAttribute('x1', '0');
-    axisDomain.setAttribute('y1', `${innerHeight}`);
-    axisDomain.setAttribute('x2', `${xScale.range()[1]}`);
-    axisDomain.setAttribute('y2', `${innerHeight}`);
-    g.appendChild(axisDomain);
-
-    // Tick labels
-    xLabels.forEach(label => {
-      const x = (xScale(label) ?? 0) + xScale.bandwidth() / 2;
-
-      const text = createSvgElement<SVGTextElement>('text');
-      text.setAttribute('class', 'axis-text');
-      text.setAttribute('x', `${x}`);
-      text.setAttribute('y', `${innerHeight + 14}`);
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('dominant-baseline', 'hanging');
-      text.textContent = label;
-      g.appendChild(text);
-    });
-  }
-
-  private _renderYAxis(
-    g: SVGGElement,
-    yScale: ScaleBand<string>,
-    yLabels: string[],
-    isRTL: boolean,
-    innerWidth: number,
-  ): void {
-    // Axis line
-    const axisDomain = createSvgElement<SVGLineElement>('line');
-    axisDomain.setAttribute('class', 'axis-domain');
-    axisDomain.setAttribute('x1', '0');
-    axisDomain.setAttribute('y1', '0');
-    axisDomain.setAttribute('x2', '0');
-    axisDomain.setAttribute('y2', `${yScale.range()[1]}`);
-    g.appendChild(axisDomain);
-
-    // Tick labels
-    yLabels.forEach(label => {
-      const y = (yScale(label) ?? 0) + yScale.bandwidth() / 2;
-      const x = isRTL ? innerWidth + 6 : -6;
-
-      const text = createSvgElement<SVGTextElement>('text');
-      text.setAttribute('class', 'y-axis-text');
-      text.setAttribute('x', `${x}`);
-      text.setAttribute('y', `${y}`);
-      text.setAttribute('text-anchor', isRTL ? 'start' : 'end');
-      text.setAttribute('dominant-baseline', 'middle');
-      text.textContent = label;
-      g.appendChild(text);
-    });
   }
 
   private _measureLongestYLabel(labels: string[]): number {

@@ -346,10 +346,11 @@ export const Basic: Story<FluentHeatMapChart> = renderComponent(html<StoryArgs<F
       data="${JSON.stringify(airQualityData)}"
       domain-values-for-color-scale="${JSON.stringify(domainValues)}"
       range-values-for-color-scale="${JSON.stringify(rangeColors)}"
+      y-axis-tick-label-max-width="64"
       sort-order="none"
     ></fluent-heat-map-chart>
   </div>
-`);;
+`);
 Basic.parameters = { docs: { story: { height: '500px' } } };
 
 export const StandardAttributes: Story<FluentHeatMapChart> = () => {
@@ -431,7 +432,6 @@ export const StringAxis: Story<FluentHeatMapChart> = renderComponent(html<StoryA
 
 // ── Axis titles ───────────────────────────────────────────────────────────────
 
-
 StringAxis.parameters = { docs: { story: { height: '500px' } } };
 export const WithAxisTitles: Story<FluentHeatMapChart> = renderComponent(html<StoryArgs<FluentHeatMapChart>>`
   <fluent-heat-map-chart
@@ -446,7 +446,6 @@ export const WithAxisTitles: Story<FluentHeatMapChart> = renderComponent(html<St
 
 // ── Hide legends ──────────────────────────────────────────────────────────────
 
-
 WithAxisTitles.parameters = { docs: { story: { height: '500px' } } };
 export const HideLegends: Story<FluentHeatMapChart> = renderComponent(html<StoryArgs<FluentHeatMapChart>>`
   <fluent-heat-map-chart
@@ -459,7 +458,6 @@ export const HideLegends: Story<FluentHeatMapChart> = renderComponent(html<Story
 `);
 
 // ── Hide tooltip ──────────────────────────────────────────────────────────────
-
 
 HideLegends.parameters = { docs: { story: { height: '500px' } } };
 export const HideTooltip: Story<FluentHeatMapChart> = renderComponent(html<StoryArgs<FluentHeatMapChart>>`
@@ -474,7 +472,6 @@ export const HideTooltip: Story<FluentHeatMapChart> = renderComponent(html<Story
 
 // ── Sort order: none ──────────────────────────────────────────────────────────
 
-
 HideTooltip.parameters = { docs: { story: { height: '500px' } } };
 export const SortOrderNone: Story<FluentHeatMapChart> = renderComponent(html<StoryArgs<FluentHeatMapChart>>`
   <fluent-heat-map-chart
@@ -488,7 +485,6 @@ export const SortOrderNone: Story<FluentHeatMapChart> = renderComponent(html<Sto
 
 // ── Custom date format ────────────────────────────────────────────────────────
 
-
 SortOrderNone.parameters = { docs: { story: { height: '500px' } } };
 export const CustomDateFormat: Story<FluentHeatMapChart> = renderComponent(html<StoryArgs<FluentHeatMapChart>>`
   <fluent-heat-map-chart
@@ -501,7 +497,6 @@ export const CustomDateFormat: Story<FluentHeatMapChart> = renderComponent(html<
 `);
 
 // ── Sizing controls ───────────────────────────────────────────────────────────
-
 
 CustomDateFormat.parameters = { docs: { story: { height: '500px' } } };
 export const Sizing: Story<FluentHeatMapChart> = () => {
@@ -611,7 +606,6 @@ export const StringLabels: Story<FluentHeatMapChart> = renderComponent(html<Stor
     y-axis-string-labels="${JSON.stringify(yAxisStringLabels)}"
   ></fluent-heat-map-chart>
 `);
-
 
 StringLabels.parameters = { docs: { story: { height: '500px' } } };
 export const CategoryOrder: Story<FluentHeatMapChart> = () => {

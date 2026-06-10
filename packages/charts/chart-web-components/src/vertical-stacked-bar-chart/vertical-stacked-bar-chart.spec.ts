@@ -50,6 +50,34 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(1);
   });
 
+  test('Should honor width updates from attribute', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    await element.evaluate(node => {
+      node.setAttribute('width', '420');
+    });
+
+    await expect(element.locator('svg')).toHaveAttribute('width', '420');
+  });
+
+  test('Should reduce visual gap when bar-gap-max is set', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    const getFirstStackBarWidth = async (): Promise<number> => {
+      const widthValue = await element.locator('.bar').first().getAttribute('width');
+      return Number(widthValue ?? 0);
+    };
+
+    const defaultBarWidth = await getFirstStackBarWidth();
+
+    await element.evaluate(node => {
+      node.setAttribute('bar-gap-max', '0');
+    });
+
+    const widenedBarWidth = await getFirstStackBarWidth();
+    expect(widenedBarWidth).toBeGreaterThan(defaultBarWidth);
+  });
+
   test('Should render primary y-axis on right in RTL', async ({ page }) => {
     await page.setContent(/* html */ `
       <div dir="rtl">

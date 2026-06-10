@@ -8,6 +8,14 @@ import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
+  type AxisScaleLike,
+  renderBottomAxisShared,
+  renderPrimaryYAxisShared,
+  renderSecondaryYAxisShared,
+  toAxisNumber as toNumber,
+  toOptionalAxisNumber as toOptionalNumber,
+} from '../utils/cartesian-axis-shared.js';
+import {
   formatLocaleNumber,
   getColorFromToken,
   getNextColor,
@@ -15,7 +23,6 @@ import {
   jsonConverter,
   parseDateOrNumber,
   SVG_NAMESPACE_URI,
-  wrapText,
 } from '../utils/chart-helpers.js';
 import type { AreaChartDataPoint, AreaChartMode, AreaChartSeries } from './area-chart.options.js';
 
@@ -31,32 +38,10 @@ export type TooltipEntry = { legend: string; color: string; value: string; callO
 type TooltipState = TooltipProps & { xLabel: string; xAxisAriaLabel?: string; entries: TooltipEntry[] };
 type XValue = number | Date;
 type ContinuousScale = ScaleLinear<number, number> | ScaleTime<number, number>;
-type ScaleLike<Domain extends AxisDomain> = {
-  domain(): Domain[];
-  ticks?: (count?: number) => Domain[];
-  bandwidth?: () => number;
-  (value: Domain): number | undefined;
-};
 type NormalizedPoint = AreaChartDataPoint & { x: XValue; xLabel: string; cx: number; cy: number };
 type NormalizedSeries = { legend: string; color: string; data: NormalizedPoint[] };
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
-
-const toNumber = (value: number | string | undefined, fallback: number): number => {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const toOptionalNumber = (value: number | string | undefined): number | undefined => {
-  if (value === undefined || value === null || value === '') {
-    return undefined;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
 
 const formatNumberValue = (value: number, specifier: string | undefined, culture: string | undefined): string => {
   if (specifier) {
@@ -104,244 +89,9 @@ const getNormalizedXValue = (value: number | Date): XValue => {
   return parsed instanceof Date ? parsed : Number(parsed);
 };
 
-const getTickValues = <Domain extends AxisDomain>(axis: Axis<Domain>, scale: ScaleLike<Domain>): Domain[] => {
-  const explicit = axis.tickValues();
-  if (explicit) {
-    return Array.from(explicit as Iterable<Domain>);
-  }
-  if (typeof scale.ticks === 'function') {
-    const [count] = axis.tickArguments() as [number?];
-    return scale.ticks(count);
-  }
-  return scale.domain();
-};
-
-const getPosition = <Domain extends AxisDomain>(scale: ScaleLike<Domain>, value: Domain): number => {
-  const start = scale(value) ?? 0;
-  return typeof scale.bandwidth === 'function' ? start + scale.bandwidth() / 2 : start;
-};
-
-const renderBottomAxis = <Domain extends AxisDomain>(
-  svg: SVGSVGElement,
-  chart: AreaChart,
-  scale: ScaleLike<Domain>,
-  axis: Axis<Domain>,
-  formatter: (value: Domain) => string,
-  innerWidth: number,
-  innerHeight: number,
-  leftMargin: number,
-): void => {
-  const group = createSvgElement<SVGGElement>('g');
-  group.classList.add('x-axis');
-  group.setAttribute('transform', `translate(${leftMargin}, ${defaultMargins.top + innerHeight})`);
-
-  const domain = createSvgElement<SVGLineElement>('line');
-  domain.classList.add('axis-domain');
-  domain.setAttribute('x1', '0');
-  domain.setAttribute('x2', String(innerWidth));
-  group.appendChild(domain);
-
-  const tickPadding = toNumber(chart.tickPadding, 6);
-  let previousRight = Number.NEGATIVE_INFINITY;
-
-  getTickValues(axis, scale).forEach(value => {
-    const tick = createSvgElement<SVGGElement>('g');
-    tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(${getPosition(scale, value)}, 0)`);
-
-    const line = createSvgElement<SVGLineElement>('line');
-    line.classList.add('axis-tick-line');
-    line.setAttribute('y2', '6');
-    tick.appendChild(line);
-
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add('axis-text');
-    text.setAttribute('y', String(6 + tickPadding));
-    // dominant-baseline='hanging' makes y the top of the text, so the full
-    // tickPadding gap is preserved between the tick end and the label top.
-    text.setAttribute('dominant-baseline', 'hanging');
-    text.setAttribute('text-anchor', chart.rotateXAxisLabels ? 'start' : 'middle');
-    text.textContent = formatter(value);
-    if (chart.rotateXAxisLabels) {
-      text.setAttribute('transform', 'rotate(45)');
-    }
-    if (chart.showXAxisLabelsTooltip) {
-      const title = createSvgElement<SVGTitleElement>('title');
-      title.textContent = text.textContent;
-      text.appendChild(title);
-    }
-    tick.appendChild(text);
-    group.appendChild(tick);
-
-    if (chart.wrapXAxisLabels && typeof scale.bandwidth === 'function') {
-      wrapText(text, Math.max(scale.bandwidth(), 1));
-    } else if (chart.hideTickOverlap && !chart.rotateXAxisLabels) {
-      const box = text.getBBox();
-      const left = getPosition(scale, value) + box.x;
-      const right = left + box.width;
-      if (left < previousRight) {
-        tick.style.display = 'none';
-      } else {
-        previousRight = right + 4;
-      }
-    }
-  });
-
-  if (chart.xAxisTitle) {
-    const title = createSvgElement<SVGTextElement>('text');
-    title.classList.add('x-axis-title');
-    title.setAttribute('x', String(innerWidth / 2));
-    title.setAttribute('y', '42');
-    title.setAttribute('text-anchor', 'middle');
-    title.textContent = chart.xAxisTitle;
-    group.appendChild(title);
-  }
-
-  svg.appendChild(group);
-};
-
-const renderLeftAxis = (
-  svg: SVGSVGElement,
-  chart: AreaChart,
-  scale: ScaleLike<number>,
-  axis: Axis<number>,
-  formatter: (value: number) => string,
-  innerHeight: number,
-  innerWidth: number,
-  leftMargin: number,
-): void => {
-  const isRtl = getRTL(chart);
-  const group = createSvgElement<SVGGElement>('g');
-  group.classList.add('y-axis');
-  // In RTL the primary Y axis moves to the right side of the chart.
-  const groupX = isRtl ? leftMargin + innerWidth : leftMargin;
-  group.setAttribute('transform', `translate(${groupX}, ${defaultMargins.top})`);
-
-  const domain = createSvgElement<SVGLineElement>('line');
-  domain.classList.add('axis-domain');
-  domain.setAttribute('y2', String(innerHeight));
-  group.appendChild(domain);
-
-  const tickPadding = toNumber(chart.tickPadding, 6);
-  getTickValues(axis, scale).forEach(value => {
-    const tick = createSvgElement<SVGGElement>('g');
-    tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(0, ${getPosition(scale, value)})`);
-
-    const line = createSvgElement<SVGLineElement>('line');
-    line.classList.add('axis-tick-line');
-    // In RTL the axis is on the right: ticks point right (outward from the chart area).
-    line.setAttribute('x2', isRtl ? '6' : '-6');
-    tick.appendChild(line);
-
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add('y-axis-text');
-    text.setAttribute('x', String(isRtl ? 6 + tickPadding : -(6 + tickPadding)));
-    // SVG inherits direction from the container (dir="rtl"), which makes text-anchor
-    // direction-aware: 'end' = logical-end = LEFT edge in RTL, RIGHT edge in LTR.
-    // Using 'end' places the label outward (right of tick in RTL, left of tick in LTR).
-    text.setAttribute('text-anchor', 'end');
-    text.setAttribute('dominant-baseline', 'middle');
-    text.textContent = formatter(value);
-    tick.appendChild(text);
-
-    group.appendChild(tick);
-  });
-
-  if (chart.yAxisTitle) {
-    const title = createSvgElement<SVGTextElement>('text');
-    title.classList.add('y-axis-title');
-    // LTR (axis on LEFT): rotate(-90) reads bottom-to-top.
-    //   rotate(-90) maps (x,y) → (y,-x). To land at x'=-42 (left of axis),
-    //   y'=innerHeight/2: set x=-innerHeight/2, y=-42.
-    // RTL (axis on RIGHT): rotate(90) reads top-to-bottom (mirrored).
-    //   rotate(90) maps (x,y) → (-y,x). To land at x'=+42 (right of axis),
-    //   y'=innerHeight/2: -y=42 → y=-42, x=innerHeight/2.
-    // In both cases ty is '-42'; only tx and rotation differ.
-    const rotation = isRtl ? 'rotate(90)' : 'rotate(-90)';
-    const tx = isRtl ? String(innerHeight / 2) : String(-innerHeight / 2);
-    title.setAttribute('x', tx);
-    title.setAttribute('y', '-42');
-    title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('transform', rotation);
-    title.textContent = chart.yAxisTitle;
-    group.appendChild(title);
-  }
-
-  svg.appendChild(group);
-};
-
-const renderRightAxis = (
-  svg: SVGSVGElement,
-  chart: AreaChart,
-  scale: ScaleLike<number>,
-  axis: Axis<number>,
-  formatter: (value: number) => string,
-  innerHeight: number,
-  innerWidth: number,
-  leftMargin: number,
-): void => {
-  const isRtl = getRTL(chart);
-  const group = createSvgElement<SVGGElement>('g');
-  group.classList.add('y-axis-secondary');
-  // In RTL the secondary axis swaps to the left side (primary moves right).
-  const groupX = isRtl ? leftMargin : leftMargin + innerWidth;
-  group.setAttribute('transform', `translate(${groupX}, ${defaultMargins.top})`);
-
-  const domain = createSvgElement<SVGLineElement>('line');
-  domain.classList.add('axis-domain');
-  domain.setAttribute('y2', String(innerHeight));
-  group.appendChild(domain);
-
-  const tickPadding = toNumber(chart.tickPadding, 6);
-  getTickValues(axis, scale).forEach(value => {
-    const tick = createSvgElement<SVGGElement>('g');
-    tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(0, ${getPosition(scale, value)})`);
-
-    const line = createSvgElement<SVGLineElement>('line');
-    line.classList.add('axis-tick-line');
-    // In RTL the secondary axis is on the left: ticks point left (outward).
-    line.setAttribute('x2', isRtl ? '-6' : '6');
-    tick.appendChild(line);
-
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add('y-axis-text');
-    text.setAttribute('x', String(isRtl ? -(6 + tickPadding) : 6 + tickPadding));
-    // In RTL, 'start' = right edge of text at given x; text extends leftward (outward from chart).
-    // In LTR, 'start' = left edge of text at given x; text extends rightward (outward from chart).
-    // Using 'start' consistently is correct since the axis side and tick direction both flip with RTL.
-    text.setAttribute('text-anchor', 'start');
-    text.setAttribute('dominant-baseline', 'middle');
-    text.textContent = formatter(value);
-    tick.appendChild(text);
-
-    group.appendChild(tick);
-  });
-
-  if (chart.secondaryYAxisTitle) {
-    const title = createSvgElement<SVGTextElement>('text');
-    title.classList.add('y-axis-title');
-    // rotate(-90) reads bottom-to-top, matching the primary axis direction.
-    //   rotate(-90) maps (x, y) → (y, -x).
-    // LTR (axis on RIGHT): x'=+42, y'=innerHeight/2 → set x=-innerHeight/2, y=42.
-    // RTL (axis on LEFT):  x'=-42, y'=innerHeight/2 → set x=-innerHeight/2, y=-42.
-    // rotation is always 'rotate(-90)'; only ty differs.
-    const ty = isRtl ? '-42' : '42';
-    title.setAttribute('x', String(-innerHeight / 2));
-    title.setAttribute('y', ty);
-    title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('transform', 'rotate(-90)');
-    title.textContent = chart.secondaryYAxisTitle;
-    group.appendChild(title);
-  }
-
-  svg.appendChild(group);
-};
-
 /** @public */
 export class AreaChart extends CartesianChartBase {
-  declare public tooltipProps: TooltipState;
+  public declare tooltipProps: TooltipState;
 
   @attr({ converter: jsonConverter })
   public data!: AreaChartSeries[];
@@ -361,11 +111,21 @@ export class AreaChart extends CartesianChartBase {
   @attr({ attribute: 'secondary-y-axis-title' })
   public secondaryYAxisTitle: string = '';
 
+  /** Max width in px for secondary y-axis tick labels before truncating with ellipsis. */
+  @attr({ attribute: 'secondary-y-axis-tick-label-max-width' })
+  public secondaryYAxisTickLabelMaxWidth?: number | string;
+
   protected override _enableResizeObserver = true;
 
   public connectedCallback() {
     const self = this as Record<string, unknown>;
-    const attrFields = ['data', 'enableGradient', 'mode', 'secondaryYAxisTitle'] as const;
+    const attrFields = [
+      'data',
+      'enableGradient',
+      'mode',
+      'secondaryYAxisTitle',
+      'secondaryYAxisTickLabelMaxWidth',
+    ] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -409,8 +169,22 @@ export class AreaChart extends CartesianChartBase {
     this._requestRender();
   }
 
+  protected secondaryYAxisTickLabelMaxWidthChanged(): void {
+    this._requestRender();
+  }
+
   protected override _clearTooltip(): void {
-    this.tooltipProps = { isVisible: false, legend: '', xLabel: '', xAxisAriaLabel: undefined, yValue: '', color: '', xPos: 0, yPos: 0, entries: [] };
+    this.tooltipProps = {
+      isVisible: false,
+      legend: '',
+      xLabel: '',
+      xAxisAriaLabel: undefined,
+      yValue: '',
+      color: '',
+      xPos: 0,
+      yPos: 0,
+      entries: [],
+    };
   }
 
   protected override tooltipPropsChanged(old: TooltipProps, newValue: TooltipProps): void {
@@ -418,7 +192,9 @@ export class AreaChart extends CartesianChartBase {
     if (newValue.isVisible && !this.hideTooltip) {
       const state = newValue as TooltipState;
       const xText = state.xAxisAriaLabel ?? state.xLabel;
-      const parts = [xText, ...(state.entries ?? []).map(e => e.callOutAriaLabel ?? `${e.legend}: ${e.value}`)].filter(Boolean);
+      const parts = [xText, ...(state.entries ?? []).map(e => e.callOutAriaLabel ?? `${e.legend}: ${e.value}`)].filter(
+        Boolean,
+      );
       this.liveRegionText = parts.join('. ');
     }
   }
@@ -465,7 +241,8 @@ export class AreaChart extends CartesianChartBase {
         return {
           x,
           y: point.y,
-          xLabel: x instanceof Date ? formatDateValue(this, x) : formatNumberValue(x, this.xAxisTickFormat, this.culture),
+          xLabel:
+            x instanceof Date ? formatDateValue(this, x) : formatNumberValue(x, this.xAxisTickFormat, this.culture),
           cx: 0,
           cy: 0,
         };
@@ -485,7 +262,7 @@ export class AreaChart extends CartesianChartBase {
     const primaryAxisSpace = defaultMargins.left; // 60 px — space for Y axis ticks + labels
     const secondaryAxisSpace = 70; // extra space when a secondary Y axis is present
     const leftMargin = isRtl ? (hasSecondaryY ? secondaryAxisSpace : defaultMargins.right) : primaryAxisSpace;
-    const rightMargin = isRtl ? primaryAxisSpace : (hasSecondaryY ? secondaryAxisSpace : defaultMargins.right);
+    const rightMargin = isRtl ? primaryAxisSpace : hasSecondaryY ? secondaryAxisSpace : defaultMargins.right;
     const innerWidth = Math.max(width - leftMargin - rightMargin, 1);
     const innerHeight = Math.max(height - defaultMargins.top - defaultMargins.bottom, 1);
 
@@ -513,7 +290,11 @@ export class AreaChart extends CartesianChartBase {
     });
     // Ensure every entry has a value for every legend (fill missing with 0)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    stackDataset.forEach((dp: any) => legendKeys.forEach(k => { if (dp[k] === undefined) dp[k] = 0; }));
+    stackDataset.forEach((dp: any) =>
+      legendKeys.forEach(k => {
+        if (dp[k] === undefined) dp[k] = 0;
+      }),
+    );
 
     // mode='tonexty' (default): stacked — d3Stack computes cumulative bands.
     // mode='tozeroy': non-stacked — each series' area fills independently from y=0.
@@ -577,10 +358,18 @@ export class AreaChart extends CartesianChartBase {
     let xScale: ContinuousScale;
     let xFormatter: (value: AxisDomain) => string;
     if (isDateAxis) {
-      const dateValues = normalizedSeries.flatMap(series => series.data.map(point => point.x)).filter((value): value is Date => value instanceof Date);
+      const dateValues = normalizedSeries
+        .flatMap(series => series.data.map(point => point.x))
+        .filter((value): value is Date => value instanceof Date);
       const rawExtent = extent(dateValues, value => value.getTime());
-      const xMin = this.xMinValue !== undefined ? parseDateOrNumber(this.xMinValue as string | number) : new Date(rawExtent[0] ?? 0);
-      const xMax = this.xMaxValue !== undefined ? parseDateOrNumber(this.xMaxValue as string | number) : new Date(rawExtent[1] ?? 0);
+      const xMin =
+        this.xMinValue !== undefined
+          ? parseDateOrNumber(this.xMinValue as string | number)
+          : new Date(rawExtent[0] ?? 0);
+      const xMax =
+        this.xMaxValue !== undefined
+          ? parseDateOrNumber(this.xMaxValue as string | number)
+          : new Date(rawExtent[1] ?? 0);
       const domainMin = xMin instanceof Date ? xMin : new Date(Number(xMin));
       const domainMax = xMax instanceof Date ? xMax : new Date(Number(xMax));
       xScale = scaleTime().domain([domainMin, domainMax]).range([0, innerWidth]);
@@ -589,7 +378,9 @@ export class AreaChart extends CartesianChartBase {
       }
       xFormatter = value => formatDateValue(this, value as Date);
     } else {
-      const xValues = normalizedSeries.flatMap(series => series.data.map(point => point.x)).filter((value): value is number => typeof value === 'number');
+      const xValues = normalizedSeries
+        .flatMap(series => series.data.map(point => point.x))
+        .filter((value): value is number => typeof value === 'number');
       const rawExtent = extent(xValues);
       let xMin = toOptionalNumber(this.xMinValue) ?? rawExtent[0] ?? 0;
       let xMax = toOptionalNumber(this.xMaxValue) ?? rawExtent[1] ?? 1;
@@ -634,8 +425,8 @@ export class AreaChart extends CartesianChartBase {
         // cy reflects the top of the stacked layer at this x-value (for tooltip placement)
         const xKey = String(point.x instanceof Date ? point.x.getTime() : point.x);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const stackPoint = layer.find((d: any) =>
-          String(d.data.xVal instanceof Date ? d.data.xVal.getTime() : d.data.xVal) === xKey,
+        const stackPoint = layer.find(
+          (d: any) => String(d.data.xVal instanceof Date ? d.data.xVal.getTime() : d.data.xVal) === xKey,
         );
         point.cy = stackPoint ? scale(stackPoint[1]) : scale(point.y);
       });
@@ -676,7 +467,14 @@ export class AreaChart extends CartesianChartBase {
     // so the mousemove handler can retrieve every series in O(1) without re-iterating.
     // Entries are stored as a SPARSE ARRAY indexed by series index so sparse x-values
     // across series don't cause index mismatches.
-    type CalloutEntry = { legend: string; color: string; y: number; stackedY1: number; isSecondaryY: boolean; callOutAriaLabel?: string };
+    type CalloutEntry = {
+      legend: string;
+      color: string;
+      y: number;
+      stackedY1: number;
+      isSecondaryY: boolean;
+      callOutAriaLabel?: string;
+    };
     type CalloutPoint = { xLabel: string; cx: number; xAxisAriaLabel?: string; entries: (CalloutEntry | undefined)[] };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const calloutPointsByX = new Map<number, CalloutPoint>();
@@ -834,9 +632,8 @@ export class AreaChart extends CartesianChartBase {
         return;
       }
 
-      const xKey = nearestDataPoint.xVal instanceof Date
-        ? nearestDataPoint.xVal.getTime()
-        : Number(nearestDataPoint.xVal);
+      const xKey =
+        nearestDataPoint.xVal instanceof Date ? nearestDataPoint.xVal.getTime() : Number(nearestDataPoint.xVal);
       const found = calloutPointsByX.get(xKey);
       if (!found) {
         return;
@@ -895,7 +692,9 @@ export class AreaChart extends CartesianChartBase {
 
     const onOverlayMouseLeave = () => {
       hoverLine.style.display = 'none';
-      hoverDots.forEach(dot => { dot.style.display = 'none'; });
+      hoverDots.forEach(dot => {
+        dot.style.display = 'none';
+      });
       plotGroup.querySelectorAll<SVGPathElement>('.area-line').forEach(p => p.classList.remove('hovered'));
       this._clearTooltip();
     };
@@ -903,7 +702,23 @@ export class AreaChart extends CartesianChartBase {
     overlay.addEventListener('mousemove', onOverlayMouseMove);
     overlay.addEventListener('mouseleave', onOverlayMouseLeave);
 
-    renderBottomAxis(svg, this, xScale as ScaleLike<AxisDomain>, xAxis as Axis<AxisDomain>, xFormatter, innerWidth, innerHeight, leftMargin);
+    renderBottomAxisShared({
+      svg,
+      scale: xScale as AxisScaleLike<AxisDomain>,
+      axis: xAxis as Axis<AxisDomain>,
+      formatter: xFormatter,
+      axisLeft: leftMargin,
+      axisTop: defaultMargins.top,
+      innerWidth,
+      innerHeight,
+      tickPadding: toNumber(this.tickPadding, 6),
+      rotateXAxisLabels: this.rotateXAxisLabels,
+      wrapXAxisLabels: this.wrapXAxisLabels,
+      hideTickOverlap: this.hideTickOverlap,
+      showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
+      xAxisTitle: this.xAxisTitle,
+      labelDominantBaseline: 'hanging',
+    });
 
     const yFormatter = (value: number): string => {
       if (this.yAxisTickFormat) {
@@ -918,12 +733,37 @@ export class AreaChart extends CartesianChartBase {
 
     // Skip left axis when all series are secondary (no primary data to scale against).
     if (primaryStackedLayers.length > 0) {
-      renderLeftAxis(svg, this, yScale as ScaleLike<number>, yAxis as unknown as Axis<number>, yFormatter, innerHeight, innerWidth, leftMargin);
+      renderPrimaryYAxisShared({
+        svg,
+        scale: yScale as AxisScaleLike<number>,
+        axis: yAxis as unknown as Axis<number>,
+        formatter: yFormatter,
+        axisStartX: leftMargin,
+        axisTop: defaultMargins.top,
+        innerHeight,
+        innerWidth,
+        tickPadding: toNumber(this.tickPadding, 6),
+        isRTL: isRtl,
+        yAxisTitle: this.yAxisTitle,
+      });
     }
 
     if (hasSecondaryY) {
       const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
-      renderRightAxis(svg, this, yScaleSecondary as ScaleLike<number>, yAxisSecondary as unknown as Axis<number>, yFormatter, innerHeight, innerWidth, leftMargin);
+      renderSecondaryYAxisShared({
+        svg,
+        scale: yScaleSecondary as AxisScaleLike<number>,
+        axis: yAxisSecondary as unknown as Axis<number>,
+        formatter: yFormatter,
+        axisStartX: leftMargin,
+        axisTop: defaultMargins.top,
+        innerHeight,
+        innerWidth,
+        tickPadding: toNumber(this.tickPadding, 6),
+        isRTL: isRtl,
+        yAxisTitle: this.secondaryYAxisTitle,
+        tickLabelMaxWidth: toOptionalNumber(this.secondaryYAxisTickLabelMaxWidth),
+      });
     }
 
     this.chartContainer.appendChild(svg);

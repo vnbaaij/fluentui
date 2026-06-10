@@ -5,18 +5,20 @@ import { format } from 'd3-format';
 import { scaleLinear, type ScaleLinear } from 'd3-scale';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
+import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
 import {
-  type CartesianChartMargins,
-  getDirectionalMargins,
-  getPrimaryYAxisLayout,
-} from '../utils/cartesian-axis-helpers.js';
+  type AxisScaleLike,
+  renderBottomAxisShared,
+  renderPrimaryYAxisShared,
+  toAxisNumber as toNumber,
+  toOptionalAxisNumber as toOptionalNumber,
+} from '../utils/cartesian-axis-shared.js';
 import {
   formatLocaleNumber,
   getColorFromToken,
   getNextColor,
   jsonConverter,
   SVG_NAMESPACE_URI,
-  wrapText,
 } from '../utils/chart-helpers.js';
 import type { ScatterChartSeries } from './scatter-chart.options.js';
 
@@ -24,30 +26,8 @@ const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
 
 type TooltipState = TooltipProps & { xValue: string };
-type ScaleLike<Domain extends AxisDomain> = {
-  domain(): Domain[];
-  ticks?: (count?: number) => Domain[];
-  bandwidth?: () => number;
-  (value: Domain): number | undefined;
-};
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
-
-const toNumber = (value: number | string | undefined, fallback: number): number => {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const toOptionalNumber = (value: number | string | undefined): number | undefined => {
-  if (value === undefined || value === null || value === '') {
-    return undefined;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
 
 const formatNumberValue = (value: number, specifier: string | undefined, culture: string | undefined): string => {
   if (specifier) {
@@ -58,156 +38,6 @@ const formatNumberValue = (value: number, specifier: string | undefined, culture
     }
   }
   return formatLocaleNumber(value, culture);
-};
-
-const getTickValues = <Domain extends AxisDomain>(axis: Axis<Domain>, scale: ScaleLike<Domain>): Domain[] => {
-  const explicit = axis.tickValues();
-  if (explicit) {
-    return Array.from(explicit as Iterable<Domain>);
-  }
-  if (typeof scale.ticks === 'function') {
-    const [count] = axis.tickArguments() as [number?];
-    return scale.ticks(count);
-  }
-  return scale.domain();
-};
-
-const getPosition = <Domain extends AxisDomain>(scale: ScaleLike<Domain>, value: Domain): number => {
-  const start = scale(value) ?? 0;
-  return typeof scale.bandwidth === 'function' ? start + scale.bandwidth() / 2 : start;
-};
-
-const renderBottomAxis = (
-  svg: SVGSVGElement,
-  chart: ScatterChart,
-  scale: ScaleLike<number>,
-  axis: Axis<number>,
-  formatter: (value: number) => string,
-  innerWidth: number,
-  innerHeight: number,
-  margins: CartesianChartMargins,
-): void => {
-  const group = createSvgElement<SVGGElement>('g');
-  group.classList.add('x-axis');
-  group.setAttribute('transform', `translate(${margins.left}, ${margins.top + innerHeight})`);
-
-  const domain = createSvgElement<SVGLineElement>('line');
-  domain.classList.add('axis-domain');
-  domain.setAttribute('x1', '0');
-  domain.setAttribute('x2', String(innerWidth));
-  group.appendChild(domain);
-
-  const tickPadding = toNumber(chart.tickPadding, 6);
-  let previousRight = Number.NEGATIVE_INFINITY;
-
-  getTickValues(axis, scale).forEach(value => {
-    const tick = createSvgElement<SVGGElement>('g');
-    tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(${getPosition(scale, value)}, 0)`);
-
-    const line = createSvgElement<SVGLineElement>('line');
-    line.classList.add('axis-tick-line');
-    line.setAttribute('y2', '6');
-    tick.appendChild(line);
-
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add('axis-text');
-    text.setAttribute('y', String(6 + tickPadding));
-    text.setAttribute('text-anchor', chart.rotateXAxisLabels ? 'start' : 'middle');
-    text.textContent = formatter(value);
-    if (chart.rotateXAxisLabels) {
-      text.setAttribute('transform', 'rotate(45)');
-    }
-    if (chart.showXAxisLabelsTooltip) {
-      const title = createSvgElement<SVGTitleElement>('title');
-      title.textContent = text.textContent;
-      text.appendChild(title);
-    }
-    tick.appendChild(text);
-    group.appendChild(tick);
-
-    if (chart.wrapXAxisLabels) {
-      wrapText(text, 48);
-    } else if (chart.hideTickOverlap && !chart.rotateXAxisLabels) {
-      const box = text.getBBox();
-      const left = getPosition(scale, value) + box.x;
-      const right = left + box.width;
-      if (left < previousRight) {
-        tick.style.display = 'none';
-      } else {
-        previousRight = right + 4;
-      }
-    }
-  });
-
-  if (chart.xAxisTitle) {
-    const title = createSvgElement<SVGTextElement>('text');
-    title.classList.add('x-axis-title');
-    title.setAttribute('x', String(innerWidth / 2));
-    title.setAttribute('y', '42');
-    title.setAttribute('text-anchor', 'middle');
-    title.textContent = chart.xAxisTitle;
-    group.appendChild(title);
-  }
-
-  svg.appendChild(group);
-};
-
-const renderLeftAxis = (
-  svg: SVGSVGElement,
-  chart: ScatterChart,
-  scale: ScaleLike<number>,
-  axis: Axis<number>,
-  formatter: (value: number) => string,
-  innerHeight: number,
-  innerWidth: number,
-  margins: CartesianChartMargins,
-  isRTL: boolean,
-): void => {
-  const tickPadding = toNumber(chart.tickPadding, 6);
-  const layout = getPrimaryYAxisLayout(isRTL, margins, innerWidth, innerHeight, tickPadding);
-  const group = createSvgElement<SVGGElement>('g');
-  group.classList.add('y-axis');
-  group.setAttribute('transform', `translate(${layout.axisX}, ${margins.top})`);
-
-  const domain = createSvgElement<SVGLineElement>('line');
-  domain.classList.add('axis-domain');
-  domain.setAttribute('y2', String(innerHeight));
-  group.appendChild(domain);
-
-  getTickValues(axis, scale).forEach(value => {
-    const tick = createSvgElement<SVGGElement>('g');
-    tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(0, ${getPosition(scale, value)})`);
-
-    const line = createSvgElement<SVGLineElement>('line');
-    line.classList.add('axis-tick-line');
-    line.setAttribute('x2', String(layout.tickLineX2));
-    tick.appendChild(line);
-
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add('y-axis-text');
-    text.setAttribute('x', String(layout.tickLabelX));
-    text.setAttribute('text-anchor', 'end');
-    text.setAttribute('dominant-baseline', 'middle');
-    text.textContent = formatter(value);
-    tick.appendChild(text);
-
-    group.appendChild(tick);
-  });
-
-  if (chart.yAxisTitle) {
-    const title = createSvgElement<SVGTextElement>('text');
-    title.classList.add('y-axis-title');
-    title.setAttribute('x', String(layout.titleX));
-    title.setAttribute('y', '-42');
-    title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('transform', layout.titleRotation);
-    title.textContent = chart.yAxisTitle;
-    group.appendChild(title);
-  }
-
-  svg.appendChild(group);
 };
 
 /** @public */
@@ -368,27 +198,36 @@ export class ScatterChart extends CartesianChartBase {
       });
     });
 
-    renderBottomAxis(
+    renderBottomAxisShared({
       svg,
-      this,
-      xScale as ScaleLike<number>,
-      xAxis as unknown as Axis<number>,
-      value => formatNumberValue(value, this.xAxisTickFormat, this.culture),
+      scale: xScale as AxisScaleLike<number>,
+      axis: xAxis as unknown as Axis<number>,
+      formatter: value => formatNumberValue(value, this.xAxisTickFormat, this.culture),
+      axisLeft: margins.left,
+      axisTop: margins.top,
       innerWidth,
       innerHeight,
-      margins,
-    );
-    renderLeftAxis(
+      tickPadding: toNumber(this.tickPadding, 6),
+      rotateXAxisLabels: this.rotateXAxisLabels,
+      wrapXAxisLabels: this.wrapXAxisLabels,
+      wrapLabelWidth: 48,
+      hideTickOverlap: this.hideTickOverlap,
+      showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
+      xAxisTitle: this.xAxisTitle,
+    });
+    renderPrimaryYAxisShared({
       svg,
-      this,
-      yScale as ScaleLike<number>,
-      yAxis as unknown as Axis<number>,
-      value => formatNumberValue(value, this.yAxisTickFormat, this.culture),
+      scale: yScale as AxisScaleLike<number>,
+      axis: yAxis as unknown as Axis<number>,
+      formatter: value => formatNumberValue(value, this.yAxisTickFormat, this.culture),
+      axisStartX: margins.left,
+      axisTop: margins.top,
       innerHeight,
       innerWidth,
-      margins,
-      this._isRTL,
-    );
+      tickPadding: toNumber(this.tickPadding, 6),
+      isRTL: this._isRTL,
+      yAxisTitle: this.yAxisTitle,
+    });
 
     this.chartContainer.appendChild(svg);
     this.legends = normalizedSeries.map(series => ({ legend: series.legend, color: series.color }));
