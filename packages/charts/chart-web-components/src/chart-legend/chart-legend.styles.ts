@@ -1,6 +1,7 @@
 import type { ElementStyles } from '@microsoft/fast-element';
 import { css } from '@microsoft/fast-element';
 import {
+  borderRadiusSmall,
   borderRadiusMedium,
   colorNeutralForeground1,
   colorStrokeFocus2,
@@ -103,6 +104,14 @@ export const styles: ElementStyles = css`
     border: ${strokeWidthThin} solid;
   }
 
+  .legend-rect.rounded {
+    border-radius: ${borderRadiusSmall};
+  }
+
+/* Same for overflow menu items */
+fluent-menu-item .legend-rect.rounded {
+  border-radius: ${borderRadiusSmall};
+}
   .legend-text {
     ${typographyCaption1Styles}
     color: ${colorNeutralForeground1};

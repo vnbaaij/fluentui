@@ -11,6 +11,7 @@ export function polarChartTemplate<T extends PolarChart>(): ElementViewTemplate<
         label="${x => x.legendListLabel}"
         position="${x => x.legendPosition}"
         ?hidden="${x => x.hideLegends}"
+        round-boxes="${x => x.roundCorners}"
         @legend-click="${(x, c) => x.handleLegendClick((c.event as CustomEvent<string>).detail)}"
         @legend-mouseover="${(x, c) => x.handleLegendMouseoverAndFocus((c.event as CustomEvent<string>).detail)}"
         @legend-mouseout="${x => x.handleLegendMouseoutAndBlur()}"
@@ -21,12 +22,17 @@ export function polarChartTemplate<T extends PolarChart>(): ElementViewTemplate<
       ${when(
         x => !x.hideTooltip && x.tooltipProps.isVisible,
         html<T>`
-          <div class="tooltip" style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x => x.tooltipProps.yPos}px;">
+          <div
+            class="tooltip"
+            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x => x.tooltipProps.yPos}px;"
+          >
             <div class="tooltip-body">
               <div class="tooltip-header">Value</div>
               <div class="tooltip-inner" style="border-color: ${x => x.tooltipProps.color};">
                 <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
-                <div class="tooltip-content-y" style="color: ${x => x.tooltipProps.color};">${x => x.tooltipProps.yValue}</div>
+                <div class="tooltip-content-y" style="color: ${x => x.tooltipProps.color};">
+                  ${x => x.tooltipProps.yValue}
+                </div>
               </div>
             </div>
           </div>

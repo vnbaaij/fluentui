@@ -12,7 +12,12 @@ export function gaugeChartTemplate<T extends GaugeChart>(): ElementViewTemplate<
     <template>
       ${when(x => !!x.chartTitle, html<T>`<div class="chart-title">${x => x.chartTitle}</div>`)}
       <div class="chart-container" ${ref('chartContainer')}>
-        <svg class="chart" role="none" width="${x => x.width ?? 252}" height="${x => x.height ?? (x.sublabel ? 116 : 96)}">
+        <svg
+          class="chart"
+          role="none"
+          width="${x => x.width ?? 252}"
+          height="${x => x.height ?? (x.sublabel ? 116 : 96)}"
+        >
           <defs ${ref('svgDefsEl')}></defs>
           <g ${ref('group')}></g>
         </svg>
@@ -22,6 +27,7 @@ export function gaugeChartTemplate<T extends GaugeChart>(): ElementViewTemplate<
         label="${x => x.legendListLabel}"
         position="${x => x.legendPosition}"
         ?hidden="${x => x.hideLegends}"
+        round-boxes="${x => x.roundCorners}"
         @legend-click="${(x, c) => x.handleLegendClick((c.event as CustomEvent<string>).detail)}"
         @legend-mouseover="${(x, c) => x.handleLegendMouseoverAndFocus((c.event as CustomEvent<string>).detail)}"
         @legend-mouseout="${x => x.handleLegendMouseoutAndBlur()}"

@@ -58,6 +58,14 @@ export class ChartLegend extends FASTElement {
   public center = false;
 
   /**
+   * Enable rounded corners on legend colored boxes.
+   * When undefined, inherits from the parent chart's rounded-corners setting.
+   * When explicitly set, overrides the chart setting.
+   */
+  @attr({ attribute: 'round-boxes', mode: 'boolean' })
+  public roundBoxes?: boolean;
+
+  /**
    * Number of items that overflow the row. Drives the `when()` that renders
    * the "+N more" button and the overflow popup.
    */
@@ -85,7 +93,7 @@ export class ChartLegend extends FASTElement {
     // Save defaults first so we can restore them for fields that have no
     // corresponding HTML attribute (FAST won't call the setter in that case).
     const self = this as Record<string, unknown>;
-    const attrFields = ['items', 'position', 'overflowText', 'center'] as const;
+    const attrFields = ['items', 'position', 'overflowText', 'center', 'roundBoxes'] as const;
     const observableFields = ['highlighted', 'selected', '_overflowCount', '_overflowItems'] as const;
 
     const savedAttr: Partial<Record<(typeof attrFields)[number], unknown>> = {};

@@ -4,13 +4,14 @@ import type { ScatterChart } from './scatter-chart.js';
 export function scatterChartTemplate<T extends ScatterChart>(): ElementViewTemplate<T> {
   return html<T>`
     <template>
-      ${when(x => !!x.chartTitle, html<T>`<div class="chart-title">${x => x.chartTitle}</div>`) }
+      ${when(x => !!x.chartTitle, html<T>`<div class="chart-title">${x => x.chartTitle}</div>`)}
       <div class="chart-container" ${ref('chartContainer')}></div>
       <fluent-chart-legend
         :items="${x => x.legends}"
         label="${x => x.legendListLabel}"
         position="${x => x.legendPosition}"
         ?hidden="${x => x.hideLegends}"
+        round-boxes="${x => x.roundCorners}"
         @legend-click="${(x, c) => x.handleLegendClick((c.event as CustomEvent<string>).detail)}"
         @legend-mouseover="${(x, c) => x.handleLegendMouseoverAndFocus((c.event as CustomEvent<string>).detail)}"
         @legend-mouseout="${x => x.handleLegendMouseoutAndBlur()}"
@@ -23,8 +24,8 @@ export function scatterChartTemplate<T extends ScatterChart>(): ElementViewTempl
         html<T>`
           <div
             class="tooltip"
-            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x => x.tooltipProps.yPos}px; transform: ${x =>
-              x.tooltipInlineTransform}"
+            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x =>
+              x.tooltipProps.yPos}px; transform: ${x => x.tooltipInlineTransform}"
           >
             <div class="tooltip-body">
               <div class="tooltip-header">${x => x.tooltipProps.yValue}</div>

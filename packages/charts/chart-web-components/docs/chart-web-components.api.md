@@ -44,6 +44,9 @@ export class AreaChart extends CartesianChartBase {
     protected modeChanged(): void;
     // (undocumented)
     protected _performRender(): void;
+    secondaryYAxisTickLabelMaxWidth?: number | string;
+    // (undocumented)
+    protected secondaryYAxisTickLabelMaxWidthChanged(): void;
     secondaryYAxisTitle: string;
     // (undocumented)
     protected secondaryYAxisTitleChanged(): void;
@@ -112,6 +115,7 @@ export class ChartLegend extends FASTElement {
     overflowText?: string;
     // Warning: (ae-forgotten-export) The symbol "ChartLegendPosition" needs to be exported by the entry point index.d.ts
     position?: ChartLegendPosition;
+    roundBoxes?: boolean;
     selected: string[];
 }
 
@@ -576,6 +580,9 @@ export class HeatMapChart extends CartesianChartBase {
     yAxisStringLabels?: Record<string, string>;
     // (undocumented)
     protected yAxisStringLabelsChanged(): void;
+    yAxisTickLabelMaxWidth?: number | string;
+    // (undocumented)
+    protected yAxisTickLabelMaxWidthChanged(): void;
 }
 
 // @public
@@ -818,6 +825,10 @@ export class LineChart extends CartesianChartBase {
     //
     // (undocumented)
     tooltipProps: TooltipState_3;
+    // (undocumented)
+    yAxisTickLabelMaxWidth?: number | string;
+    // (undocumented)
+    protected yAxisTickLabelMaxWidthChanged(): void;
 }
 
 // @public (undocumented)
