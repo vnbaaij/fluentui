@@ -226,6 +226,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           }
           const hostRect = this.getBoundingClientRect();
           const svgRect = svg.getBoundingClientRect();
+          const anchorX = svgRect.left - hostRect.left + margins.left + x + offset + actualWidth / 2;
+          const anchorY = svgRect.top - hostRect.top + margins.top + top;
           this._currentTooltipDataPoint = { ...segment, xAxisPoint: stack.xAxisPoint };
           this.tooltipProps = {
             isVisible: true,
@@ -233,9 +235,10 @@ export class VerticalStackedBarChart extends CartesianChartBase {
             xValue: String(stack.xAxisPoint),
             yValue: formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
             color,
-            xPos: svgRect.left - hostRect.left + margins.left + x + offset + actualWidth / 2,
-            yPos: svgRect.top - hostRect.top + margins.top + top,
+            xPos: anchorX,
+            yPos: anchorY,
           };
+          this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
         });
         rect.addEventListener('mouseleave', () => this._clearTooltip());
         plotGroup.appendChild(rect);

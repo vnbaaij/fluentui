@@ -281,6 +281,8 @@ export class LineChart extends CartesianChartBase {
       }
       const hostRect = this.getBoundingClientRect();
       const svgRect = svg.getBoundingClientRect();
+      const anchorX = svgRect.left - hostRect.left + margins.left + point.cx;
+      const anchorY = svgRect.top - hostRect.top + margins.top + point.cy;
       this._currentTooltipDataPoint = { legend, x: point.x, y: point.y };
       this.tooltipProps = {
         isVisible: true,
@@ -288,9 +290,10 @@ export class LineChart extends CartesianChartBase {
         xValue: point.xLabel,
         yValue: formatNumberValue(point.y, this.yAxisTickFormat, this.culture),
         color,
-        xPos: svgRect.left - hostRect.left + margins.left + point.cx,
-        yPos: svgRect.top - hostRect.top + margins.top + point.cy,
+        xPos: anchorX,
+        yPos: anchorY,
       };
+      this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
     };
 
     const showNearestPoint = (legend: string, color: string, points: NormalizedPoint[], event: MouseEvent) => {

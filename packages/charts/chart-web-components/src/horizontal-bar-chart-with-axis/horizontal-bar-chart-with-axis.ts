@@ -920,9 +920,9 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
 
     const hostRect = this.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
-    const xReference = 'clientX' in event ? event.clientX : targetRect.left + targetRect.width / 2;
-    const xPos = this._isRTL ? hostRect.right - xReference : xReference - hostRect.left;
-    const yPos = ('clientY' in event ? event.clientY : targetRect.top) - hostRect.top - 44;
+    const anchorX =
+      'clientX' in event ? event.clientX - hostRect.left : targetRect.left + targetRect.width / 2 - hostRect.left;
+    const anchorY = 'clientY' in event ? event.clientY - hostRect.top : targetRect.top - hostRect.top;
     this._currentTooltipDataPoint = point;
     this.tooltipProps = {
       isVisible: true,
@@ -932,9 +932,10 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
       yLabel: Y_AXIS_LABEL,
       yValue: point.yAxisCalloutData || String(point.y),
       color,
-      xPos: Math.max(0, xPos),
-      yPos: Math.max(0, yPos),
+      xPos: Math.max(0, this._isRTL ? hostRect.width - anchorX : anchorX),
+      yPos: Math.max(0, anchorY),
     };
+    this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
   }
 
   protected override _clearTooltip(): void {

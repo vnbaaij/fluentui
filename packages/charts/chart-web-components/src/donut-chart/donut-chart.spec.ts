@@ -925,7 +925,7 @@ test.describe('Donut-chart - value-inside-donut', () => {
     await expect(element.locator('.text-inside-donut')).toContainText('20,000');
   });
 
-  test('Should remove center text when value-inside-donut attribute is removed', async ({ page }) => {
+  test('Should show auto-sum when value-inside-donut attribute is removed', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
@@ -940,13 +940,137 @@ test.describe('Donut-chart - value-inside-donut', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
 
     const element = page.locator('fluent-donut-chart');
-    await expect(element.locator('.text-inside-donut')).toHaveCount(1);
+    await expect(element.locator('.text-inside-donut')).toContainText('39,000');
 
     await element.evaluate(el => {
       el.removeAttribute('value-inside-donut');
     });
 
+    // When removed, should auto-sum with locale formatting (20000 + 39000 = 59,000)
+    await expect(element.locator('.text-inside-donut')).toContainText('59,000');
+  });
+
+  test('Should auto-sum data when value-inside-donut is empty', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          value-inside-donut=""
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    // Total = 20000 + 39000 = 59000 (formatted with locale: 59,000)
+    await expect(element.locator('.text-inside-donut')).toContainText('59,000');
+  });
+
+  test('Should auto-sum data when value-inside-donut attribute is not set', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    // Total = 20000 + 39000 = 59000 (formatted with locale: 59,000)
+    await expect(element.locator('.text-inside-donut')).toContainText('59,000');
+  });
+
+  test('Should support format string with {0} placeholder', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          value-inside-donut="Total: {0} items"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    // Total = 20000 + 39000 = 59000 (formatted with locale: 59,000)
+    await expect(element.locator('.text-inside-donut')).toContainText('Total: 59,000 items');
+  });
+
+  test('Should force empty when value-inside-donut is a space', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          value-inside-donut=" "
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    // Text element should have no visible content
     await expect(element.locator('.text-inside-donut')).toHaveCount(0);
+  });
+
+  test('Should use valueInsideFormatter function for custom formatting', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+
+    // Set formatter function: convert to thousands with K suffix
+    await element.evaluate((el: FluentDonutChart) => {
+      el.valueInsideFormatter = (value: number) => `$${(value / 1000).toFixed(1)}K`;
+    });
+
+    // Total = 20000 + 39000 = 59000 → $59.0K
+    await expect(element.locator('.text-inside-donut')).toContainText('$59.0K');
+  });
+
+  test('Should update center text when format string is applied', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="${basicTitle}"
+          inner-radius="55"
+          value-inside-donut="Count: {0}"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.text-inside-donut')).toContainText('Count: 59,000');
+
+    await element.evaluate(el => {
+      el.setAttribute('value-inside-donut', 'Sum: {0}');
+    });
+
+    await expect(element.locator('.text-inside-donut')).toContainText('Sum: 59,000');
   });
 });
 
@@ -1224,5 +1348,64 @@ test.describe('DonutChart - tooltipRenderer', () => {
     await element.getByLabel('first,').dispatchEvent('mouseover');
     await expect(element.locator('.tooltip')).toHaveCount(1);
     await expect(element.locator('.tooltip-body')).toBeVisible();
+  });
+
+  test('Should not render default tooltip template when tooltipRenderer is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart
+          chart-title="custom tooltip no-default test"
+          inner-radius="55"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+    const element = page.locator('fluent-donut-chart');
+
+    await element.evaluate((el: any) => {
+      el.tooltipRenderer = () => `<span class="custom-tip">Custom tooltip</span>`;
+    });
+
+    await element.getByLabel('first,').dispatchEvent('mouseover');
+    await expect(element.locator('.tooltip-body .custom-tip')).toBeVisible();
+    await expect(element.locator('.tooltip-body .tooltip-inner')).toHaveCount(0);
+  });
+
+  test('Should keep tooltip inside chart bounds on narrow viewports', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:220px;">
+        <fluent-donut-chart
+          chart-title="tooltip viewport bounds test"
+          inner-radius="55"
+          width="200"
+          height="200"
+          data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+    const element = page.locator('fluent-donut-chart');
+
+    await element.getByLabel('first,').dispatchEvent('mouseover');
+    const tooltip = element.locator('.tooltip');
+    await expect(tooltip).toBeVisible();
+
+    const tooltipBox = await tooltip.boundingBox();
+    const hostBox = await element.boundingBox();
+
+    expect(tooltipBox).not.toBeNull();
+    expect(hostBox).not.toBeNull();
+    if (!tooltipBox || !hostBox) {
+      return;
+    }
+
+    expect(tooltipBox.x).toBeGreaterThanOrEqual(hostBox.x - 1);
+    expect(tooltipBox.y).toBeGreaterThanOrEqual(hostBox.y - 1);
+    expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(hostBox.x + hostBox.width + 1);
+    expect(tooltipBox.y + tooltipBox.height).toBeLessThanOrEqual(hostBox.y + hostBox.height + 1);
   });
 });

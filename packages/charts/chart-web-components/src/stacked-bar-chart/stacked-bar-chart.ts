@@ -130,7 +130,9 @@ export class StackedBarChart extends ChartBase {
     const height = toNumber(this.height, margins.top + barHeight + margins.bottom);
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const total = chartData.reduce((sum, point) => sum + Math.max(point.data, 0), 0);
-    const scale = scaleLinear().domain([0, total || 1]).range([0, innerWidth]);
+    const scale = scaleLinear()
+      .domain([0, total || 1])
+      .range([0, innerWidth]);
 
     const svg = createSvgElement<SVGSVGElement>('svg');
     svg.classList.add('chart');
@@ -195,7 +197,10 @@ export class StackedBarChart extends ChartBase {
           event.preventDefault();
           point.onClick?.();
         }
-        this._rovingKeydown(this._segments.map(segment => segment.bar), event);
+        this._rovingKeydown(
+          this._segments.map(segment => segment.bar),
+          event,
+        );
       });
       rect.addEventListener('click', () => point.onClick?.());
 
@@ -264,12 +269,7 @@ export class StackedBarChart extends ChartBase {
     }
   }
 
-  private _createFill(
-    defs: SVGDefsElement,
-    color: string,
-    point: StackedBarChartDataPoint,
-    index: number,
-  ): string {
+  private _createFill(defs: SVGDefsElement, color: string, point: StackedBarChartDataPoint, index: number): string {
     if (!this.enableGradient && !point.gradient) {
       return color;
     }
@@ -305,14 +305,17 @@ export class StackedBarChart extends ChartBase {
   ) {
     const rect = this.getBoundingClientRect();
     const targetRect = el.getBoundingClientRect();
+    const anchorX = targetRect.left - rect.left + targetRect.width / 2;
+    const anchorY = targetRect.top - rect.top;
     this._currentTooltipDataPoint = dataPoint;
     this.tooltipProps = {
       isVisible: true,
       legend: dataPoint.legend ?? '',
       yValue: defaultNumberFormatter(dataPoint.data ?? 0),
       color,
-      xPos: targetRect.left - rect.left + targetRect.width / 2,
-      yPos: targetRect.top - rect.top,
+      xPos: anchorX,
+      yPos: anchorY,
     };
+    this._positionTooltipFromAnchor(anchorX, anchorY, { preferredVertical: 'above', horizontalAlign: 'center' });
   }
 }

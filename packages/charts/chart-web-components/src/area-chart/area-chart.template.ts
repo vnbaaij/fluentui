@@ -28,14 +28,19 @@ export function areaChartTemplate<T extends AreaChart>(): ElementViewTemplate<T>
               x.tooltipProps.yPos}px; transform: ${x => x.tooltipInlineTransform}"
           >
             <div class="tooltip-body">
-              <div class="tooltip-header">${x => (x.tooltipProps as any).xLabel}</div>
-              ${repeat(
-                x => (x.tooltipProps as any).entries as TooltipEntry[],
-                html<TooltipEntry, T>`
-                  <div class="tooltip-info" style="border-color: ${x => x.color};">
-                    <div class="tooltip-legend-text">${x => x.legend}</div>
-                    <div class="tooltip-primary-value" style="color: ${x => x.color};">${x => x.value}</div>
-                  </div>
+              ${when(
+                x => !x.tooltipRenderer,
+                html<T>`
+                  <div class="tooltip-header">${x => (x.tooltipProps as any).xLabel}</div>
+                  ${repeat(
+                    x => (x.tooltipProps as any).entries as TooltipEntry[],
+                    html<TooltipEntry, T>`
+                      <div class="tooltip-info" style="border-color: ${x => x.color};">
+                        <div class="tooltip-legend-text">${x => x.legend}</div>
+                        <div class="tooltip-primary-value" style="color: ${x => x.color};">${x => x.value}</div>
+                      </div>
+                    `,
+                  )}
                 `,
               )}
             </div>

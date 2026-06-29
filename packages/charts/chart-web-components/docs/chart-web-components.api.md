@@ -175,6 +175,7 @@ export class DonutChart extends ChartBase {
     valueInsideDonut?: string;
     // (undocumented)
     protected valueInsideDonutChanged(): void;
+    valueInsideFormatter: ((value: number) => string) | null;
 }
 
 // Warning: (ae-missing-release-tag) "DonutChartDataPoint" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

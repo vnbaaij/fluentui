@@ -431,13 +431,6 @@ export class HeatMapChart extends CartesianChartBase {
     // not the host width, which can be wider due to :host { width: 100% }.
     const chartW = this._lastSvgWidth || hostRect.width;
     const chartH = this._lastSvgHeight || hostRect.height;
-    const GAP = 12;
-
-    const TOOLTIP_W = 270;
-    const TOOLTIP_H = 130;
-
-    const xPos = Math.max(0, Math.min(relX - TOOLTIP_W / 2, chartW - TOOLTIP_W));
-    const yPos = relY + GAP + TOOLTIP_H <= chartH ? relY + GAP : Math.max(0, relY - GAP - TOOLTIP_H);
 
     const rectText =
       point.rectText !== undefined
@@ -451,12 +444,21 @@ export class HeatMapChart extends CartesianChartBase {
       legend: point.legend,
       yValue: rectText,
       color: cellColor,
-      xPos,
-      yPos,
+      xPos: relX,
+      yPos: relY,
       rectText,
       ratio: point.ratio,
       descriptionMessage: point.descriptionMessage,
     } satisfies HeatMapTooltipProps;
+    this._positionTooltipFromAnchor(relX, relY, {
+      preferredVertical: 'below',
+      horizontalAlign: 'center',
+      gap: 12,
+      estimatedWidth: 270,
+      estimatedHeight: 130,
+      boundsWidth: chartW,
+      boundsHeight: chartH,
+    });
   }
 
   private _buildColorScale() {

@@ -194,6 +194,8 @@ export class ScatterChart extends CartesianChartBase {
           }
           const hostRect = this.getBoundingClientRect();
           const svgRect = svg.getBoundingClientRect();
+          const anchorX = svgRect.left - hostRect.left + margins.left + xScale(point.x);
+          const anchorY = svgRect.top - hostRect.top + margins.top + yScale(point.y);
           this._currentTooltipDataPoint = { legend: series.legend, ...point };
           this.tooltipProps = {
             isVisible: true,
@@ -201,9 +203,10 @@ export class ScatterChart extends CartesianChartBase {
             xValue: point.xLabel,
             yValue: point.yLabel,
             color: series.color,
-            xPos: svgRect.left - hostRect.left + margins.left + xScale(point.x),
-            yPos: svgRect.top - hostRect.top + margins.top + yScale(point.y),
+            xPos: anchorX,
+            yPos: anchorY,
           };
+          this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
         });
         circle.addEventListener('mouseleave', () => this._clearTooltip());
         plotGroup.appendChild(circle);

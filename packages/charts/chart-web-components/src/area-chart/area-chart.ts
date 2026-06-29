@@ -704,6 +704,8 @@ export class AreaChart extends CartesianChartBase {
 
       if (!this.hideTooltip && entries.length > 0) {
         const hostRect = this.getBoundingClientRect();
+        const anchorX = svgRect.left - hostRect.left + leftMargin + cx;
+        const anchorY = svgRect.top - hostRect.top + defaultMargins.top + topY;
         this._currentTooltipDataPoint = { xLabel: found.xLabel, entries };
         this.tooltipProps = {
           isVisible: true,
@@ -713,9 +715,10 @@ export class AreaChart extends CartesianChartBase {
           xLabel: found.xLabel,
           xAxisAriaLabel: found.xAxisAriaLabel,
           entries,
-          xPos: svgRect.left - hostRect.left + leftMargin + cx,
-          yPos: svgRect.top - hostRect.top + defaultMargins.top + topY - 10,
+          xPos: anchorX,
+          yPos: anchorY,
         };
+        this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
       }
     };
 

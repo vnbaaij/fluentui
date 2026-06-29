@@ -27,13 +27,18 @@ export function stackedBarChartTemplate<T extends StackedBarChart>(): ElementVie
             style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x => x.tooltipProps.yPos}px;"
           >
             <div class="tooltip-body">
-              <div class="tooltip-header">Value</div>
-              <div class="tooltip-inner" style="border-color: ${x => x.tooltipProps.color};">
-                <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
-                <div class="tooltip-content-y" style="color: ${x => x.tooltipProps.color};">
-                  ${x => x.tooltipProps.yValue}
-                </div>
-              </div>
+              ${when(
+                x => !x.tooltipRenderer,
+                html<T>`
+                  <div class="tooltip-header">Value</div>
+                  <div class="tooltip-inner" style="border-color: ${x => x.tooltipProps.color};">
+                    <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
+                    <div class="tooltip-content-y" style="color: ${x => x.tooltipProps.color};">
+                      ${x => x.tooltipProps.yValue}
+                    </div>
+                  </div>
+                `,
+              )}
             </div>
           </div>
         `,

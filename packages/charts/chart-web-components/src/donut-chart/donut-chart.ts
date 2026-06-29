@@ -1,4 +1,4 @@
-import { attr, nullableNumberConverter } from '@microsoft/fast-element';
+import { attr, nullableNumberConverter, observable } from '@microsoft/fast-element';
 import { ChartBase } from '../utils/chart-base.js';
 import { format as d3Format } from 'd3-format';
 import { arc as d3Arc, pie as d3Pie, PieArcDatum } from 'd3-shape';
@@ -31,6 +31,14 @@ export class DonutChart extends ChartBase {
   @attr
   public order: 'default' | 'sorted' = 'default';
 
+  /**
+   * Optional formatter function for the text inside the donut.
+   * Receives the sum of all data values and returns the formatted string.
+   * When provided, this takes precedence over format string processing.
+   */
+  @observable
+  public valueInsideFormatter: ((value: number) => string) | null = null;
+
   public group!: SVGGElement;
 
   protected override _enableResizeObserver = true;
@@ -54,11 +62,18 @@ export class DonutChart extends ChartBase {
     // We save the default values first so we can restore them for fields that have
     // no corresponding HTML attribute (FAST won't call the setter in that case).
     const self = this as Record<string, unknown>;
-    const attrFields = ['showLabelsInPercent', 'data', 'innerRadius', 'valueInsideDonut', 'order'] as const;
+    const reactiveFields = [
+      'showLabelsInPercent',
+      'data',
+      'innerRadius',
+      'valueInsideDonut',
+      'order',
+      'valueInsideFormatter',
+    ] as const;
 
-    const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
+    const saved: Partial<Record<(typeof reactiveFields)[number], unknown>> = {};
 
-    for (const field of attrFields) {
+    for (const field of reactiveFields) {
       saved[field] = self[field];
       delete self[field];
     }
@@ -66,7 +81,7 @@ export class DonutChart extends ChartBase {
     super.connectedCallback();
 
     // Restore defaults for any attr-backed field that was not set from an HTML attribute.
-    for (const field of attrFields) {
+    for (const field of reactiveFields) {
       if (self[field] === undefined && saved[field] !== undefined) {
         self[field] = saved[field];
       }
@@ -95,6 +110,10 @@ export class DonutChart extends ChartBase {
   }
 
   protected valueInsideDonutChanged() {
+    this._requestRender();
+  }
+
+  protected valueInsideFormatterChanged() {
     this._requestRender();
   }
 
@@ -214,44 +233,9 @@ export class DonutChart extends ChartBase {
       path.setAttribute('aria-label', `${arcDatum.data.legend}, ${arcDatum.data.data}.`);
       path.setAttribute('role', 'img');
 
-      path.addEventListener('mouseover', event => {
-        if (!this._shouldShowTooltip(arcDatum.data.legend)) {
-          return;
-        }
+      path.addEventListener('mouseover', event => this._showArcTooltip(arcDatum.data, path, event));
 
-        const bounds = this.getBoundingClientRect();
-
-        this._currentTooltipDataPoint = arcDatum.data;
-        this.tooltipProps = {
-          isVisible: true,
-          legend: arcDatum.data.legend,
-          yValue: this._formatDataPointValue(arcDatum.data),
-          color: arcDatum.data.color!,
-          xPos: this._isRTL ? bounds.right - event.clientX : event.clientX - bounds.left,
-          yPos: event.clientY - bounds.top - 85,
-        };
-      });
-
-      path.addEventListener('focus', () => {
-        if (!this._shouldShowTooltip(arcDatum.data.legend)) {
-          return;
-        }
-
-        const rootBounds = this.getBoundingClientRect();
-        const arcBounds = path.getBoundingClientRect();
-
-        this._currentTooltipDataPoint = arcDatum.data;
-        this.tooltipProps = {
-          isVisible: true,
-          legend: arcDatum.data.legend,
-          yValue: this._formatDataPointValue(arcDatum.data),
-          color: arcDatum.data.color!,
-          xPos: this._isRTL
-            ? rootBounds.right - arcBounds.left - arcBounds.width / 2
-            : arcBounds.left + arcBounds.width / 2 - rootBounds.left,
-          yPos: arcBounds.top - rootBounds.top - 85,
-        };
-      });
+      path.addEventListener('focus', () => this._showArcTooltip(arcDatum.data, path));
 
       path.addEventListener('blur', () => {
         this._clearTooltip();
@@ -276,7 +260,9 @@ export class DonutChart extends ChartBase {
     this._applyActiveLegendState();
     this._applyLegendButtonState();
 
-    if (this.valueInsideDonut) {
+    // Create text element if valueInsideDonut is set or auto-sum is enabled
+    const displayValue = this._computeDisplayValue(totalValue);
+    if (displayValue !== null) {
       this._textInsideDonut = document.createElementNS(SVG_NAMESPACE_URI, 'text');
       this.group.appendChild(this._textInsideDonut);
       this._textInsideDonut.classList.add('text-inside-donut');
@@ -286,6 +272,39 @@ export class DonutChart extends ChartBase {
       this._textInsideDonut.setAttribute('dominant-baseline', 'middle');
       this._updateTextInsideDonut();
     }
+  }
+
+  private _showArcTooltip(dataPoint: DonutChartDataPoint, arcPath: SVGPathElement, event?: MouseEvent): void {
+    if (!this._shouldShowTooltip(dataPoint.legend)) {
+      return;
+    }
+
+    const hostBounds = this.getBoundingClientRect();
+    const arcBounds = arcPath.getBoundingClientRect();
+    const segmentCenterX = arcBounds.left + arcBounds.width / 2 - hostBounds.left;
+    const segmentCenterY = arcBounds.top + arcBounds.height / 2 - hostBounds.top;
+    const anchorX = event?.clientX !== undefined ? event.clientX - hostBounds.left : segmentCenterX;
+    const anchorY = event?.clientY !== undefined ? event.clientY - hostBounds.top : segmentCenterY;
+    const horizontalAlign: 'start' | 'center' | 'end' = event ? (this._isRTL ? 'end' : 'start') : 'center';
+
+    this._currentTooltipDataPoint = dataPoint;
+    this.tooltipProps = {
+      isVisible: true,
+      legend: dataPoint.legend,
+      yValue: this._formatDataPointValue(dataPoint),
+      color: dataPoint.color!,
+      xPos: this._isRTL ? hostBounds.width - anchorX : anchorX,
+      yPos: Math.max(0, anchorY - 8),
+    };
+
+    this._positionTooltipFromAnchor(anchorX, anchorY, {
+      preferredVertical: 'above',
+      horizontalAlign,
+      gap: 8,
+      padding: 8,
+      estimatedWidth: 176,
+      estimatedHeight: 64,
+    });
   }
 
   private _getLegends(chartData: DonutChartDataPoint[]): Legend[] {
@@ -381,14 +400,56 @@ export class DonutChart extends ChartBase {
     );
   }
 
-  private _getTextInsideDonut(valueInsideDonut: string) {
-    let textInsideDonut = valueInsideDonut;
+  /**
+   * Computes the display value for inside the donut.
+   * Returns null if no value should be displayed.
+   * Logic:
+   * - If valueInsideDonut is a space, return null (force empty)
+   * - If valueInsideDonut contains {0} placeholder, it's a format string
+   * - If valueInsideDonut is empty/undefined, compute auto-sum
+   * - Otherwise, return valueInsideDonut as-is
+   */
+  private _computeDisplayValue(totalValue: number): string | null {
+    // Space forces empty (no text)
+    if (this.valueInsideDonut === ' ') {
+      return null;
+    }
+
+    const value = this.valueInsideDonut?.trim() ?? '';
+
+    // Format string with {0} placeholder
+    if (value.includes('{0}')) {
+      // If formatter function is set, use it directly
+      if (this.valueInsideFormatter) {
+        return this.valueInsideFormatter(totalValue);
+      }
+      // Otherwise use locale formatting for the {0} replacement
+      const formattedValue = formatLocaleNumber(totalValue, this.culture || undefined);
+      return value.replace('{0}', formattedValue);
+    }
+
+    // Not set or explicitly empty → auto-sum
+    if (this.valueInsideDonut == null || this.valueInsideDonut === '') {
+      // If formatter function is set, use it
+      if (this.valueInsideFormatter) {
+        return this.valueInsideFormatter(totalValue);
+      }
+      // Always use locale formatting for auto-sum
+      return formatLocaleNumber(totalValue, this.culture || undefined);
+    }
+
+    // Explicit value
+    return value;
+  }
+
+  private _getTextInsideDonut(computedValue: string) {
+    let textInsideDonut = computedValue;
 
     const highlighted = this._getHighlightedLegends();
     const singleHighlight =
       highlighted.length === 1 ? highlighted[0] : this.tooltipProps.isVisible ? this.tooltipProps.legend : null;
 
-    if (valueInsideDonut && singleHighlight) {
+    if (computedValue && singleHighlight) {
       const highlightedDataPoint = this.data.find(dataPoint => dataPoint.legend === singleHighlight);
       if (highlightedDataPoint) {
         textInsideDonut = this._formatDataPointValue(highlightedDataPoint);
@@ -399,11 +460,19 @@ export class DonutChart extends ChartBase {
   }
 
   private _updateTextInsideDonut() {
-    if (!this._textInsideDonut || !this.valueInsideDonut) {
+    if (!this._textInsideDonut) {
       return;
     }
 
-    this._textInsideDonut.textContent = this._getTextInsideDonut(this.valueInsideDonut);
+    const totalValue = this.data?.reduce((sum, point) => sum + (point.data ?? 0), 0) ?? 0;
+    const displayValue = this._computeDisplayValue(totalValue);
+
+    if (displayValue === null) {
+      this._textInsideDonut.textContent = '';
+      return;
+    }
+
+    this._textInsideDonut.textContent = this._getTextInsideDonut(displayValue);
     const lineHeight = this._textInsideDonut.getBoundingClientRect().height;
     wrapText(this._textInsideDonut, 2 * this.innerRadius);
     const lines = this._textInsideDonut.getElementsByTagName('tspan');

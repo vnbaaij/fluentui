@@ -373,6 +373,8 @@ export class FunnelChart extends ChartBase {
 
   private _showTooltip(legend: string, yValue: string, color: string, event: MouseEvent) {
     const bounds = this.getBoundingClientRect();
+    const anchorX = event.clientX - bounds.left;
+    const anchorY = event.clientY - bounds.top;
     const current = this._currentTooltipDataPoint as { legend: string; yValue: string; color: string } | null;
     if (!current || current.legend !== legend || current.yValue !== yValue || current.color !== color) {
       this._currentTooltipDataPoint = { legend, yValue, color };
@@ -382,25 +384,30 @@ export class FunnelChart extends ChartBase {
       legend,
       yValue,
       color,
-      xPos: this._isRTL ? bounds.right - event.clientX : event.clientX - bounds.left,
-      yPos: event.clientY - bounds.top - 85,
+      xPos: this._isRTL ? bounds.width - anchorX : anchorX,
+      yPos: anchorY,
     };
+    this._positionTooltipFromAnchor(anchorX, anchorY, {
+      preferredVertical: 'above',
+      horizontalAlign: this._isRTL ? 'end' : 'start',
+    });
   }
 
   private _showTooltipForElement(legend: string, yValue: string, color: string, el: SVGPathElement) {
     const rootBounds = this.getBoundingClientRect();
     const elBounds = el.getBoundingClientRect();
+    const anchorX = elBounds.left + elBounds.width / 2 - rootBounds.left;
+    const anchorY = elBounds.top - rootBounds.top;
     this._currentTooltipDataPoint = { legend, yValue, color };
     this.tooltipProps = {
       isVisible: true,
       legend,
       yValue,
       color,
-      xPos: this._isRTL
-        ? rootBounds.right - elBounds.left - elBounds.width / 2
-        : elBounds.left + elBounds.width / 2 - rootBounds.left,
-      yPos: elBounds.top - rootBounds.top - 85,
+      xPos: this._isRTL ? rootBounds.width - anchorX : anchorX,
+      yPos: anchorY,
     };
+    this._positionTooltipFromAnchor(anchorX, anchorY, { preferredVertical: 'above', horizontalAlign: 'center' });
   }
 
   protected _applyActiveLegendState() {

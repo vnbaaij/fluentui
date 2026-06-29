@@ -144,8 +144,8 @@ export class SankeyChart extends ChartBase {
       const strokeColor = this.pathColor
         ? getColorFromToken(this.pathColor)
         : source.color
-          ? getColorFromToken(source.color)
-          : getNextColor(source.index ?? index, 0);
+        ? getColorFromToken(source.color)
+        : getNextColor(source.index ?? index, 0);
 
       const path = createSvgElement<SVGPathElement>('path');
       path.classList.add('sankey-link');
@@ -163,17 +163,18 @@ export class SankeyChart extends ChartBase {
 
         const rootBounds = this.getBoundingClientRect();
         const linkBounds = path.getBoundingClientRect();
+        const anchorX = linkBounds.left - rootBounds.left + linkBounds.width / 2;
+        const anchorY = linkBounds.top - rootBounds.top;
         this._currentTooltipDataPoint = link;
         this.tooltipProps = {
           isVisible: true,
           legend: `${sourceLegend} → ${targetLegend}`,
           yValue: defaultNumberFormatter(link.value),
           color: strokeColor,
-          xPos: this._isRTL
-            ? rootBounds.right - linkBounds.left - linkBounds.width / 2
-            : linkBounds.left - rootBounds.left + linkBounds.width / 2,
-          yPos: Math.max(linkBounds.top - rootBounds.top - 8, 0),
+          xPos: this._isRTL ? rootBounds.width - anchorX : anchorX,
+          yPos: Math.max(anchorY, 0),
         };
+        this._positionTooltipFromAnchor(anchorX, anchorY, { preferredVertical: 'above', horizontalAlign: 'center' });
       });
 
       path.addEventListener('mouseleave', () => {

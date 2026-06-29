@@ -167,7 +167,7 @@ export const Sizing: Story<FluentDonutChart> = () => {
   });
   controls.appendChild(widthControl.element);
 
-  const heightControl = createSliderField('Height', 'donut-height', height, 100, 500 , nextHeight => {
+  const heightControl = createSliderField('Height', 'donut-height', height, 100, 500, nextHeight => {
     height = nextHeight;
     heightControl.setValue(nextHeight);
     renderChart();
@@ -264,6 +264,65 @@ export const ValueInsideDonut: Story<FluentDonutChart> = () => {
   return container;
 };
 ValueInsideDonut.parameters = { docs: { story: { height: '440px' } } };
+
+export const AutoSumExample: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Auto-sum: no value-inside-donut attribute');
+  chart.setAttribute('data', JSON.stringify(sortedData));
+  chart.setAttribute('inner-radius', '55');
+  // No value-inside-donut attribute → auto-sum enabled (shows 59,000 with locale formatting)
+  container.appendChild(chart);
+  return container;
+};
+AutoSumExample.storyName = 'Auto-sum (Default)';
+AutoSumExample.parameters = { docs: { story: { height: '380px' } } };
+
+export const FormatStringExample: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Format String with {0} placeholder');
+  chart.setAttribute('data', JSON.stringify(sortedData));
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('value-inside-donut', 'Total: {0} items');
+  // Format string with {0} placeholder → shows "Total: 59,000 items" (with locale formatting)
+  container.appendChild(chart);
+  return container;
+};
+FormatStringExample.storyName = 'Format String';
+FormatStringExample.parameters = { docs: { story: { height: '380px' } } };
+
+export const FormatterFunctionExample: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Custom Formatter Function');
+  chart.setAttribute('data', JSON.stringify(sortedData));
+  chart.setAttribute('inner-radius', '55');
+  // Use valueInsideFormatter property for custom formatting
+  chart.valueInsideFormatter = (value: number) => {
+    // Format as currency with k suffix
+    return `$${(value / 1000).toFixed(1)}k`;
+  };
+  // Shows "$59.0k"
+  container.appendChild(chart);
+  return container;
+};
+FormatterFunctionExample.storyName = 'Custom Formatter Function';
+FormatterFunctionExample.parameters = { docs: { story: { height: '380px' } } };
+
+export const ForceEmptyExample: Story<FluentDonutChart> = () => {
+  const container = document.createElement('div');
+  const chart = document.createElement('fluent-donut-chart') as FluentDonutChart;
+  chart.setAttribute('chart-title', 'Force Empty (space character)');
+  chart.setAttribute('data', JSON.stringify(sortedData));
+  chart.setAttribute('inner-radius', '55');
+  chart.setAttribute('value-inside-donut', ' ');
+  // Space character forces empty center (no text displayed)
+  container.appendChild(chart);
+  return container;
+};
+ForceEmptyExample.storyName = 'Force Empty';
+ForceEmptyExample.parameters = { docs: { story: { height: '380px' } } };
 
 export const Sorted: Story<FluentDonutChart> = renderComponent(html<StoryArgs<FluentDonutChart>>`
   <fluent-donut-chart

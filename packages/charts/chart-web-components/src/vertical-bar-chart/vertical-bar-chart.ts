@@ -211,6 +211,8 @@ export class VerticalBarChart extends CartesianChartBase {
         }
         const hostRect = this.getBoundingClientRect();
         const svgRect = svg.getBoundingClientRect();
+        const anchorX = svgRect.left - hostRect.left + margins.left + x + offset + actualWidth / 2;
+        const anchorY = svgRect.top - hostRect.top + margins.top + yScale(point.y);
         this._currentTooltipDataPoint = point;
         this.tooltipProps = {
           isVisible: true,
@@ -218,9 +220,10 @@ export class VerticalBarChart extends CartesianChartBase {
           xValue: key,
           yValue: formatNumberValue(point.y, this.yAxisTickFormat, this.culture),
           color,
-          xPos: svgRect.left - hostRect.left + margins.left + x + offset + actualWidth / 2,
-          yPos: svgRect.top - hostRect.top + margins.top + yScale(point.y),
+          xPos: anchorX,
+          yPos: anchorY,
         };
+        this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
       });
       rect.addEventListener('mouseleave', () => this._clearTooltip());
       rect.addEventListener('click', () => point.onClick?.());

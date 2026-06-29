@@ -10,7 +10,11 @@ import {
   SVG_NAMESPACE_URI,
   validateChartPropsArray,
 } from '../utils/chart-helpers.js';
-import type { HorizontalBarChartDataPoint, HorizontalBarChartProps, HorizontalBarChartVariant } from './horizontal-bar-chart.options.js';
+import type {
+  HorizontalBarChartDataPoint,
+  HorizontalBarChartProps,
+  HorizontalBarChartVariant,
+} from './horizontal-bar-chart.options.js';
 import type { Legend, TooltipRenderer } from '../utils/chart-options.js';
 
 /**
@@ -217,7 +221,10 @@ export class HorizontalBarChart extends ChartBase {
           continue;
         }
         // Skip legend for single-point bars unless explicitly enabled.
-        if (!this.showLegendForSinglePointBar && dataSeries.chartData!.filter(p => !(p as any).placeholder).length === 1) {
+        if (
+          !this.showLegendForSinglePointBar &&
+          dataSeries.chartData!.filter(p => !(p as any).placeholder).length === 1
+        ) {
           continue;
         }
         if (!uniqueLegendsMap.has(point.legend)) {
@@ -409,17 +416,18 @@ export class HorizontalBarChart extends ChartBase {
         }
         const bounds = this.getBoundingClientRect();
         const rBounds = rectEl.getBoundingClientRect();
+        const anchorX = rBounds.left + rBounds.width / 2 - bounds.left;
+        const anchorY = rBounds.top - bounds.top;
         this._currentTooltipDataPoint = point;
         this.tooltipProps = {
           isVisible: true,
           legend: point.legend,
           yValue: formatLocaleNumber(point.data ?? 0, this.culture || undefined),
           color: point.gradient ? point.gradient[0] : getColorFromToken(point.color ?? ''),
-          xPos: this._isRTL
-            ? bounds.right - rBounds.left - rBounds.width / 2
-            : rBounds.left + rBounds.width / 2 - bounds.left,
-          yPos: rBounds.top - bounds.top - 40,
+          xPos: this._isRTL ? bounds.width - anchorX : anchorX,
+          yPos: anchorY,
         };
+        this._positionTooltipFromAnchor(anchorX, anchorY, { preferredVertical: 'above', horizontalAlign: 'center' });
       });
       rectEl.addEventListener('blur', () => this._clearTooltip());
       rectEl.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -469,9 +477,7 @@ export class HorizontalBarChart extends ChartBase {
           .text(`${percentage}%`);
       } else {
         const effectiveHideRatio =
-          this.hideRatioPerBar !== undefined
-            ? (this.hideRatioPerBar[barNo ?? 0] ?? this.hideRatio)
-            : this.hideRatio;
+          this.hideRatioPerBar !== undefined ? this.hideRatioPerBar[barNo ?? 0] ?? this.hideRatio : this.hideRatio;
         const showRatio = !effectiveHideRatio && data!.chartData!.length === 2;
         if (showRatio) {
           const ratioDiv = barTitleDiv.append('div').attr('role', 'text').attr('class', 'bar-label');
@@ -510,8 +516,8 @@ export class HorizontalBarChart extends ChartBase {
         }
 
         const bounds = this.getBoundingClientRect();
-        const centerX = window.innerWidth / 2;
-        const xPos = Math.max(0, Math.min(centerX, window.innerWidth));
+        const anchorX = event.clientX - bounds.left;
+        const anchorY = event.clientY - bounds.top;
 
         this._currentTooltipDataPoint = d;
         this.tooltipProps = {
@@ -519,9 +525,13 @@ export class HorizontalBarChart extends ChartBase {
           legend: d.legend,
           yValue: formatLocaleNumber(d.data, this.culture || undefined),
           color: d.gradient ? d.gradient[0] : getColorFromToken(d.color!),
-          xPos: this._isRTL ? bounds.right - event.clientX : Math.min(event.clientX - bounds.left, xPos),
-          yPos: event.clientY - bounds.top - 40,
+          xPos: this._isRTL ? bounds.width - anchorX : anchorX,
+          yPos: anchorY,
         };
+        this._positionTooltipFromAnchor(anchorX, anchorY, {
+          preferredVertical: 'above',
+          horizontalAlign: this._isRTL ? 'end' : 'start',
+        });
       })
       .on('mouseout', () => {
         this._clearTooltip();

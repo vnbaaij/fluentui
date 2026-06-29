@@ -505,7 +505,10 @@ export class GaugeChart extends ChartBase {
       path.setAttribute('id', arcId);
       path.setAttribute('data-id', segment.legend);
       path.setAttribute('role', 'img');
-      path.setAttribute('aria-label', segment.ariaLabel ?? getSegmentLabel(segment, minValue, maxValue, this.variant, true));
+      path.setAttribute(
+        'aria-label',
+        segment.ariaLabel ?? getSegmentLabel(segment, minValue, maxValue, this.variant, true),
+      );
       path.setAttribute('tabindex', this._segmentEls.length === 1 ? '0' : '-1');
       path.classList.add('segment');
 
@@ -755,8 +758,12 @@ export class GaugeChart extends ChartBase {
   private _showTooltip(e: MouseEvent, segment: ExtendedSegment) {
     if (this.hideTooltip) return;
     const bounds = this.getBoundingClientRect();
-    const xPos = this._isRTL ? bounds.right - e.clientX : e.clientX - bounds.left;
-    const yPos = e.clientY - bounds.top - 80;
+    const anchorX = e.clientX - bounds.left;
+    const anchorY = e.clientY - bounds.top;
+    const { xPos, yPos } = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
+      preferredVertical: 'above',
+      horizontalAlign: this._isRTL ? 'end' : 'start',
+    });
     const rows = this._buildTooltipRows(undefined);
 
     this.gaugeTooltipProps = {
@@ -774,10 +781,12 @@ export class GaugeChart extends ChartBase {
     if (this.hideTooltip) return;
     const rootBounds = this.getBoundingClientRect();
     const elBounds = el.getBoundingClientRect();
-    const xPos = this._isRTL
-      ? rootBounds.right - elBounds.left - elBounds.width / 2
-      : elBounds.left + elBounds.width / 2 - rootBounds.left;
-    const yPos = elBounds.top - rootBounds.top - 80;
+    const anchorX = elBounds.left + elBounds.width / 2 - rootBounds.left;
+    const anchorY = elBounds.top - rootBounds.top;
+    const { xPos, yPos } = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
+      preferredVertical: 'above',
+      horizontalAlign: 'center',
+    });
     const rows = this._buildTooltipRows(undefined);
 
     this.gaugeTooltipProps = {
@@ -794,8 +803,12 @@ export class GaugeChart extends ChartBase {
   private _showNeedleTooltip(e: MouseEvent) {
     if (this.hideTooltip) return;
     const bounds = this.getBoundingClientRect();
-    const xPos = this._isRTL ? bounds.right - e.clientX : e.clientX - bounds.left;
-    const yPos = e.clientY - bounds.top - 80;
+    const anchorX = e.clientX - bounds.left;
+    const anchorY = e.clientY - bounds.top;
+    const { xPos, yPos } = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
+      preferredVertical: 'above',
+      horizontalAlign: this._isRTL ? 'end' : 'start',
+    });
     const rows = this._buildTooltipRows(undefined);
 
     this.gaugeTooltipProps = {
@@ -813,10 +826,12 @@ export class GaugeChart extends ChartBase {
     if (this.hideTooltip) return;
     const rootBounds = this.getBoundingClientRect();
     const elBounds = el.getBoundingClientRect();
-    const xPos = this._isRTL
-      ? rootBounds.right - elBounds.left - elBounds.width / 2
-      : elBounds.left + elBounds.width / 2 - rootBounds.left;
-    const yPos = elBounds.top - rootBounds.top - 80;
+    const anchorX = elBounds.left + elBounds.width / 2 - rootBounds.left;
+    const anchorY = elBounds.top - rootBounds.top;
+    const { xPos, yPos } = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
+      preferredVertical: 'above',
+      horizontalAlign: 'center',
+    });
     const rows = this._buildTooltipRows(undefined);
 
     this.gaugeTooltipProps = {

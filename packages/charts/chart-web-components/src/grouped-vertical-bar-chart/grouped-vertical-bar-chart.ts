@@ -206,6 +206,8 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
           }
           const hostRect = this.getBoundingClientRect();
           const svgRect = svg.getBoundingClientRect();
+          const anchorX = svgRect.left - hostRect.left + margins.left + groupX + slotX + offset + actualWidth / 2;
+          const anchorY = svgRect.top - hostRect.top + margins.top + yScale(point.data);
           this._currentTooltipDataPoint = { ...point, xAxisPoint: group.xAxisPoint };
           this.tooltipProps = {
             isVisible: true,
@@ -213,9 +215,10 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
             xValue: group.xAxisPoint,
             yValue: formatNumberValue(point.data, this.yAxisTickFormat, this.culture),
             color,
-            xPos: svgRect.left - hostRect.left + margins.left + groupX + slotX + offset + actualWidth / 2,
-            yPos: svgRect.top - hostRect.top + margins.top + yScale(point.data),
+            xPos: anchorX,
+            yPos: anchorY,
           };
+          this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
         });
         rect.addEventListener('mouseleave', () => this._clearTooltip());
         plotGroup.appendChild(rect);
