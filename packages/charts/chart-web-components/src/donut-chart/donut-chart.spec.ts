@@ -771,9 +771,9 @@ test.describe('Donut-chart - width and height', () => {
 
     const element = page.locator('fluent-donut-chart');
     const svg = element.locator('svg.chart');
-    // Percentage values must be forwarded as-is to the SVG attribute.
-    await expect(svg).toHaveAttribute('width', '50%');
-    await expect(svg).toHaveAttribute('height', '50%');
+    // Percentage host dimensions are normalized to 100% on the SVG to avoid percentage-of-percentage scaling.
+    await expect(svg).toHaveAttribute('width', '100%');
+    await expect(svg).toHaveAttribute('height', '100%');
     // The SVG should resolve to ~200 px (50% of the 400 px container).
     const box = await svg.boundingBox();
     expect(box!.width).toBeGreaterThan(150);

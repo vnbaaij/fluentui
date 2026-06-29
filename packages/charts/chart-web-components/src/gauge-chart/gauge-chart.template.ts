@@ -15,8 +15,8 @@ export function gaugeChartTemplate<T extends GaugeChart>(): ElementViewTemplate<
         <svg
           class="chart"
           role="none"
-          width="${x => x.width ?? 252}"
-          height="${x => x.height ?? (x.sublabel ? 116 : 96)}"
+          width="${x => x._toSvgLength(x.width, 252)}"
+          height="${x => x._toSvgLength(x.height, x.sublabel ? 116 : 96)}"
         >
           <defs ${ref('svgDefsEl')}></defs>
           <g ${ref('group')}></g>

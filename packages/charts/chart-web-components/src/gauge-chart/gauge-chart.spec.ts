@@ -376,15 +376,15 @@ test.describe('GaugeChart - width and height', () => {
     await expect(svg).toHaveAttribute('height', '280');
   });
 
-  test('Should forward percentage strings to SVG attributes', async ({ page }) => {
+  test('Should normalize percentage strings for SVG attributes', async ({ page }) => {
     const element = page.locator('fluent-gauge-chart');
     await element.evaluate(el => {
       el.setAttribute('width', '50%');
       el.setAttribute('height', '50%');
     });
     const svg = element.locator('svg.chart');
-    await expect(svg).toHaveAttribute('width', '50%');
-    await expect(svg).toHaveAttribute('height', '50%');
+    await expect(svg).toHaveAttribute('width', '100%');
+    await expect(svg).toHaveAttribute('height', '100%');
     // 50% of 680px container → bounding box width should be approximately 340px
     const box = await svg.boundingBox();
     expect(box?.width).toBeCloseTo(340, -1);

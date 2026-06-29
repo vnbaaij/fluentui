@@ -15,8 +15,8 @@ export function funnelChartTemplate<T extends FunnelChart>(): ElementViewTemplat
         <svg
           ${ref('svgElement')}
           class="chart"
-          width="${x => x.width ?? 400}"
-          height="${x => x.height ?? 400}"
+          width="${x => x._toSvgLength(x.width, 400)}"
+          height="${x => x._toSvgLength(x.height, 400)}"
           role="none"
         >
           <g ${ref('group')}></g>
