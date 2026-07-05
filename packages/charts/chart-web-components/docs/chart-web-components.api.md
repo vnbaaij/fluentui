@@ -7,7 +7,7 @@
 import { ElementStyles } from '@microsoft/fast-element';
 import { ElementViewTemplate } from '@microsoft/fast-element';
 import { FASTElement } from '@microsoft/fast-element';
-import { FASTElementDefinition } from '@microsoft/fast-element';
+import { PartialFASTElementDefinition } from '@microsoft/fast-element';
 
 // @public
 export interface AccessibilityData {
@@ -73,7 +73,7 @@ export interface AreaChartDataPoint {
 }
 
 // @public (undocumented)
-export const AreaChartDefinition: FASTElementDefinition<typeof AreaChart>;
+export const AreaChartDefinition: PartialFASTElementDefinition;
 
 // @public (undocumented)
 export interface AreaChartSeries {
@@ -120,7 +120,7 @@ export class ChartLegend extends FASTElement {
 }
 
 // @public (undocumented)
-export const ChartLegendDefinition: FASTElementDefinition<typeof ChartLegend>;
+export const ChartLegendDefinition: PartialFASTElementDefinition;
 
 // @public
 export const ChartLegendStyles: ElementStyles;
@@ -176,6 +176,8 @@ export class DonutChart extends ChartBase {
     // (undocumented)
     protected valueInsideDonutChanged(): void;
     valueInsideFormatter: ((value: number) => string) | null;
+    // (undocumented)
+    protected valueInsideFormatterChanged(): void;
 }
 
 // Warning: (ae-missing-release-tag) "DonutChartDataPoint" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -191,7 +193,7 @@ export interface DonutChartDataPoint {
 }
 
 // @public (undocumented)
-export const DonutChartDefinition: FASTElementDefinition<typeof DonutChart>;
+export const DonutChartDefinition: PartialFASTElementDefinition;
 
 // @public
 export const DonutChartStyles: ElementStyles;
@@ -241,7 +243,7 @@ export interface FunnelChartDataPoint {
 }
 
 // @public (undocumented)
-export const FunnelChartDefinition: FASTElementDefinition<typeof FunnelChart>;
+export const FunnelChartDefinition: PartialFASTElementDefinition;
 
 // @public
 export type FunnelChartOrientation = 'vertical' | 'horizontal';
@@ -345,7 +347,7 @@ export interface GanttChartDataPoint {
 }
 
 // @public (undocumented)
-export const GanttChartDefinition: FASTElementDefinition<typeof GanttChart>;
+export const GanttChartDefinition: PartialFASTElementDefinition;
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -426,7 +428,7 @@ export class GaugeChart extends ChartBase {
 }
 
 // @public (undocumented)
-export const GaugeChartDefinition: FASTElementDefinition<typeof GaugeChart>;
+export const GaugeChartDefinition: PartialFASTElementDefinition;
 
 // @public
 export interface GaugeChartSegment {
@@ -502,7 +504,7 @@ export interface GroupedVerticalBarChartDataPoint {
 }
 
 // @public (undocumented)
-export const GroupedVerticalBarChartDefinition: FASTElementDefinition<typeof GroupedVerticalBarChart>;
+export const GroupedVerticalBarChartDefinition: PartialFASTElementDefinition;
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -607,7 +609,7 @@ export interface HeatMapChartDataPoint {
 }
 
 // @public (undocumented)
-export const HeatMapChartDefinition: FASTElementDefinition<typeof HeatMapChart>;
+export const HeatMapChartDefinition: PartialFASTElementDefinition;
 
 // @public
 export const HeatMapChartStyles: ElementStyles;
@@ -680,7 +682,7 @@ export interface HorizontalBarChartDataPoint {
 }
 
 // @public (undocumented)
-export const HorizontalBarChartDefinition: FASTElementDefinition<typeof HorizontalBarChart>;
+export const HorizontalBarChartDefinition: PartialFASTElementDefinition;
 
 // @public
 export interface HorizontalBarChartProps {
@@ -784,7 +786,7 @@ export interface HorizontalBarChartWithAxisDataPoint {
 }
 
 // @public (undocumented)
-export const HorizontalBarChartWithAxisDefinition: FASTElementDefinition<typeof HorizontalBarChartWithAxis>;
+export const HorizontalBarChartWithAxisDefinition: PartialFASTElementDefinition;
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -841,7 +843,7 @@ export interface LineChartDataPoint {
 }
 
 // @public (undocumented)
-export const LineChartDefinition: FASTElementDefinition<typeof LineChart>;
+export const LineChartDefinition: PartialFASTElementDefinition;
 
 // @public (undocumented)
 export interface LineChartSeries {
@@ -894,7 +896,7 @@ export interface PolarChartDataPoint {
 }
 
 // @public (undocumented)
-export const PolarChartDefinition: FASTElementDefinition<typeof PolarChart>;
+export const PolarChartDefinition: PartialFASTElementDefinition;
 
 // @public (undocumented)
 export interface PolarChartSeries {
@@ -947,7 +949,7 @@ export interface SankeyChartData {
 }
 
 // @public (undocumented)
-export const SankeyChartDefinition: FASTElementDefinition<typeof SankeyChart>;
+export const SankeyChartDefinition: PartialFASTElementDefinition;
 
 // @public (undocumented)
 export interface SankeyChartLink {
@@ -1016,7 +1018,7 @@ export interface ScatterChartDataPoint {
 }
 
 // @public (undocumented)
-export const ScatterChartDefinition: FASTElementDefinition<typeof ScatterChart>;
+export const ScatterChartDefinition: PartialFASTElementDefinition;
 
 // @public (undocumented)
 export interface ScatterChartSeries {
@@ -1065,7 +1067,7 @@ export class SparklineChart extends ChartBase {
 }
 
 // @public (undocumented)
-export const SparklineChartDefinition: FASTElementDefinition<typeof SparklineChart>;
+export const SparklineChartDefinition: PartialFASTElementDefinition;
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -1143,7 +1145,7 @@ export interface StackedBarChartDataPoint {
 }
 
 // @public (undocumented)
-export const StackedBarChartDefinition: FASTElementDefinition<typeof StackedBarChart>;
+export const StackedBarChartDefinition: PartialFASTElementDefinition;
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -1194,7 +1196,7 @@ export interface TreeChartDataPoint {
 }
 
 // @public (undocumented)
-export const TreeChartDefinition: FASTElementDefinition<typeof TreeChart>;
+export const TreeChartDefinition: PartialFASTElementDefinition;
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -1257,7 +1259,7 @@ export interface VerticalBarChartDataPoint {
 }
 
 // @public (undocumented)
-export const VerticalBarChartDefinition: FASTElementDefinition<typeof VerticalBarChart>;
+export const VerticalBarChartDefinition: PartialFASTElementDefinition;
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -1316,7 +1318,7 @@ export interface VerticalStackedBarChartDataPoint {
 }
 
 // @public (undocumented)
-export const VerticalStackedBarChartDefinition: FASTElementDefinition<typeof VerticalStackedBarChart>;
+export const VerticalStackedBarChartDefinition: PartialFASTElementDefinition;
 
 // @public (undocumented)
 export interface VerticalStackedBarChartProps {

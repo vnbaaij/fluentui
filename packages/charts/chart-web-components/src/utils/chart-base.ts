@@ -720,7 +720,7 @@ export abstract class ChartBase extends FASTElement {
    * Returns a safe SVG width/height attribute value when host dimensions are also applied in CSS.
    * Percentages are normalized to `100%` to avoid percentage-of-percentage double scaling.
    */
-  protected _toSvgLength(value: number | string | undefined, fallback: number | string): number | string {
+  public _toSvgLength(value: number | string | undefined, fallback: number | string): number | string {
     if (value === undefined || value === null || value === '') {
       return fallback;
     }

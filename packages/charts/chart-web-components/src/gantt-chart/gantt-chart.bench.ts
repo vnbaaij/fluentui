@@ -1,7 +1,7 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
+import { GanttChart } from './gantt-chart.js';
 import { definition } from './gantt-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+GanttChart.define(definition);
 
 const itemRenderer = () => {
   const ganttChart = document.createElement('fluent-gantt-chart');

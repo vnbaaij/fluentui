@@ -1,5 +1,5 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
 import '../chart-legend/define.js';
+import { ScatterChart } from './scatter-chart.js';
 import { definition } from './scatter-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+ScatterChart.define(definition);

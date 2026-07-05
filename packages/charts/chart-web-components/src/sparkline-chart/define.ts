@@ -1,4 +1,4 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
+import { SparklineChart } from './sparkline-chart.js';
 import { definition } from './sparkline-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+SparklineChart.define(definition);

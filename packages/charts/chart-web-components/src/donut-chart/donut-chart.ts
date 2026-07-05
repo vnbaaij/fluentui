@@ -405,7 +405,7 @@ export class DonutChart extends ChartBase {
    * Returns null if no value should be displayed.
    * Logic:
    * - If valueInsideDonut is a space, return null (force empty)
-   * - If valueInsideDonut contains {0} placeholder, it's a format string
+   * - If valueInsideDonut contains \{0\} placeholder, it's a format string
    * - If valueInsideDonut is empty/undefined, compute auto-sum
    * - Otherwise, return valueInsideDonut as-is
    */

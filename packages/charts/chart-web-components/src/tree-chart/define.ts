@@ -1,5 +1,5 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
 import '../chart-legend/define.js';
+import { TreeChart } from './tree-chart.js';
 import { definition } from './tree-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+TreeChart.define(definition);

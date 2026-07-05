@@ -1,5 +1,5 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
 import '../chart-legend/define.js';
+import { PolarChart } from './polar-chart.js';
 import { definition } from './polar-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+PolarChart.define(definition);

@@ -1,5 +1,5 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
 import '../chart-legend/define.js';
+import { GaugeChart } from './gauge-chart.js';
 import { definition } from './gauge-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+GaugeChart.define(definition);

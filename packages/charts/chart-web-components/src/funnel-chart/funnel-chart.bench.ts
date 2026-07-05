@@ -1,7 +1,7 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
+import { FunnelChart } from './funnel-chart.js';
 import { definition } from './funnel-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+FunnelChart.define(definition);
 
 const itemRenderer = () => {
   const funnelChart = document.createElement('fluent-funnel-chart');

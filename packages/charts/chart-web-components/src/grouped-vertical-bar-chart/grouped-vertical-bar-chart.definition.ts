@@ -1,5 +1,5 @@
 import { FluentDesignSystem } from '@fluentui/web-components';
-import { GroupedVerticalBarChart } from './grouped-vertical-bar-chart.js';
+import { type PartialFASTElementDefinition } from '@microsoft/fast-element';
 import { styles } from './grouped-vertical-bar-chart.styles.js';
 import { template } from './grouped-vertical-bar-chart.template.js';
 
@@ -8,11 +8,12 @@ import { template } from './grouped-vertical-bar-chart.template.js';
  * @remarks
  * HTML Element: `<fluent-grouped-vertical-bar-chart>`
  */
-export const definition = GroupedVerticalBarChart.compose({
+export const definition: PartialFASTElementDefinition = {
   name: `${FluentDesignSystem.prefix}-grouped-vertical-bar-chart`,
+  registry: FluentDesignSystem.registry,
   template,
   styles,
   shadowOptions: {
     delegatesFocus: true,
   },
-});
+};

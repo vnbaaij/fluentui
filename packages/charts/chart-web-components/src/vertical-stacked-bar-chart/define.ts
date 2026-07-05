@@ -1,5 +1,5 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
 import '../chart-legend/define.js';
+import { VerticalStackedBarChart } from './vertical-stacked-bar-chart.js';
 import { definition } from './vertical-stacked-bar-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+VerticalStackedBarChart.define(definition);

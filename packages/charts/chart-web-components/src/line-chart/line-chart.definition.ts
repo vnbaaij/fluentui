@@ -1,5 +1,5 @@
 import { FluentDesignSystem } from '@fluentui/web-components';
-import { LineChart } from './line-chart.js';
+import { type PartialFASTElementDefinition } from '@microsoft/fast-element';
 import { styles } from './line-chart.styles.js';
 import { template } from './line-chart.template.js';
 
@@ -8,11 +8,12 @@ import { template } from './line-chart.template.js';
  * @remarks
  * HTML Element: `<fluent-line-chart>`
  */
-export const definition = LineChart.compose({
+export const definition: PartialFASTElementDefinition = {
   name: `${FluentDesignSystem.prefix}-line-chart`,
+  registry: FluentDesignSystem.registry,
   template,
   styles,
   shadowOptions: {
     delegatesFocus: true,
   },
-});
+};

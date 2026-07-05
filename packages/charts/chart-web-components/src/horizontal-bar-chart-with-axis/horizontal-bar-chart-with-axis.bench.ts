@@ -1,7 +1,8 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
+import { HorizontalBarChartWithAxis } from './horizontal-bar-chart-with-axis.js';
 import { definition } from './horizontal-bar-chart-with-axis.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+HorizontalBarChartWithAxis.define(definition);
+
 
 const itemRenderer = () => {
   const chart = document.createElement('fluent-horizontal-bar-chart-with-axis');

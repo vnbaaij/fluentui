@@ -116,7 +116,6 @@ const getTextColorForBg = (bgHex: string): string => {
  * package (extends CartesianChartBase, renders into `chartContainer`, uses
  * chart-base legend and tooltip systems).
  *
- * @tag fluent-heat-map-chart
  * @public
  */
 export class HeatMapChart extends CartesianChartBase {
@@ -196,7 +195,7 @@ export class HeatMapChart extends CartesianChartBase {
   /**
    * JSON dictionary mapping x-axis string keys to display labels.
    * Used by Blazor (where JS functions cannot be passed as attributes).
-   * Example: '{"monday":"Mon","tuesday":"Tue"}'
+   * Example: '\{"monday":"Mon","tuesday":"Tue"\}'
    */
   @attr({ attribute: 'x-axis-string-labels', converter: jsonConverter })
   public xAxisStringLabels?: Record<string, string>;
@@ -204,7 +203,7 @@ export class HeatMapChart extends CartesianChartBase {
   /**
    * JSON dictionary mapping y-axis string keys to display labels.
    * Used by Blazor (where JS functions cannot be passed as attributes).
-   * Example: '{"q1":"Q1 2024","q2":"Q2 2024"}'
+   * Example: '\{"q1":"Q1 2024","q2":"Q2 2024"\}'
    */
   @attr({ attribute: 'y-axis-string-labels', converter: jsonConverter })
   public yAxisStringLabels?: Record<string, string>;
@@ -605,7 +604,7 @@ export class HeatMapChart extends CartesianChartBase {
   }
 
   /**
-   * Build a lookup map from {xLabel, yLabel} → FlatPoint.
+   * Build a lookup map from \{xLabel, yLabel\} → FlatPoint.
    * This enables O(1) cell lookups when rendering the grid.
    */
   private _buildPointMap(

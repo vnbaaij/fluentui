@@ -1,5 +1,5 @@
 import { FluentDesignSystem } from '@fluentui/web-components';
-import { AreaChart } from './area-chart.js';
+import { type PartialFASTElementDefinition } from '@microsoft/fast-element';
 import { styles } from './area-chart.styles.js';
 import { template } from './area-chart.template.js';
 
@@ -8,11 +8,12 @@ import { template } from './area-chart.template.js';
  * @remarks
  * HTML Element: `<fluent-area-chart>`
  */
-export const definition = AreaChart.compose({
+export const definition: PartialFASTElementDefinition = {
   name: `${FluentDesignSystem.prefix}-area-chart`,
+  registry: FluentDesignSystem.registry,
   template,
   styles,
   shadowOptions: {
     delegatesFocus: true,
   },
-});
+};

@@ -1,5 +1,5 @@
 import { FluentDesignSystem } from '@fluentui/web-components';
-import { ScatterChart } from './scatter-chart.js';
+import { type PartialFASTElementDefinition } from '@microsoft/fast-element';
 import { styles } from './scatter-chart.styles.js';
 import { template } from './scatter-chart.template.js';
 
@@ -8,11 +8,12 @@ import { template } from './scatter-chart.template.js';
  * @remarks
  * HTML Element: `<fluent-scatter-chart>`
  */
-export const definition = ScatterChart.compose({
+export const definition: PartialFASTElementDefinition = {
   name: `${FluentDesignSystem.prefix}-scatter-chart`,
+  registry: FluentDesignSystem.registry,
   template,
   styles,
   shadowOptions: {
     delegatesFocus: true,
   },
-});
+};

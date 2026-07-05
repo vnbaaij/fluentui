@@ -1,5 +1,5 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
 import '../chart-legend/define.js';
+import { LineChart } from './line-chart.js';
 import { definition } from './line-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+LineChart.define(definition);

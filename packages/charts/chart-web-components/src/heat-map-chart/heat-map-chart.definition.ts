@@ -1,5 +1,5 @@
 import { FluentDesignSystem } from '@fluentui/web-components';
-import { HeatMapChart } from './heat-map-chart.js';
+import { type PartialFASTElementDefinition } from '@microsoft/fast-element';
 import { styles } from './heat-map-chart.styles.js';
 import { template } from './heat-map-chart.template.js';
 
@@ -8,11 +8,12 @@ import { template } from './heat-map-chart.template.js';
  * @remarks
  * HTML Element: `<fluent-heat-map-chart>`
  */
-export const definition = HeatMapChart.compose({
+export const definition: PartialFASTElementDefinition = {
   name: `${FluentDesignSystem.prefix}-heat-map-chart`,
+  registry: FluentDesignSystem.registry,
   template,
   styles,
   shadowOptions: {
     delegatesFocus: true,
   },
-});
+};

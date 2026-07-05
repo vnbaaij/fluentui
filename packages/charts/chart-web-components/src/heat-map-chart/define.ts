@@ -1,5 +1,5 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
 import '../chart-legend/define.js';
+import { HeatMapChart } from './heat-map-chart.js';
 import { definition } from './heat-map-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+HeatMapChart.define(definition);

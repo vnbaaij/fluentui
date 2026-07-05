@@ -1,7 +1,8 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
+import { DonutChart } from './donut-chart.js';
 import { definition } from './donut-chart.definition.js';
 
-definition.define(FluentDesignSystem.registry);
+
+DonutChart.define(definition);
 
 const itemRenderer = () => {
   const donutChart = document.createElement('fluent-donut-chart');

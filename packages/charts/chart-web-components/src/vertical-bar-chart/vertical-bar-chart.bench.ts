@@ -1,8 +1,8 @@
 import './define.js';
 
 const itemRenderer = () => {
-  const chart = document.createElement('fluent-heat-map-chart');
-  return chart;
+  const verticalBarChart = document.createElement('fluent-vertical-bar-chart');
+  return verticalBarChart;
 };
 
 export default itemRenderer;

@@ -1,8 +1,8 @@
 import './define.js';
 
 const itemRenderer = () => {
-  const chart = document.createElement('fluent-heat-map-chart');
-  return chart;
+  const areaChart = document.createElement('fluent-area-chart');
+  return areaChart;
 };
 
 export default itemRenderer;
