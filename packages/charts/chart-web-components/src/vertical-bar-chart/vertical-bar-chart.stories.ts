@@ -1,20 +1,14 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
-import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
   createSwitchField,
-  ensureDefinition,
   type Meta,
   type Story,
 } from '../helpers.stories.js';
 import { definition } from './vertical-bar-chart.definition.js';
 import type { VerticalBarChartDataPoint } from './vertical-bar-chart.options.js';
 import type { VerticalBarChart } from './vertical-bar-chart.js';
-
-ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-vertical-bar-chart', () => definition.define(FluentDesignSystem.registry));
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 

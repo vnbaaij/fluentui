@@ -1,18 +1,6 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
-import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
-import {
-  controlsRowStyle,
-  createDropdownField,
-  createSliderField,
-  ensureDefinition,
-  type Meta,
-  type Story,
-} from '../helpers.stories.js';
+import { controlsRowStyle, createDropdownField, createSliderField, type Meta, type Story } from '../helpers.stories.js';
 import { definition } from './tree-chart.definition.js';
 import type { TreeChart } from './tree-chart.js';
-
-ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-tree-chart', () => definition.define(FluentDesignSystem.registry));
 
 export default { title: 'Components/TreeChart' } as Meta<TreeChart>;
 

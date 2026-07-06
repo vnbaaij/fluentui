@@ -1,20 +1,14 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
-import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
   createSwitchField,
-  ensureDefinition,
   type Meta,
   type Story,
 } from '../helpers.stories.js';
 import { definition } from './line-chart.definition.js';
 import type { LineChartSeries } from './line-chart.options.js';
 import type { LineChart } from './line-chart.js';
-
-ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-line-chart', () => definition.define(FluentDesignSystem.registry));
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 

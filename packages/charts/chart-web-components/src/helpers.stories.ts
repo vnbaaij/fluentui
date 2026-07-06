@@ -1,19 +1,4 @@
 import type { ElementViewTemplate, FASTElement, ViewTemplate } from '@microsoft/fast-element';
-import {
-  ButtonDefinition,
-  CheckboxDefinition,
-  DropdownDefinition,
-  DropdownOptionDefinition,
-  FieldDefinition,
-  FluentDesignSystem,
-  LabelDefinition,
-  ListboxDefinition,
-  RadioDefinition,
-  RadioGroupDefinition,
-  SliderDefinition,
-  SwitchDefinition,
-  TextInputDefinition,
-} from '@fluentui/web-components';
 import type { AnnotatedStoryFn, Args, ComponentAnnotations, Renderer, StoryAnnotations } from 'storybook/internal/csf';
 
 /**
@@ -116,25 +101,6 @@ export function generateImage({
 }
 
 // ── Shared story control infrastructure ──────────────────────────────────────
-
-export const ensureDefinition = (tagName: string, define: () => void) => {
-  if (!customElements.get(tagName)) {
-    define();
-  }
-};
-
-ensureDefinition('fluent-button', () => ButtonDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-checkbox', () => CheckboxDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-dropdown', () => DropdownDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-field', () => FieldDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-label', () => LabelDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-listbox', () => ListboxDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-option', () => DropdownOptionDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-radio', () => RadioDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-radio-group', () => RadioGroupDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-slider', () => SliderDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-switch', () => SwitchDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-text-input', () => TextInputDefinition.define(FluentDesignSystem.registry));
 
 // Shared element types
 export type FluentSliderElement = HTMLElement & { value: string };

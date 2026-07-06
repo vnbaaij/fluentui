@@ -1,20 +1,14 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
-import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
   createSwitchField,
-  ensureDefinition,
   type Meta,
   type Story,
 } from '../helpers.stories.js';
 import { definition } from './polar-chart.definition.js';
 import type { PolarChartSeries } from './polar-chart.options.js';
 import type { PolarChart } from './polar-chart.js';
-
-ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-polar-chart', () => definition.define(FluentDesignSystem.registry));
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 

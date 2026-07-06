@@ -1,20 +1,14 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
-import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
   createSwitchField,
-  ensureDefinition,
   type Meta,
   type Story,
 } from '../helpers.stories.js';
 import { definition } from './scatter-chart.definition.js';
 import type { ScatterChartSeries } from './scatter-chart.options.js';
 import type { ScatterChart } from './scatter-chart.js';
-
-ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-scatter-chart', () => definition.define(FluentDesignSystem.registry));
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 

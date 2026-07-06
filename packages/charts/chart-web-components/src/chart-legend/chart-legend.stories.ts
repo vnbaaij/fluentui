@@ -1,12 +1,7 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
-import type { Meta, Story } from '../helpers.stories.js';
+import { type Meta, type Story } from '../helpers.stories.js';
 import { ChartLegend as FluentChartLegend } from './chart-legend.js';
 import { definition } from './chart-legend.definition.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
-
-if (!customElements.get('fluent-chart-legend')) {
-  definition.define(FluentDesignSystem.registry);
-}
 
 const items = [
   { legend: 'Apples', color: DataVizPalette.color1 },
@@ -140,7 +135,7 @@ export const Basic: Story<FluentChartLegend> = () => {
     note('Hover to preview; click to select/deselect. Hover is blocked while an item is selected.'),
   );
   return container;
-};;
+};
 Basic.parameters = { docs: { story: { height: '150px' } } };
 
 export const WithHighlighted: Story<FluentChartLegend> = () => {

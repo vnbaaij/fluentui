@@ -1,20 +1,14 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
-import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
   createSwitchField,
-  ensureDefinition,
   type Meta,
   type Story,
 } from '../helpers.stories.js';
 import { definition } from './stacked-bar-chart.definition.js';
 import type { StackedBarChartData } from './stacked-bar-chart.options.js';
 import type { StackedBarChart } from './stacked-bar-chart.js';
-
-ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-stacked-bar-chart', () => definition.define(FluentDesignSystem.registry));
 
 const sampleData: StackedBarChartData = {
   chartTitle: 'Stacked Bar Chart',

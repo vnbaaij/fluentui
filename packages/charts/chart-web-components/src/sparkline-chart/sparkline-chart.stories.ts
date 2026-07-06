@@ -1,18 +1,14 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
 import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
   createTextInputField,
-  ensureDefinition,
   type Meta,
   type Story,
 } from '../helpers.stories.js';
 import { definition } from './sparkline-chart.definition.js';
 import type { SparklineDataPoint } from './sparkline-chart.options.js';
 import type { SparklineChart } from './sparkline-chart.js';
-
-ensureDefinition('fluent-sparkline-chart', () => definition.define(FluentDesignSystem.registry));
 
 const sampleData: SparklineDataPoint[] = [
   { x: 0, y: 10 },

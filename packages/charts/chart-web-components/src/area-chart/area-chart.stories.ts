@@ -1,12 +1,9 @@
 import { html } from '@microsoft/fast-element';
-import { FluentDesignSystem } from '@fluentui/web-components';
-import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
 import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
   createSwitchField,
-  ensureDefinition,
   type Meta,
   renderComponent,
   type Story,
@@ -15,9 +12,6 @@ import {
 import { definition } from './area-chart.definition.js';
 import type { AreaChartSeries } from './area-chart.options.js';
 import type { AreaChart } from './area-chart.js';
-
-ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-area-chart', () => definition.define(FluentDesignSystem.registry));
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 
@@ -476,7 +470,8 @@ export const TooltipRendererStory: Story<AreaChart> = () => {
   const container = document.createElement('div');
 
   const info = document.createElement('p');
-  info.textContent = 'Hover over a point — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  info.textContent =
+    'Hover over a point — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
   container.appendChild(info);
 
   const chart = document.createElement('fluent-area-chart') as AreaChart;

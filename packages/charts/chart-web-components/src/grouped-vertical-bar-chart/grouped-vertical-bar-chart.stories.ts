@@ -1,19 +1,7 @@
-import { FluentDesignSystem } from '@fluentui/web-components';
-import { definition as chartLegendDefinition } from '../chart-legend/chart-legend.definition.js';
-import {
-  controlsRowStyle,
-  createSliderField,
-  createSwitchField,
-  ensureDefinition,
-  type Meta,
-  type Story,
-} from '../helpers.stories.js';
+import { controlsRowStyle, createSliderField, createSwitchField, type Meta, type Story } from '../helpers.stories.js';
 import { definition } from './grouped-vertical-bar-chart.definition.js';
 import type { GroupedVerticalBarChartData } from './grouped-vertical-bar-chart.options.js';
 import type { GroupedVerticalBarChart } from './grouped-vertical-bar-chart.js';
-
-ensureDefinition('fluent-chart-legend', () => chartLegendDefinition.define(FluentDesignSystem.registry));
-ensureDefinition('fluent-grouped-vertical-bar-chart', () => definition.define(FluentDesignSystem.registry));
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 

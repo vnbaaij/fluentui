@@ -19,11 +19,17 @@ module.exports =
       previewUrl: process.env.DEPLOY_PATH,
     },
     viteFinal: async config => {
+      const tsAliases = createTypeScriptAliases(tsConfigPath);
+      // In this Storybook, resolve web-components from the package entrypoint
+      // instead of workspace source to avoid FAST API skew at runtime.
+      delete tsAliases['@fluentui/web-components'];
+
       // Configure path aliases
       config.resolve = config.resolve || {};
       config.resolve.alias = {
         ...(config.resolve.alias || {}),
-        ...createTypeScriptAliases(tsConfigPath),
+        ...tsAliases,
+        '@microsoft/fast-element': path.resolve(__dirname, '../../../../node_modules/@microsoft/fast-element'),
       };
 
       // Add plugin to resolve .ts files when imported with .js extension

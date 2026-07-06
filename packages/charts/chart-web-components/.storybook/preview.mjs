@@ -2,6 +2,18 @@ import { teamsDarkTheme, teamsLightTheme, webDarkTheme, webLightTheme } from '@f
 import * as prettier from 'prettier';
 import prettierPluginHTML from 'prettier/parser-html.js';
 import { setTheme } from '@fluentui/web-components';
+import '@fluentui/web-components/button/define.js';
+import '@fluentui/web-components/checkbox/define.js';
+import '@fluentui/web-components/dropdown/define.js';
+import '@fluentui/web-components/option/define.js';
+import '@fluentui/web-components/field/define.js';
+import '@fluentui/web-components/label/define.js';
+import '@fluentui/web-components/listbox/define.js';
+import '@fluentui/web-components/radio/define.js';
+import '@fluentui/web-components/radio-group/define.js';
+import '@fluentui/web-components/slider/define.js';
+import '@fluentui/web-components/switch/define.js';
+import '@fluentui/web-components/text-input/define.js';
 import webcomponentsTheme from './theme.mjs';
 
 import '../src/index-rollup.js';
@@ -42,7 +54,6 @@ export const parameters = {
     toc: {
       title: 'On this page',
       disable: false,
-      
     },
     source: {
       // To get around the inability to change Prettier options in the source addon, this transform function

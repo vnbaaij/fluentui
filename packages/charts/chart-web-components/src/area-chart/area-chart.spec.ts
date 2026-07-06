@@ -64,6 +64,19 @@ test.describe('AreaChart', () => {
     await expect(element.locator('.legend-text')).toHaveCount(2);
   });
 
+  test('Should default legend boxes to square corners', async ({ page }) => {
+    const element = page.locator('fluent-area-chart');
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(0);
+  });
+
+  test('Should round legend boxes when round-corners is set', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-area-chart data='${JSON.stringify(data)}' width='600' height='300' round-corners></fluent-area-chart>
+    `);
+    const element = page.locator('fluent-area-chart');
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(2);
+  });
+
   test('Should re-render on data change', async ({ page }) => {
     const element = page.locator('fluent-area-chart');
     await element.evaluate(node => {
