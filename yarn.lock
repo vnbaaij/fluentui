@@ -2090,6 +2090,14 @@
     csstype "^3.0.2"
     lodash "^4.17.15"
 
+"@fluentui/web-components@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@fluentui/web-components/-/web-components-3.0.0.tgz#4a0d630fb6227921cf8d6a3be4581403b1f90fd0"
+  integrity sha512-+LKzLAlqyD9WNYNoYmAVUageEUiJ8DlnHwiyB3/+WjPaAsozvlW4sqG7m38hXoVFm5QraB0hBRk5dqAF72K5qg==
+  dependencies:
+    "@fluentui/tokens" "^1.0.0-alpha.23"
+    tslib "^2.1.0"
+
 "@github/catalyst@^1.6.0":
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/@github/catalyst/-/catalyst-1.7.0.tgz#12dd1097a66260f0dde1d1d1f5ebfe7d1f576a80"
@@ -2818,12 +2826,22 @@
   resolved "https://registry.yarnpkg.com/@microsoft/fast-element/-/fast-element-2.0.0.tgz#4b3551159290f14ec59f9b48c6c4c26b4e086a0f"
   integrity sha512-Tzv4dCGTg10NNyqWWGRy3bYG4vacQUapjy5gpdpmFbSgvNF8aOzJJMkG5CfVUDoC9gWxY1ZyGgjXX0p86ZXX5w==
 
+"@microsoft/fast-element@^3.0.0":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@microsoft/fast-element/-/fast-element-3.0.1.tgz#b4a632882c3f760aa87e7b307996bf358c6ceeb9"
+  integrity sha512-euVlL8v7EAnkYD9gf6xhnY+XgzCkD0hHwC0MVsUVyhnKfGGhrNyBeD5kYnBOCcJ9afL2jTQoOA+oOpLEty3s+A==
+
 "@microsoft/fast-web-utilities@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@microsoft/fast-web-utilities/-/fast-web-utilities-6.0.0.tgz#7678c2b2cd12aeef785f4e2288da93a4db9e38a6"
   integrity sha512-ckCA4Xn91ja1Qz+jhGGL1Q3ZeuRpA5VvYcRA7GzA1NP545sl14bwz3tbHCq8jIk+PL7mkSaIveGMYuJB2L4Izg==
   dependencies:
     exenv-es6 "^1.1.1"
+
+"@microsoft/focusgroup-polyfill@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@microsoft/focusgroup-polyfill/-/focusgroup-polyfill-1.5.0.tgz#f59ab909169b3c82921d845e2034f50426eeab87"
+  integrity sha512-2tw+AISULD5xhP+wIqUheej5wZbwiuPaqjuCa8A8jLdq2ikklZBIvSDLLa6j7zbDbtV5BXnrYgSuyW1Bj5JA4A==
 
 "@microsoft/load-themed-styles@1.10.26", "@microsoft/load-themed-styles@^1.10.26":
   version "1.10.26"
