@@ -63,6 +63,7 @@
   },
   "devDependencies": {
     "@microsoft/fast-element": "^3.0.0",
+    "@microsoft/focusgroup-polyfill": "^1.5.0",
     "@storybook/html-vite": "10.3.6",
     "@tensile-perf/web-components": "~0.2.2",
     "chromedriver": "^125.0.0"
