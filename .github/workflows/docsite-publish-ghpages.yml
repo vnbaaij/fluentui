@@ -56,7 +56,7 @@ jobs:
       - name: Upload Pages Artifact
         if: steps.affected_storybooks_count.outputs.value > 0
         id: artifact_upload
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: _pages
 
@@ -77,4 +77,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
