@@ -143,6 +143,49 @@ test.describe('ChartLegend - position', () => {
     await expect(element).toHaveAttribute('position', 'start');
   });
 
+  test('Should restore hidden buttons when switching from overflow to vertical position', async ({ page }) => {
+    await page.goto(fixtureURL('components-chartlegend--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 120px;">
+        <fluent-chart-legend label="Chart legend" style="width: 120px;"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      (document.querySelector('fluent-chart-legend') as any).items = items;
+    }, items);
+
+    const element = page.locator('fluent-chart-legend');
+    await page.waitForFunction(() => {
+      const legend = document.querySelector('fluent-chart-legend') as any;
+      return legend?._overflowCount > 0;
+    });
+
+    const hiddenBefore = await element.evaluate(
+      el =>
+        Array.from(el.shadowRoot?.querySelectorAll<HTMLButtonElement>('.legend:not(.overflow-button)') ?? []).filter(
+          button => button.style.display === 'none',
+        ).length,
+    );
+    expect(hiddenBefore).toBeGreaterThan(0);
+
+    await element.evaluate(el => el.setAttribute('position', 'start'));
+
+    await page.waitForFunction(() => {
+      const legend = document.querySelector('fluent-chart-legend') as any;
+      return legend?._overflowCount === 0;
+    });
+
+    const hiddenAfter = await element.evaluate(
+      el =>
+        Array.from(el.shadowRoot?.querySelectorAll<HTMLButtonElement>('.legend:not(.overflow-button)') ?? []).filter(
+          button => button.style.display === 'none',
+        ).length,
+    );
+    expect(hiddenAfter).toBe(0);
+    await expect(element.locator('.legend:not(.overflow-button)')).toHaveCount(3);
+  });
+
   test('Should update position attribute dynamically', async ({ page }) => {
     await setup(page);
     const element = page.locator('fluent-chart-legend');
