@@ -368,6 +368,8 @@ export class GaugeChart extends ChartBase {
     // (undocumented)
     protected _applyHostDimensions(): void;
     // (undocumented)
+    protected _buildDefaultTooltipHTML(): string;
+    // (undocumented)
     chartValue: number;
     // (undocumented)
     protected chartValueChanged(): void;
@@ -393,6 +395,8 @@ export class GaugeChart extends ChartBase {
     //
     // (undocumented)
     gaugeTooltipProps: GaugeTooltipProps;
+    // (undocumented)
+    protected gaugeTooltipPropsChanged(_oldValue: GaugeTooltipProps, newValue: GaugeTooltipProps): void;
     // (undocumented)
     protected _getHostAriaLabel(): string;
     // (undocumented)

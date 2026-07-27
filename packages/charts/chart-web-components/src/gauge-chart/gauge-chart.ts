@@ -1,7 +1,14 @@
 import { attr, nullableNumberConverter, observable } from '@microsoft/fast-element';
 import { arc as d3Arc } from 'd3-shape';
 import { ChartBase } from '../utils/chart-base.js';
-import { getColorFromToken, getNextColor, jsonConverter, SVG_NAMESPACE_URI, wrapText } from '../utils/chart-helpers.js';
+import {
+  escapeHtml,
+  getColorFromToken,
+  getNextColor,
+  jsonConverter,
+  SVG_NAMESPACE_URI,
+  wrapText,
+} from '../utils/chart-helpers.js';
 import type { Legend } from '../utils/chart-options.js';
 import type { ExtendedSegment, GaugeChartSegment, GaugeChartVariant, GaugeValueFormat } from './gauge-chart.options.js';
 
@@ -23,6 +30,8 @@ const BREAKPOINTS = [
   { minRadius: 142, arcWidth: 32, fontSize: 40 },
 ];
 
+const NEEDLE_TOOLTIP_DATA_POINT = 'needle';
+
 // ── Tooltip shape specific to GaugeChart ─────────────────────────────────────
 
 export interface GaugeTooltipRow {
@@ -40,6 +49,8 @@ export interface GaugeTooltipProps {
   xPos: number;
   yPos: number;
 }
+
+type TooltipAnchorMode = 'pointer' | 'element';
 
 // ── Helper functions (mirrors React exports) ──────────────────────────────────
 
@@ -294,6 +305,41 @@ export class GaugeChart extends ChartBase {
 
   protected _applyHostDimensions() {
     super._applyHostDimensions(this.width, this.height);
+  }
+
+  protected override _buildDefaultTooltipHTML(): string {
+    const header = `<div class="tooltip-header">${escapeHtml(this.gaugeTooltipProps.headerValue ?? '')}</div>`;
+    const rows = (this.gaugeTooltipProps.rows ?? [])
+      .map(row =>
+        [
+          `<div class="tooltip-inner" style="border-color: ${escapeHtml(row.color)};">`,
+          `<div class="tooltip-legend-text">${escapeHtml(row.legend)}</div>`,
+          `<div class="tooltip-content-y" style="color: ${escapeHtml(row.color)};">${escapeHtml(row.value)}</div>`,
+          `</div>`,
+        ].join(''),
+      )
+      .join('');
+
+    return header + rows;
+  }
+
+  protected gaugeTooltipPropsChanged(_oldValue: GaugeTooltipProps, newValue: GaugeTooltipProps): void {
+    if (!newValue) {
+      this.tooltipProps = { isVisible: false, legend: '', yValue: '', color: '', xPos: 0, yPos: 0 };
+      return;
+    }
+
+    const rows = Array.isArray(newValue.rows) ? newValue.rows : [];
+    const firstRow = rows[0];
+
+    this.tooltipProps = {
+      isVisible: Boolean(newValue.isVisible),
+      legend: newValue.headerValue,
+      yValue: firstRow?.value ?? '',
+      color: firstRow?.color ?? '',
+      xPos: newValue.xPos ?? 0,
+      yPos: newValue.yPos ?? 0,
+    };
   }
 
   protected _applyActiveLegendState() {
@@ -755,21 +801,55 @@ export class GaugeChart extends ChartBase {
     );
   }
 
+  private _estimateGaugeTooltipSize(rowCount: number): { estimatedWidth: number; estimatedHeight: number } {
+    const clampedRows = Math.max(1, rowCount);
+    // Gauge tooltips are compact in width but tall due header + stacked rows.
+    const estimatedWidth = 168;
+    const estimatedHeight = 84 + clampedRows * 36;
+    return { estimatedWidth, estimatedHeight };
+  }
+
+  private _resolveGaugeTooltipPosition(
+    anchorX: number,
+    anchorY: number,
+    rowCount: number,
+    mode: TooltipAnchorMode,
+  ): { xPos: number; yPos: number } {
+    const hostWidth = Math.max(this.offsetWidth || 0, 1);
+    const hostHeight = Math.max(this.offsetHeight || 0, 1);
+    const gap = 12;
+    const { estimatedWidth, estimatedHeight } = this._estimateGaugeTooltipSize(rowCount);
+
+    if (mode === 'pointer') {
+      const left = Math.max(10, Math.min(anchorX + gap, hostWidth - estimatedWidth - 10));
+      const top = Math.max(10, Math.min(anchorY + gap, hostHeight - estimatedHeight - 10));
+      return { xPos: left, yPos: top };
+    }
+
+    return this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
+      preferredVertical: 'above',
+      horizontalAlign: 'center',
+      estimatedWidth,
+      estimatedHeight,
+      gap,
+      padding: 10,
+    });
+  }
+
   private _showTooltip(e: MouseEvent, segment: ExtendedSegment) {
     if (this.hideTooltip) return;
+    this._currentTooltipDataPoint = segment;
     const bounds = this.getBoundingClientRect();
     const anchorX = e.clientX - bounds.left;
     const anchorY = e.clientY - bounds.top;
-    const { xPos, yPos } = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
-      preferredVertical: 'above',
-      horizontalAlign: this._isRTL ? 'end' : 'start',
-    });
     const rows = this._buildTooltipRows(undefined);
+    const activeRows = rows.length > 0 ? rows : this._buildTooltipRows(segment);
+    const { xPos, yPos } = this._resolveGaugeTooltipPosition(anchorX, anchorY, activeRows.length, 'pointer');
 
     this.gaugeTooltipProps = {
       isVisible: true,
       headerValue: this._buildHeaderValue(),
-      rows: rows.length > 0 ? rows : this._buildTooltipRows(segment),
+      rows: activeRows,
       xPos,
       yPos,
     };
@@ -779,20 +859,28 @@ export class GaugeChart extends ChartBase {
 
   private _showTooltipForElement(el: SVGPathElement, segment: ExtendedSegment) {
     if (this.hideTooltip) return;
+    this._currentTooltipDataPoint = segment;
     const rootBounds = this.getBoundingClientRect();
     const elBounds = el.getBoundingClientRect();
-    const anchorX = elBounds.left + elBounds.width / 2 - rootBounds.left;
-    const anchorY = elBounds.top - rootBounds.top;
+    const gap = 12;
+    const anchorX = this._isRTL ? elBounds.left - rootBounds.left - gap : elBounds.right - rootBounds.left + gap;
+    const anchorY = elBounds.top + elBounds.height / 2 - rootBounds.top;
+    const rows = this._buildTooltipRows(undefined);
+    const activeRows = rows.length > 0 ? rows : this._buildTooltipRows(segment);
+    const { estimatedWidth, estimatedHeight } = this._estimateGaugeTooltipSize(activeRows.length);
     const { xPos, yPos } = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
       preferredVertical: 'above',
-      horizontalAlign: 'center',
+      horizontalAlign: this._isRTL ? 'end' : 'start',
+      estimatedWidth,
+      estimatedHeight,
+      gap,
+      padding: 10,
     });
-    const rows = this._buildTooltipRows(undefined);
 
     this.gaugeTooltipProps = {
       isVisible: true,
       headerValue: this._buildHeaderValue(),
-      rows: rows.length > 0 ? rows : this._buildTooltipRows(segment),
+      rows: activeRows,
       xPos,
       yPos,
     };
@@ -802,14 +890,12 @@ export class GaugeChart extends ChartBase {
 
   private _showNeedleTooltip(e: MouseEvent) {
     if (this.hideTooltip) return;
+    this._currentTooltipDataPoint = NEEDLE_TOOLTIP_DATA_POINT;
     const bounds = this.getBoundingClientRect();
     const anchorX = e.clientX - bounds.left;
     const anchorY = e.clientY - bounds.top;
-    const { xPos, yPos } = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
-      preferredVertical: 'above',
-      horizontalAlign: this._isRTL ? 'end' : 'start',
-    });
     const rows = this._buildTooltipRows(undefined);
+    const { xPos, yPos } = this._resolveGaugeTooltipPosition(anchorX, anchorY, rows.length, 'pointer');
 
     this.gaugeTooltipProps = {
       isVisible: true,
@@ -824,15 +910,13 @@ export class GaugeChart extends ChartBase {
 
   private _showNeedleTooltipForElement(el: SVGPathElement) {
     if (this.hideTooltip) return;
+    this._currentTooltipDataPoint = NEEDLE_TOOLTIP_DATA_POINT;
     const rootBounds = this.getBoundingClientRect();
     const elBounds = el.getBoundingClientRect();
     const anchorX = elBounds.left + elBounds.width / 2 - rootBounds.left;
     const anchorY = elBounds.top - rootBounds.top;
-    const { xPos, yPos } = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
-      preferredVertical: 'above',
-      horizontalAlign: 'center',
-    });
     const rows = this._buildTooltipRows(undefined);
+    const { xPos, yPos } = this._resolveGaugeTooltipPosition(anchorX, anchorY, rows.length, 'element');
 
     this.gaugeTooltipProps = {
       isVisible: true,
@@ -846,6 +930,7 @@ export class GaugeChart extends ChartBase {
   }
 
   private _clearGaugeTooltip() {
+    this._currentTooltipDataPoint = null;
     this.gaugeTooltipProps = { isVisible: false, headerValue: '', rows: [], xPos: 0, yPos: 0 };
     this.liveRegionText = '';
   }

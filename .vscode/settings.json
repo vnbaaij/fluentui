@@ -78,5 +78,8 @@
   "cSpell.words": ["beachball", "borderless", "fluentui", "griffel", "spinbutton", "tabster"],
   "nxConsole.generateAiAgentRules": true,
   // Maximum number of requests for the chat agent - Prevents AI agents from stopping mid-session
-  "chat.agent.maxRequests": 999
+  "chat.agent.maxRequests": 999,
+  "chat.tools.terminal.autoApprove": {
+    "yarn compile": true
+  }
 }

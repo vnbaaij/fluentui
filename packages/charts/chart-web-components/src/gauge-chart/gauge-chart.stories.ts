@@ -187,12 +187,6 @@ export const ChartAttributes: Story<FluentGaugeChart> = () => {
     }).element,
   );
 
-  toggleControls.appendChild(
-    createSwitchField('Enable Gradient', 'gauge-ca-enable-gradient', false, checked => {
-      chart.toggleAttribute('enable-gradient', checked);
-    }).element,
-  );
-
   container.appendChild(chart);
   return container;
 };

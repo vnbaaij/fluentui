@@ -23,7 +23,7 @@ export class DonutChart extends ChartBase {
   public data!: DonutChartDataPoint[];
 
   @attr({ attribute: 'inner-radius', converter: nullableNumberConverter })
-  public innerRadius: number = 1;
+  public innerRadius: number = 55;
 
   @attr({ attribute: 'value-inside-donut' })
   public valueInsideDonut?: string;

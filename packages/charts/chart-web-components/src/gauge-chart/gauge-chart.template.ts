@@ -42,16 +42,23 @@ export function gaugeChartTemplate<T extends GaugeChart>(): ElementViewTemplate<
             class="tooltip"
             style="inset-inline-start: ${x => x.gaugeTooltipProps.xPos}px; top: ${x => x.gaugeTooltipProps.yPos}px;"
           >
-            <div class="tooltip-header">${x => x.gaugeTooltipProps.headerValue}</div>
-            ${repeat(
-              x => x.gaugeTooltipProps.rows,
-              html<GaugeTooltipRow, T>`
-                <div class="tooltip-inner" style="border-color: ${x => x.color};">
-                  <div class="tooltip-legend-text">${x => x.legend}</div>
-                  <div class="tooltip-content-y" style="color: ${x => x.color};">${x => x.value}</div>
-                </div>
-              `,
-            )}
+            <div class="tooltip-body">
+              ${when(
+                x => !x.tooltipRenderer,
+                html<T>`
+                  <div class="tooltip-header">${x => x.gaugeTooltipProps.headerValue}</div>
+                  ${repeat(
+                    x => x.gaugeTooltipProps.rows,
+                    html<GaugeTooltipRow, T>`
+                      <div class="tooltip-inner" style="border-color: ${x => x.color};">
+                        <div class="tooltip-legend-text">${x => x.legend}</div>
+                        <div class="tooltip-content-y" style="color: ${x => x.color};">${x => x.value}</div>
+                      </div>
+                    `,
+                  )}
+                `,
+              )}
+            </div>
           </div>
         `,
       )}
