@@ -32,6 +32,19 @@ test.describe('SankeyChart', () => {
     await expect(element.locator('.legend-text').nth(0)).toHaveText('A');
   });
 
+  test('Should toggle rounded class on legend swatches when round-corners changes', async ({ page }) => {
+    const element = page.locator('fluent-sankey-chart');
+    const legendCount = await element.locator('.legend-text').count();
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(0);
+
+    await element.evaluate(el => {
+      el.toggleAttribute('round-corners', true);
+    });
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(legendCount);
+  });
+
   test('Should re-render when data changes', async ({ page }) => {
     const element = page.locator('fluent-sankey-chart');
     const nextData: SankeyChartData = {

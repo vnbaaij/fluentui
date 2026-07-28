@@ -516,7 +516,9 @@ test.describe('horizontalbarchart - Single Bar NM Variant', () => {
     await page.goto(fixtureURL('components-horizontalbarchart--single-bar-nm-variant'));
     await page.setContent(/* html */ `
     <div>
-        <fluent-horizontal-bar-chart data='${JSON.stringify(singleBarNMVariantData)}' variant="single-bar" show-legend-for-single-point-bar>
+        <fluent-horizontal-bar-chart data='${JSON.stringify(
+          singleBarNMVariantData,
+        )}' variant="single-bar" show-legend-for-single-point-bar>
         </fluent-horizontal-bar-chart>
     </div>
     `);
@@ -650,7 +652,9 @@ test.describe('horizontalbarchart - Single Data Point', () => {
     await page.goto(fixtureURL('components-horizontalbarchart--single-data-point'));
     await page.setContent(/* html */ `
     <div>
-        <fluent-horizontal-bar-chart data='${JSON.stringify(singlePointData)}' variant="single-bar" show-legend-for-single-point-bar>
+        <fluent-horizontal-bar-chart data='${JSON.stringify(
+          singlePointData,
+        )}' variant="single-bar" show-legend-for-single-point-bar>
         </fluent-horizontal-bar-chart>
     </div>
     `);
@@ -825,6 +829,28 @@ test.describe('Horizontal-bar-chart - round-corners', () => {
     await element.evaluate(el => el.toggleAttribute('round-corners', true));
 
     await expect(firstBar).toHaveAttribute('rx', '3');
+  });
+
+  test('Should toggle rounded class on legend swatches when round-corners changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-horizontal-bar-chart data='${JSON.stringify(basicChartTestData)}'>
+        </fluent-horizontal-bar-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart'));
+
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const legendCount = await element.getByRole('option').count();
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(0);
+
+    await element.evaluate(el => {
+      el.toggleAttribute('round-corners', true);
+    });
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(legendCount);
   });
 });
 

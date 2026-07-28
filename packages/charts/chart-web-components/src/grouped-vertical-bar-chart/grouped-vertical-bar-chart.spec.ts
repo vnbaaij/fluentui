@@ -40,6 +40,19 @@ test.describe('GroupedVerticalBarChart', () => {
     await expect(element.locator('.legend-text')).toHaveCount(2);
   });
 
+  test('Should toggle rounded class on legend swatches when round-corners changes', async ({ page }) => {
+    const element = page.locator('fluent-grouped-vertical-bar-chart');
+    const legendCount = await element.locator('.legend-text').count();
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(0);
+
+    await element.evaluate(el => {
+      el.toggleAttribute('round-corners', true);
+    });
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(legendCount);
+  });
+
   test('Should re-render on data change', async ({ page }) => {
     const element = page.locator('fluent-grouped-vertical-bar-chart');
     await element.evaluate(node => {

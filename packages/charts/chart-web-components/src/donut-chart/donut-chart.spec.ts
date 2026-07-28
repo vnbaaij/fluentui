@@ -550,6 +550,26 @@ test.describe('Donut-chart - round-corners', () => {
 
     await expect(firstArc).not.toHaveAttribute('d', defaultPath ?? '');
   });
+
+  test('Should toggle rounded class on legend swatches when round-corners changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-donutchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-donut-chart chart-title="Rounded legend" inner-radius="55" data='${JSON.stringify(data)}'>
+        </fluent-donut-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
+
+    const element = page.locator('fluent-donut-chart');
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(0);
+
+    await element.evaluate(el => {
+      el.setAttribute('round-corners', 'true');
+    });
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(data.length);
+  });
 });
 
 test.describe('Donut-chart - order', () => {

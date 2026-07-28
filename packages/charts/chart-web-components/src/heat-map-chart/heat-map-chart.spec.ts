@@ -94,6 +94,19 @@ test.describe('HeatMapChart - Basic', () => {
     await expect(legends.nth(2).getByText('High')).toBeVisible();
   });
 
+  test('Should toggle rounded class on legend swatches when round-corners changes', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+    const legendCount = await element.locator('.legend-text').count();
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(0);
+
+    await element.evaluate(el => {
+      el.toggleAttribute('round-corners', true);
+    });
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(legendCount);
+  });
+
   test('Should hide legends when hide-legends is set', async ({ page }) => {
     const element = page.locator('fluent-heat-map-chart');
     await element.evaluate(el => el.setAttribute('hide-legends', ''));

@@ -71,6 +71,19 @@ test.describe('GaugeChart - Basic', () => {
     await expect(element.getByRole('option', { name: 'High' })).toBeVisible();
   });
 
+  test('Should toggle rounded class on legend swatches when round-corners changes', async ({ page }) => {
+    const element = page.locator('fluent-gauge-chart');
+    const legendCount = await element.getByRole('option').count();
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(0);
+
+    await element.evaluate(el => {
+      el.toggleAttribute('round-corners', true);
+    });
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(legendCount);
+  });
+
   test('Should render segments with correct aria labels', async ({ page }) => {
     const element = page.locator('fluent-gauge-chart');
     const lowSegment = element.locator('.segment[data-id="Low"]');

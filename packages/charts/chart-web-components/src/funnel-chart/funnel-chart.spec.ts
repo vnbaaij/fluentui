@@ -92,6 +92,20 @@ test.describe('FunnelChart - Basic', () => {
     await expect(legends.nth(3).getByText('Conversions')).toBeVisible();
   });
 
+  test('Should toggle rounded class on legend swatches when round-corners changes', async ({ page }) => {
+    const element = page.locator('fluent-funnel-chart');
+    const legendTextItems = element.locator('.legend-text');
+    const legendCount = await legendTextItems.count();
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(0);
+
+    await element.evaluate(el => {
+      el.toggleAttribute('round-corners', true);
+    });
+
+    await expect(element.locator('.legend-rect.rounded')).toHaveCount(legendCount);
+  });
+
   test('Should hide legends when hide-legends is set', async ({ page }) => {
     await page.setContent(/* html */ `
       <div>
