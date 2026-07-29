@@ -3,6 +3,7 @@ import { max } from 'd3-array';
 import { type Axis, axisBottom, axisLeft } from 'd3-axis';
 import { format } from 'd3-format';
 import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear } from 'd3-scale';
+import { line as createLine } from 'd3-shape';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
@@ -56,11 +57,17 @@ export class VerticalBarChart extends CartesianChartBase {
   @attr({ attribute: 'use-single-color', mode: 'boolean' })
   public useSingleColor: boolean = false;
 
+  @attr({ attribute: 'line-legend-text' })
+  public lineLegendText?: string;
+
+  @attr({ attribute: 'line-legend-color' })
+  public lineLegendColor?: string;
+
   protected override _enableResizeObserver = true;
 
   public connectedCallback() {
     const self = this as Record<string, unknown>;
-    const attrFields = ['data', 'barWidth', 'useSingleColor'] as const;
+    const attrFields = ['data', 'barWidth', 'useSingleColor', 'lineLegendText', 'lineLegendColor'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -93,6 +100,14 @@ export class VerticalBarChart extends CartesianChartBase {
   }
 
   protected useSingleColorChanged(): void {
+    this._requestRender();
+  }
+
+  protected lineLegendTextChanged(): void {
+    this._requestRender();
+  }
+
+  protected lineLegendColorChanged(): void {
     this._requestRender();
   }
 
@@ -131,18 +146,68 @@ export class VerticalBarChart extends CartesianChartBase {
     const margins = getDirectionalMargins(defaultMargins, this._isRTL);
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
-    const groupsByCategory = new Map<string, VerticalBarChartDataPoint[]>();
-    points.forEach(point => {
-      const key = String(point.x);
-      groupsByCategory.set(key, [...(groupsByCategory.get(key) ?? []), point]);
-    });
-    const xDomain = sortCategoryGroups(
-      Array.from(groupsByCategory.entries()).map(([key, groupedPoints]) => ({ key, points: groupedPoints })),
-      this.xAxisCategoryOrder,
-      points.map(point => String(point.x)),
-      group => group.points.map(point => point.y),
-    ).map(group => group.key);
-    const xScale = scaleBand<string>().domain(xDomain).range([0, innerWidth]).padding(0.2);
+    const allNumericX = points.every(point => typeof point.x === 'number' && Number.isFinite(point.x));
+
+    let xScaleBand: ScaleBand<string> | undefined;
+    let xScaleLinear: ScaleLinear<number, number> | undefined;
+    let xAxis: Axis<string | number>;
+    let barAutoWidth = 24;
+
+    const getXCenter = (point: VerticalBarChartDataPoint): number => {
+      if (xScaleLinear) {
+        return xScaleLinear(point.x as number);
+      }
+      return (xScaleBand!(String(point.x)) ?? 0) + xScaleBand!.bandwidth() / 2;
+    };
+
+    if (allNumericX) {
+      const numericXValues = points.map(point => point.x as number);
+      const minX = Math.min(...numericXValues);
+      const maxX = Math.max(...numericXValues);
+      const domainMin = minX === maxX ? minX - 1 : minX;
+      const domainMax = minX === maxX ? maxX + 1 : maxX;
+
+      xScaleLinear = scaleLinear().domain([domainMin, domainMax]).range([0, innerWidth]);
+      if (this.roundedTicks) {
+        xScaleLinear.nice();
+      }
+
+      xAxis = axisBottom(xScaleLinear).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<string | number>;
+      applyAxisTickConfig(
+        xAxis as unknown as Axis<number>,
+        this.xAxisTickCount,
+        this.tickValues?.map(value => Number(value)),
+      );
+
+      const sortedUniqueX = [...new Set(numericXValues)].sort((left, right) => left - right);
+      if (sortedUniqueX.length > 1) {
+        const minGap = sortedUniqueX.slice(1).reduce((currentMin, value, index) => {
+          return Math.min(currentMin, value - sortedUniqueX[index]);
+        }, Number.POSITIVE_INFINITY);
+        const minPxGap = Math.abs(xScaleLinear(sortedUniqueX[0] + minGap) - xScaleLinear(sortedUniqueX[0]));
+        barAutoWidth = Math.max(8, Math.min(24, minPxGap * 0.5));
+      }
+    } else {
+      const groupsByCategory = new Map<string, VerticalBarChartDataPoint[]>();
+      points.forEach(point => {
+        const key = String(point.x);
+        groupsByCategory.set(key, [...(groupsByCategory.get(key) ?? []), point]);
+      });
+      const xDomain = sortCategoryGroups(
+        Array.from(groupsByCategory.entries()).map(([key, groupedPoints]) => ({ key, points: groupedPoints })),
+        this.xAxisCategoryOrder,
+        points.map(point => String(point.x)),
+        group => group.points.map(point => point.y),
+      ).map(group => group.key);
+      xScaleBand = scaleBand<string>().domain(xDomain).range([0, innerWidth]).padding(0.2);
+      xAxis = axisBottom(xScaleBand).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<string | number>;
+      applyAxisTickConfig(
+        xAxis as unknown as Axis<string>,
+        this.xAxisTickCount,
+        this.tickValues?.map(value => String(value)),
+      );
+    }
+
     const maxY = max(points, point => point.y) ?? 0;
     const preparedYAxis = computePreparedNumericYAxis({
       minValue: toOptionalNumber(this.yMinValue) ?? 0,
@@ -162,12 +227,6 @@ export class VerticalBarChart extends CartesianChartBase {
     plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
     svg.appendChild(plotGroup);
 
-    const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6));
-    applyAxisTickConfig(
-      xAxis,
-      this.xAxisTickCount,
-      this.tickValues?.map(value => String(value)),
-    );
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
       yAxis,
@@ -186,17 +245,19 @@ export class VerticalBarChart extends CartesianChartBase {
     points.forEach((point, index) => {
       const key = String(point.x);
       const legend = point.legend ?? key;
-      const x = xScale(key) ?? 0;
       const requestedWidth = toOptionalNumber(this.barWidth);
-      const actualWidth = Math.min(requestedWidth ?? xScale.bandwidth(), xScale.bandwidth());
-      const offset = (xScale.bandwidth() - actualWidth) / 2;
+      const actualWidth = xScaleBand
+        ? Math.min(requestedWidth ?? xScaleBand.bandwidth(), xScaleBand.bandwidth())
+        : requestedWidth ?? barAutoWidth;
+      const xCenter = getXCenter(point);
+      const x = xCenter - actualWidth / 2;
       const color = singleColor ?? (point.color ? getColorFromToken(point.color) : getNextColor(index, 0));
       legendMap.set(legend, color);
 
       const rect = createSvgElement<SVGRectElement>('rect');
       rect.classList.add('bar');
       rect.dataset.legend = legend;
-      rect.setAttribute('x', String(x + offset));
+      rect.setAttribute('x', String(x));
       rect.setAttribute('y', String(yScale(point.y)));
       rect.setAttribute('width', String(actualWidth));
       rect.setAttribute('height', String(Math.max(innerHeight - yScale(point.y), 0)));
@@ -211,7 +272,7 @@ export class VerticalBarChart extends CartesianChartBase {
         }
         const hostRect = this.getBoundingClientRect();
         const svgRect = svg.getBoundingClientRect();
-        const anchorX = svgRect.left - hostRect.left + margins.left + x + offset + actualWidth / 2;
+        const anchorX = svgRect.left - hostRect.left + margins.left + xCenter;
         const anchorY = svgRect.top - hostRect.top + margins.top + yScale(point.y);
         this._currentTooltipDataPoint = point;
         this.tooltipProps = {
@@ -230,11 +291,47 @@ export class VerticalBarChart extends CartesianChartBase {
       plotGroup.appendChild(rect);
     });
 
+    const linePoints = points.filter(point => point.lineData && typeof point.lineData.y === 'number');
+    if (linePoints.length > 0) {
+      const lineLegend = this.lineLegendText || 'Line';
+      const lineColor = this.lineLegendColor ? getColorFromToken(this.lineLegendColor) : 'brown';
+      legendMap.set(lineLegend, lineColor);
+
+      const linePath = createSvgElement<SVGPathElement>('path');
+      linePath.classList.add('line-path');
+      linePath.dataset.legend = lineLegend;
+      linePath.setAttribute('fill', 'none');
+      linePath.setAttribute('stroke', lineColor);
+      linePath.setAttribute('stroke-width', '3');
+      linePath.setAttribute(
+        'd',
+        createLine<VerticalBarChartDataPoint>()
+          .x(point => getXCenter(point))
+          .y(point => yScale(point.lineData?.y ?? 0))(linePoints) ?? '',
+      );
+      plotGroup.appendChild(linePath);
+
+      linePoints.forEach((point, index) => {
+        const marker = createSvgElement<SVGCircleElement>('circle');
+        marker.classList.add('line-marker');
+        marker.dataset.legend = lineLegend;
+        marker.setAttribute('cx', String(getXCenter(point)));
+        marker.setAttribute('cy', String(yScale(point.lineData?.y ?? 0)));
+        marker.setAttribute('r', '4');
+        marker.setAttribute('fill', '#fff');
+        marker.setAttribute('stroke', lineColor);
+        marker.setAttribute('stroke-width', '2');
+        marker.addEventListener('click', () => point.lineData?.onClick?.());
+        marker.id = `vbc-line-marker-${index}`;
+        plotGroup.appendChild(marker);
+      });
+    }
+
     renderBottomAxisShared({
       svg,
-      scale: xScale,
+      scale: (xScaleBand ?? xScaleLinear) as ScaleBand<string> | ScaleLinear<number, number>,
       axis: xAxis,
-      formatter: value => value,
+      formatter: value => String(value),
       axisLeft: margins.left,
       axisTop: margins.top,
       innerWidth,
@@ -272,7 +369,7 @@ export class VerticalBarChart extends CartesianChartBase {
     }
     const highlighted = this._getHighlightedLegends();
     const hasSelection = highlighted.length > 0;
-    this.chartContainer.querySelectorAll<SVGElement>('.bar').forEach(element => {
+    this.chartContainer.querySelectorAll<SVGElement>('.bar, .line-path, .line-marker').forEach(element => {
       const legend = element.dataset.legend ?? '';
       const isActive = !hasSelection || highlighted.includes(legend);
       element.classList.toggle('inactive', !isActive);

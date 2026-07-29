@@ -278,9 +278,9 @@ export const Overflow: Story<FluentChartLegend> = () => {
   const container = document.createElement('div');
   container.style.cssText = 'border:1px dashed #ccc;padding:8px;';
 
-  // Constrain to 400px so the legend overflows at typical font sizes.
+  // Constrain to 402px so the legend overflows at typical font sizes.
   const constrainedWrapper = document.createElement('div');
-  constrainedWrapper.style.cssText = 'width:400px;';
+  constrainedWrapper.style.cssText = 'width:402px;';
 
   const el = document.createElement('fluent-chart-legend') as FluentChartLegend;
   el.items = manyItems;

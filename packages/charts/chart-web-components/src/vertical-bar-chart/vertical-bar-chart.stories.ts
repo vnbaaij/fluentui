@@ -13,14 +13,14 @@ import type { VerticalBarChart } from './vertical-bar-chart.js';
 // ── Sample data ───────────────────────────────────────────────────────────────
 
 const basicData: VerticalBarChartDataPoint[] = [
-  { x: 0, y: 10000, legend: 'Oranges', color: 'dodgerblue' },
-  { x: 10000, y: 50000, legend: 'Dogs', color: 'midnightblue' },
-  { x: 25000, y: 30000, legend: 'Apples', color: 'darkblue' },
+  { x: 0, y: 10000, legend: 'Oranges', color: 'dodgerblue', lineData: { y: 7000 } },
+  { x: 10000, y: 50000, legend: 'Dogs', color: 'midnightblue', lineData: { y: 30000 } },
+  { x: 25000, y: 30000, legend: 'Apples', color: 'darkblue', lineData: { y: 3000 } },
   { x: 40000, y: 13000, legend: 'Bananas', color: 'blue' },
-  { x: 52000, y: 43000, legend: 'Giraffes', color: 'darkslateblue' },
-  { x: 68000, y: 30000, legend: 'Cats', color: 'royalblue' },
-  { x: 80000, y: 20000, legend: 'Elephants', color: 'slateblue' },
-  { x: 92000, y: 45000, legend: 'Monkeys', color: 'steelblue' },
+  { x: 52000, y: 43000, legend: 'Giraffes', color: 'darkslateblue', lineData: { y: 30000 } },
+  { x: 68000, y: 30000, legend: 'Cats', color: 'royalblue', lineData: { y: 5000 } },
+  { x: 80000, y: 20000, legend: 'Elephants', color: 'slateblue', lineData: { y: 16000 } },
+  { x: 92000, y: 45000, legend: 'Monkeys', color: 'steelblue', lineData: { y: 40000 } },
 ];
 
 const negativeData: VerticalBarChartDataPoint[] = [
@@ -44,6 +44,8 @@ export const Basic: Story<VerticalBarChart> = () => {
   chart.chartTitle = basicTitle;
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
+  chart.setAttribute('line-legend-text', 'just line');
+  chart.setAttribute('line-legend-color', 'brown');
   return chart;
 };
 Basic.parameters = { docs: { story: { height: '470px' } } };
@@ -67,6 +69,8 @@ export const StandardAttributes: Story<VerticalBarChart> = () => {
   chart.chartTitle = basicTitle;
   chart.setAttribute('width', `${width}`);
   chart.setAttribute('height', `${height}`);
+  chart.setAttribute('line-legend-text', 'just line');
+  chart.setAttribute('line-legend-color', 'brown');
   chart.setAttribute('style', 'margin-top:20px;');
 
   const widthControl = createSliderField('Width', 'vbar-sa-width', width, 200, 1000, nextValue => {
@@ -135,6 +139,8 @@ export const ChartAttributes: Story<VerticalBarChart> = () => {
   chart.chartTitle = 'Vertical bar chart chart attributes example';
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
+  chart.setAttribute('line-legend-text', 'just line');
+  chart.setAttribute('line-legend-color', 'brown');
   chart.setAttribute('style', 'margin-top:20px;');
 
   const barWidthControl = createSliderField('Bar Width', 'vbar-ca-bar-width', 0, 0, 60, nextValue => {
@@ -172,6 +178,8 @@ export const TooltipRendererStory: Story<VerticalBarChart> = () => {
   chart.chartTitle = 'Vertical bar chart custom tooltipRenderer';
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
+  chart.setAttribute('line-legend-text', 'just line');
+  chart.setAttribute('line-legend-color', 'brown');
   chart.setAttribute('x-axis-title', 'Days since project start');
   chart.setAttribute('y-axis-title', 'Revenue in dollars');
   chart.tooltipRenderer = (_point, defaultRender) => {
@@ -193,6 +201,8 @@ export const Culture: Story<VerticalBarChart> = () => {
   chart.chartTitle = 'Vertical bar chart culture example (de-DE)';
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
+  chart.setAttribute('line-legend-text', 'just line');
+  chart.setAttribute('line-legend-color', 'brown');
   chart.setAttribute('culture', 'de-DE');
   return chart;
 };
@@ -212,6 +222,8 @@ export const TitleAlign: Story<VerticalBarChart> = () => {
   chart.chartTitle = 'Vertical bar chart title align example';
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
+  chart.setAttribute('line-legend-text', 'just line');
+  chart.setAttribute('line-legend-color', 'brown');
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
@@ -246,6 +258,8 @@ export const TitleAndLegendPositions: Story<VerticalBarChart> = () => {
   chart.chartTitle = 'Vertical bar chart title and legend positions example';
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
+  chart.setAttribute('line-legend-text', 'just line');
+  chart.setAttribute('line-legend-color', 'brown');
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
@@ -294,6 +308,8 @@ export const RTL: Story<VerticalBarChart> = () => {
   chart.chartTitle = 'Vertical bar chart RTL example';
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
+  chart.setAttribute('line-legend-text', 'just line');
+  chart.setAttribute('line-legend-color', 'brown');
   wrapper.appendChild(chart);
   return wrapper;
 };
