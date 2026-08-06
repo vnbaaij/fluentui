@@ -146,7 +146,13 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       stacks.map(stack => String(stack.xAxisPoint)),
       group => group.points,
     ).map(group => group.key);
-    const xScale = scaleBand<string>().domain(domain).range([0, innerWidth]).padding(0.2);
+    const xAxisInnerPadding = toOptionalNumber(this.xAxisInnerPadding) ?? 2 / 3;
+    const xAxisOuterPadding = toOptionalNumber(this.xAxisOuterPadding) ?? 0;
+    const xScale = scaleBand<string>()
+      .domain(domain)
+      .range([0, innerWidth])
+      .paddingInner(xAxisInnerPadding)
+      .paddingOuter(xAxisOuterPadding);
     const maxTotal =
       max(stacks, stack => stack.chartData.reduce((sum, point) => sum + Math.max(point.data, 0), 0)) ?? 0;
     const preparedYAxis = computePreparedNumericYAxis({
@@ -256,10 +262,15 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       innerWidth,
       innerHeight,
       tickPadding: toNumber(this.tickPadding, 6),
+      isRTL: this._isRTL,
       rotateXAxisLabels: this.rotateXAxisLabels,
       wrapXAxisLabels: this.wrapXAxisLabels,
       hideTickOverlap: this.hideTickOverlap,
       showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
+      axisLabelTooltipHandlers: {
+        show: (target, fullLabel) => this._showAxisLabelTooltip(target, fullLabel),
+        hide: () => this._hideAxisLabelTooltip(),
+      },
       xAxisTitle: this.xAxisTitle,
     });
     renderPrimaryYAxisShared({

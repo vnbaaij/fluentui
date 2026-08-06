@@ -28,9 +28,9 @@ export const createNumberFormat = (
  */
 export const formatLocaleNumber = (value: number, locale: string | undefined): string => {
   try {
-    return value.toLocaleString(locale);
+    return createNumberFormat(locale).format(value);
   } catch {
-    return value.toLocaleString(undefined);
+    return createNumberFormat(undefined).format(value);
   }
 };
 
@@ -311,11 +311,31 @@ export const wrapText = (text: SVGTextElement, width: number) => {
     return;
   }
 
+  const getMeasuredTextLength = (target: SVGTextContentElement, value: string): number => {
+    target.textContent = value;
+    const svgLength = target.getComputedTextLength?.() ?? 0;
+    if (svgLength > 0) {
+      return svgLength;
+    }
+
+    const context = document.createElement('canvas').getContext('2d');
+    if (!context) {
+      return 0;
+    }
+
+    const computed = getComputedStyle(text);
+    const font = computed.font || `${computed.fontSize || '12px'} ${computed.fontFamily || 'sans-serif'}`;
+    context.font = font;
+    return context.measureText(value).width;
+  };
+
   const words = text.textContent.split(/\s+/).reverse();
   let word: string | undefined;
   let line: string[] = [];
   let lineNumber = 0;
-  const lineHeight = text.getBoundingClientRect().height;
+  const measuredLineHeight = text.getBoundingClientRect().height;
+  const computedFontSize = parseFloat(getComputedStyle(text).fontSize || '12');
+  const lineHeight = measuredLineHeight > 0 ? measuredLineHeight : computedFontSize * 1.2;
   const y = text.getAttribute('y') || '0';
 
   text.textContent = null;
@@ -328,8 +348,9 @@ export const wrapText = (text: SVGTextElement, width: number) => {
 
   while ((word = words.pop())) {
     line.push(word);
-    tspan.textContent = line.join(' ') + ' ';
-    if (tspan.getComputedTextLength() > width && line.length > 1) {
+    const candidate = line.join(' ') + ' ';
+    const candidateLength = getMeasuredTextLength(tspan, candidate);
+    if (candidateLength > width && line.length > 1) {
       line.pop();
       tspan.textContent = line.join(' ') + ' ';
       line = [word];
@@ -339,6 +360,8 @@ export const wrapText = (text: SVGTextElement, width: number) => {
       tspan.setAttribute('y', y);
       tspan.setAttribute('dy', `${lineNumber++ * lineHeight}`);
       tspan.textContent = word;
+    } else {
+      tspan.textContent = candidate;
     }
   }
 };

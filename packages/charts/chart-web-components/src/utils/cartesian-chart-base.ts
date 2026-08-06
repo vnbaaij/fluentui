@@ -127,9 +127,41 @@ export abstract class CartesianChartBase extends ChartBase {
   @attr({ attribute: 'x-axis-category-order' })
   public xAxisCategoryOrder: AxisCategoryOrder = 'default';
 
+  /** Inner padding between categorical x-axis bands. Applies to categorical bar charts. */
+  @attr({ attribute: 'x-axis-inner-padding' })
+  public xAxisInnerPadding?: number | string;
+
+  /** Outer padding around first and last categorical x-axis bands. Applies to categorical bar charts. */
+  @attr({ attribute: 'x-axis-outer-padding' })
+  public xAxisOuterPadding?: number | string;
+
   /** Width in pixels of the SVG stroke drawn on each bar. When set, an outline is applied. */
   @attr({ attribute: 'stroke-width' })
   public strokeWidth?: number | string;
+
+  /** Width of the overlaid line stroke. */
+  @attr({ attribute: 'line-stroke-width' })
+  public lineStrokeWidth?: number | string;
+
+  /** Dash pattern for the overlaid line stroke. */
+  @attr({ attribute: 'line-stroke-dasharray' })
+  public lineStrokeDasharray?: string | number;
+
+  /** Dash offset for the overlaid line stroke. */
+  @attr({ attribute: 'line-stroke-dashoffset' })
+  public lineStrokeDashoffset?: string | number;
+
+  /** Line cap style for the overlaid line stroke. */
+  @attr({ attribute: 'line-stroke-linecap' })
+  public lineStrokeLinecap?: 'butt' | 'round' | 'square' | 'inherit';
+
+  /** Width of the border around the overlaid line. */
+  @attr({ attribute: 'line-border-width' })
+  public lineBorderWidth?: number | string;
+
+  /** Color of the border around the overlaid line. */
+  @attr({ attribute: 'line-border-color' })
+  public lineBorderColor?: string;
 
   /**
    * When `true`, truncates long x-axis tick labels and shows the full text in a
@@ -137,6 +169,14 @@ export abstract class CartesianChartBase extends ChartBase {
    */
   @attr({ attribute: 'show-x-axis-labels-tooltip', mode: 'boolean' })
   public showXAxisLabelsTooltip: boolean = false;
+
+  /**
+   * Maximum number of characters shown in x-axis labels when
+   * `show-x-axis-labels-tooltip` is enabled. Longer labels are truncated
+   * and full text is available on hover.
+   */
+  @attr({ attribute: 'no-of-chars-to-truncate' })
+  public noOfCharsToTruncate?: number | string;
 
   /**
    * When true (default), hides x-axis tick labels that would overlap with the previous label.
@@ -191,8 +231,17 @@ export abstract class CartesianChartBase extends ChartBase {
       'xAxisTickCount',
       'yAxisTickCount',
       'xAxisCategoryOrder',
+      'xAxisInnerPadding',
+      'xAxisOuterPadding',
       'strokeWidth',
+      'lineStrokeWidth',
+      'lineStrokeDasharray',
+      'lineStrokeDashoffset',
+      'lineStrokeLinecap',
+      'lineBorderWidth',
+      'lineBorderColor',
       'showXAxisLabelsTooltip',
+      'noOfCharsToTruncate',
       'hideTickOverlap',
       'dateLocalizeOptions',
       'useUTC',
@@ -291,11 +340,47 @@ export abstract class CartesianChartBase extends ChartBase {
     this._requestRender();
   }
 
+  protected xAxisInnerPaddingChanged() {
+    this._requestRender();
+  }
+
+  protected xAxisOuterPaddingChanged() {
+    this._requestRender();
+  }
+
   protected strokeWidthChanged() {
     this._requestRender();
   }
 
+  protected lineStrokeWidthChanged() {
+    this._requestRender();
+  }
+
+  protected lineStrokeDasharrayChanged() {
+    this._requestRender();
+  }
+
+  protected lineStrokeDashoffsetChanged() {
+    this._requestRender();
+  }
+
+  protected lineStrokeLinecapChanged() {
+    this._requestRender();
+  }
+
+  protected lineBorderWidthChanged() {
+    this._requestRender();
+  }
+
+  protected lineBorderColorChanged() {
+    this._requestRender();
+  }
+
   protected showXAxisLabelsTooltipChanged() {
+    this._requestRender();
+  }
+
+  protected noOfCharsToTruncateChanged() {
     this._requestRender();
   }
 

@@ -538,7 +538,7 @@ test.describe('GanttChart - stroke-width', () => {
 });
 
 test.describe('GanttChart - show-x-axis-labels-tooltip', () => {
-  test('Should truncate long x-axis labels and add title tooltip when enabled', async ({ page }) => {
+  test('Should truncate long x-axis labels and show overlay tooltip when enabled', async ({ page }) => {
     await page.goto(fixtureURL('components-ganttchart--basic'));
     // Use .10f format to produce labels > 10 chars (e.g. "0.0000000000")
     await page.setContent(/* html */ `
@@ -552,14 +552,20 @@ test.describe('GanttChart - show-x-axis-labels-tooltip', () => {
       </div>
     `);
     await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
-    const axisLabels = page.locator('fluent-gantt-chart').locator('.axis-text');
+    const element = page.locator('fluent-gantt-chart');
+    const axisLabels = element.locator('.axis-text');
     await expect(axisLabels.first()).not.toBeEmpty();
-    // Every x-axis tick label should have a <title> child (tooltip)
-    const titleCount = await axisLabels.first().locator('title').count();
-    expect(titleCount).toBe(1);
+
+    const truncatedLabel = axisLabels.filter({ hasText: /\.\.\./ }).first();
+    await truncatedLabel.hover();
+
+    const axisTooltip = element.locator('.axis-label-tooltip');
+    await expect(axisTooltip).toHaveCount(1);
+    await expect(axisTooltip).toHaveCSS('opacity', '0.9');
+    await expect(axisTooltip).not.toHaveText('');
   });
 
-  test('Should not add title tooltip when show-x-axis-labels-tooltip is absent', async ({ page }) => {
+  test('Should not render overlay tooltip when show-x-axis-labels-tooltip is absent', async ({ page }) => {
     await page.goto(fixtureURL('components-ganttchart--basic'));
     await page.setContent(/* html */ `
       <div>
@@ -570,9 +576,10 @@ test.describe('GanttChart - show-x-axis-labels-tooltip', () => {
       </div>
     `);
     await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
-    const axisLabels = page.locator('fluent-gantt-chart').locator('.axis-text');
-    const firstTitleCount = await axisLabels.first().locator('title').count();
-    expect(firstTitleCount).toBe(0);
+    const element = page.locator('fluent-gantt-chart');
+    const axisLabels = element.locator('.axis-text');
+    await axisLabels.first().hover();
+    await expect(element.locator('.axis-label-tooltip')).toHaveCount(0);
   });
 });
 

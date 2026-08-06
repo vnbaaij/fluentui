@@ -139,7 +139,13 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
       group => group.points,
     ).map(group => group.key);
     const keyDomain = Array.from(new Set(groups.flatMap(group => group.series.map(point => point.key))));
-    const xScale = scaleBand<string>().domain(groupDomain).range([0, innerWidth]).padding(0.1);
+    const xAxisInnerPadding = toOptionalNumber(this.xAxisInnerPadding) ?? 2 / 3;
+    const xAxisOuterPadding = toOptionalNumber(this.xAxisOuterPadding) ?? 0;
+    const xScale = scaleBand<string>()
+      .domain(groupDomain)
+      .range([0, innerWidth])
+      .paddingInner(xAxisInnerPadding)
+      .paddingOuter(xAxisOuterPadding);
     const innerScale = scaleBand<string>().domain(keyDomain).range([0, xScale.bandwidth()]).padding(0.05);
     const maxY = max(groups.flatMap(group => group.series.map(point => point.data))) ?? 0;
     const preparedYAxis = computePreparedNumericYAxis({
@@ -235,10 +241,15 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
       innerWidth,
       innerHeight,
       tickPadding: toNumber(this.tickPadding, 6),
+      isRTL: this._isRTL,
       rotateXAxisLabels: this.rotateXAxisLabels,
       wrapXAxisLabels: this.wrapXAxisLabels,
       hideTickOverlap: this.hideTickOverlap,
       showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
+      axisLabelTooltipHandlers: {
+        show: (target, fullLabel) => this._showAxisLabelTooltip(target, fullLabel),
+        hide: () => this._hideAxisLabelTooltip(),
+      },
       xAxisTitle: this.xAxisTitle,
     });
     renderPrimaryYAxisShared({

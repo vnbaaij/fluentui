@@ -810,6 +810,10 @@ export class GanttChart extends CartesianChartBase {
       wrapXAxisLabels: this.wrapXAxisLabels,
       hideTickOverlap: this.hideTickOverlap,
       showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
+      axisLabelTooltipHandlers: {
+        show: (target, fullLabel) => this._showAxisLabelTooltip(target, fullLabel),
+        hide: () => this._hideAxisLabelTooltip(),
+      },
       xAxisTitle: this.xAxisTitle,
       formatTickLabel: (tick, [min, max]) => {
         const rangeMs = max - min;

@@ -52,6 +52,21 @@ test.describe('ChartLegend - rendering', () => {
     await expect(buttons.nth(0)).toHaveAttribute('aria-posinset', '1');
     await expect(buttons.nth(2)).toHaveAttribute('aria-posinset', '3');
   });
+
+  test('Should render line legend swatch shape when item is marked as line legend', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    await element.evaluate(el => {
+      (el as any).items = [
+        { legend: 'Just line', color: 'brown', isLineLegendInBarChart: true },
+        { legend: 'Apples', color: '#637cef' },
+      ];
+    });
+
+    const swatches = element.locator('.legend-rect');
+    await expect(swatches.first()).toHaveClass(/line/);
+    await expect(swatches.nth(1)).not.toHaveClass(/line/);
+  });
 });
 
 // ── Accessibility ────────────────────────────────────────────────────────────

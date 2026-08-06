@@ -830,6 +830,10 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
       wrapXAxisLabels: this.wrapXAxisLabels,
       hideTickOverlap: this.hideTickOverlap,
       showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
+      axisLabelTooltipHandlers: {
+        show: (target, fullLabel) => this._showAxisLabelTooltip(target, fullLabel),
+        hide: () => this._hideAxisLabelTooltip(),
+      },
       xAxisTitle: this.xAxisTitle,
       formatTickLabel: tick =>
         this.xAxisTickFormat ? _applyFormat(tick, this.xAxisTickFormat) : formatAxisNumber(tick, this.culture),

@@ -9,7 +9,13 @@ export type AxisScaleLike<Domain extends AxisDomain> = {
   domain(): Domain[];
   ticks?: (count?: number) => Domain[];
   bandwidth?: () => number;
+  step?: () => number;
   (value: Domain): number | undefined;
+};
+
+export type AxisLabelTooltipHandlers = {
+  show: (target: SVGTextElement, fullLabel: string) => void;
+  hide: () => void;
 };
 
 export const getAxisTickValues = <Domain extends AxisDomain>(
@@ -198,11 +204,14 @@ export type BottomAxisRenderOptions<Domain extends AxisDomain> = {
   innerWidth: number;
   innerHeight: number;
   tickPadding: number;
+  isRTL?: boolean;
   rotateXAxisLabels?: boolean;
   wrapXAxisLabels?: boolean;
   wrapLabelWidth?: BottomAxisWrapLabelWidth<Domain>;
   hideTickOverlap?: boolean;
   showXAxisLabelsTooltip?: boolean;
+  noOfCharsToTruncate?: number;
+  axisLabelTooltipHandlers?: AxisLabelTooltipHandlers;
   xAxisTitle?: string;
   labelClassName?: string;
   titleClassName?: string;
@@ -220,20 +229,26 @@ export const renderBottomAxisShared = <Domain extends AxisDomain>({
   innerWidth,
   innerHeight,
   tickPadding,
+  isRTL = false,
   rotateXAxisLabels = false,
   wrapXAxisLabels = false,
   wrapLabelWidth,
   hideTickOverlap = false,
   showXAxisLabelsTooltip = false,
+  noOfCharsToTruncate = 4,
+  axisLabelTooltipHandlers,
   xAxisTitle,
   labelClassName = 'axis-text',
   titleClassName = 'x-axis-title',
   labelDominantBaseline = 'hanging',
   showTickLines = true,
 }: BottomAxisRenderOptions<Domain>): void => {
+  const safeTruncateChars = Number.isFinite(noOfCharsToTruncate) ? Math.max(1, Math.floor(noOfCharsToTruncate)) : 4;
+
   const group = createSvgElement<SVGGElement>('g');
   group.classList.add('x-axis');
   group.setAttribute('transform', `translate(${axisLeft}, ${axisTop + innerHeight})`);
+  svg.appendChild(group);
 
   const domain = createSvgElement<SVGLineElement>('line');
   domain.classList.add('axis-domain');
@@ -241,10 +256,14 @@ export const renderBottomAxisShared = <Domain extends AxisDomain>({
   domain.setAttribute('x2', String(innerWidth));
   group.appendChild(domain);
 
-  getAxisTickValues(axis, scale).forEach(value => {
+  const tickValues = getAxisTickValues(axis, scale);
+  const tickPositions = tickValues.map(value => getAxisPosition(scale, value));
+
+  tickValues.forEach((value, tickIndex) => {
     const tick = createSvgElement<SVGGElement>('g');
+    const tickPosition = tickPositions[tickIndex];
     tick.classList.add('tick');
-    tick.setAttribute('transform', `translate(${getAxisPosition(scale, value)}, 0)`);
+    tick.setAttribute('transform', `translate(${tickPosition}, 0)`);
 
     if (showTickLines) {
       const line = createSvgElement<SVGLineElement>('line');
@@ -256,16 +275,30 @@ export const renderBottomAxisShared = <Domain extends AxisDomain>({
     const text = createSvgElement<SVGTextElement>('text');
     text.classList.add(labelClassName);
     text.setAttribute('y', String(6 + tickPadding));
-    text.setAttribute('text-anchor', rotateXAxisLabels ? 'start' : 'middle');
+    text.setAttribute('text-anchor', rotateXAxisLabels ? 'end' : 'middle');
     text.setAttribute('dominant-baseline', labelDominantBaseline);
-    text.textContent = formatter(value);
+    const fullLabel = formatter(value);
+    const shouldTruncateForTooltip = showXAxisLabelsTooltip && !wrapXAxisLabels;
+    const renderedLabel =
+      shouldTruncateForTooltip && fullLabel.length > safeTruncateChars
+        ? `${fullLabel.slice(0, safeTruncateChars)}...`
+        : fullLabel;
+    text.textContent = renderedLabel;
     if (rotateXAxisLabels) {
-      text.setAttribute('transform', 'rotate(45)');
+      // Nudge rotated labels toward the chart center so the text midpoint aligns
+      // closer to the tick mark (LTR: left, RTL: right).
+      const rotatedLabelShiftX = isRTL ? 10 : -10;
+      text.setAttribute('transform', `translate(${rotatedLabelShiftX}, 0) rotate(-45)`);
     }
-    if (showXAxisLabelsTooltip) {
-      const title = createSvgElement<SVGTitleElement>('title');
-      title.textContent = text.textContent;
-      text.appendChild(title);
+    if (showXAxisLabelsTooltip && renderedLabel !== fullLabel) {
+      if (axisLabelTooltipHandlers) {
+        text.addEventListener('mouseover', () => axisLabelTooltipHandlers.show(text, fullLabel));
+        text.addEventListener('mouseout', () => axisLabelTooltipHandlers.hide());
+      } else {
+        const title = createSvgElement<SVGTitleElement>('title');
+        title.textContent = fullLabel;
+        text.appendChild(title);
+      }
     }
     tick.appendChild(text);
     group.appendChild(tick);
@@ -276,6 +309,14 @@ export const renderBottomAxisShared = <Domain extends AxisDomain>({
         width = wrapLabelWidth;
       } else if (typeof wrapLabelWidth === 'function') {
         width = wrapLabelWidth(value, scale);
+      } else if (tickPositions.length > 1) {
+        if (tickIndex < tickPositions.length - 1) {
+          width = Math.abs(tickPositions[tickIndex + 1] - tickPosition);
+        } else if (tickIndex > 0) {
+          width = Math.abs(tickPosition - tickPositions[tickIndex - 1]);
+        }
+      } else if (typeof scale.step === 'function') {
+        width = scale.step();
       } else if (typeof scale.bandwidth === 'function') {
         width = scale.bandwidth();
       }
@@ -295,9 +336,7 @@ export const renderBottomAxisShared = <Domain extends AxisDomain>({
     group.appendChild(title);
   }
 
-  svg.appendChild(group);
-
-  if (hideTickOverlap && !rotateXAxisLabels) {
+  if (hideTickOverlap && !rotateXAxisLabels && !wrapXAxisLabels) {
     hideOverlappingBottomAxisLabels(Array.from(group.querySelectorAll<SVGTextElement>(`.${labelClassName}`)));
   }
 };
@@ -672,6 +711,8 @@ export type ContinuousBottomAxisRenderOptions = {
   wrapXAxisLabels?: boolean;
   hideTickOverlap?: boolean;
   showXAxisLabelsTooltip?: boolean;
+  noOfCharsToTruncate?: number;
+  axisLabelTooltipHandlers?: AxisLabelTooltipHandlers;
   xAxisTitle?: string;
   formatTickLabel: (tick: number, range: [number, number]) => string;
 };
@@ -689,9 +730,13 @@ export const renderContinuousBottomAxisShared = ({
   wrapXAxisLabels = false,
   hideTickOverlap = false,
   showXAxisLabelsTooltip = false,
+  noOfCharsToTruncate = 4,
+  axisLabelTooltipHandlers,
   xAxisTitle,
   formatTickLabel,
 }: ContinuousBottomAxisRenderOptions) => {
+  const safeTruncateChars = Number.isFinite(noOfCharsToTruncate) ? Math.max(1, Math.floor(noOfCharsToTruncate)) : 4;
+
   const axisY = height - margins.bottom;
   const min = domain[0];
   const max = domain[1];
@@ -713,6 +758,10 @@ export const renderContinuousBottomAxisShared = ({
 
     const labelY = axisY + tickPadding + 12;
     const rawLabel = formatTickLabel(tick, range);
+    const renderedLabel =
+      showXAxisLabelsTooltip && !wrapXAxisLabels && rawLabel.length > safeTruncateChars
+        ? `${rawLabel.slice(0, safeTruncateChars)}...`
+        : rawLabel;
 
     const text = createSvgElement<SVGTextElement>('text');
     text.setAttribute('class', 'axis-text');
@@ -722,10 +771,10 @@ export const renderContinuousBottomAxisShared = ({
     if (rotateXAxisLabels) {
       text.setAttribute('text-anchor', isRTL ? 'start' : 'end');
       text.setAttribute('transform', `rotate(-45, ${x}, ${labelY})`);
-      text.textContent = rawLabel;
+      text.textContent = renderedLabel;
     } else if (wrapXAxisLabels) {
       text.setAttribute('text-anchor', 'middle');
-      const words = rawLabel.split(' ');
+      const words = renderedLabel.split(' ');
       if (words.length > 1) {
         words.forEach((word, index) => {
           const tspan = createSvgElement<SVGTSpanElement>('tspan');
@@ -735,17 +784,22 @@ export const renderContinuousBottomAxisShared = ({
           text.appendChild(tspan);
         });
       } else {
-        text.textContent = rawLabel;
+        text.textContent = renderedLabel;
       }
     } else {
       text.setAttribute('text-anchor', 'middle');
-      text.textContent = rawLabel;
+      text.textContent = renderedLabel;
     }
 
-    if (showXAxisLabelsTooltip) {
-      const title = createSvgElement<SVGTitleElement>('title');
-      title.textContent = rawLabel;
-      text.appendChild(title);
+    if (showXAxisLabelsTooltip && renderedLabel !== rawLabel) {
+      if (axisLabelTooltipHandlers) {
+        text.addEventListener('mouseover', () => axisLabelTooltipHandlers.show(text, rawLabel));
+        text.addEventListener('mouseout', () => axisLabelTooltipHandlers.hide());
+      } else {
+        const title = createSvgElement<SVGTitleElement>('title');
+        title.textContent = rawLabel;
+        text.appendChild(title);
+      }
     }
 
     axisLayer.appendChild(text);

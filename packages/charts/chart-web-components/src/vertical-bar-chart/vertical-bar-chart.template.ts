@@ -1,5 +1,5 @@
-import { ElementViewTemplate, html, ref, when } from '@microsoft/fast-element';
-import type { VerticalBarChart } from './vertical-bar-chart.js';
+import { ElementViewTemplate, html, ref, repeat, when } from '@microsoft/fast-element';
+import type { TooltipEntry, VerticalBarChart } from './vertical-bar-chart.js';
 
 export function verticalBarChartTemplate<T extends VerticalBarChart>(): ElementViewTemplate<T> {
   return html<T>`
@@ -31,13 +31,19 @@ export function verticalBarChartTemplate<T extends VerticalBarChart>(): ElementV
               ${when(
                 x => !x.tooltipRenderer,
                 html<T>`
-                  <div class="tooltip-header">${x => x.tooltipProps.yValue}</div>
-                  <div class="tooltip-info" style="border-color: ${x => x.tooltipProps.color};">
-                    <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
-                    <div class="tooltip-primary-value" style="color: ${x => x.tooltipProps.color};">
-                      ${x => x.tooltipProps.xValue}
-                    </div>
-                  </div>
+                  <div class="tooltip-header">${x => x.tooltipProps.xValue || x.tooltipProps.yValue}</div>
+                  ${repeat(
+                    x => (x.tooltipProps as any).entries as TooltipEntry[],
+                    html<TooltipEntry, T>`
+                      <div class="tooltip-info" style="border-color: ${x => x.color};">
+                        ${when(
+                          x => !!x.legend,
+                          html<TooltipEntry, T>`<div class="tooltip-legend-text">${x => x.legend}</div>`,
+                        )}
+                        <div class="tooltip-primary-value" style="color: ${x => x.color};">${x => x.value}</div>
+                      </div>
+                    `,
+                  )}
                 `,
               )}
             </div>

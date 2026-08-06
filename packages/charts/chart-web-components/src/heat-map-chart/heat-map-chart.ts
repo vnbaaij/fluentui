@@ -728,6 +728,7 @@ export class HeatMapChart extends CartesianChartBase {
       innerWidth,
       innerHeight,
       tickPadding: 8,
+      isRTL,
       showTickLines: false,
     });
 

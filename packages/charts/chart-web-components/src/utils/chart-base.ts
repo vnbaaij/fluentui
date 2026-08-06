@@ -232,6 +232,7 @@ export abstract class ChartBase extends FASTElement {
   private _renderDirty = false;
   private _frameHandle: number | null = null;
   private _resizeObserver?: ResizeObserver;
+  private _axisLabelTooltipEl?: HTMLDivElement;
 
   constructor() {
     super();
@@ -332,6 +333,9 @@ export abstract class ChartBase extends FASTElement {
     this.shadowRoot?.removeEventListener('pointerup', this._onShadowPointerUp);
     this._resizeObserver?.disconnect();
     this._cancelScheduledRender();
+    this._hideAxisLabelTooltip();
+    this._axisLabelTooltipEl?.remove();
+    this._axisLabelTooltipEl = undefined;
     super.disconnectedCallback();
   }
 
@@ -537,6 +541,50 @@ export abstract class ChartBase extends FASTElement {
   }
 
   /**
+   * Shows a shared HTML tooltip for a truncated axis label.
+   * This mirrors React chart behavior more closely than native <title>.
+   */
+  protected _showAxisLabelTooltip(target: SVGTextElement, fullLabel: string): void {
+    if (!this.shadowRoot || !fullLabel) {
+      return;
+    }
+
+    const tooltip = this._getOrCreateAxisLabelTooltipElement();
+    tooltip.textContent = fullLabel;
+
+    const hostRect = this.getBoundingClientRect();
+    const labelRect = target.getBoundingClientRect();
+    const left = (labelRect.left + labelRect.right) / 2 - hostRect.left;
+    const bottom = hostRect.bottom - (labelRect.top - 4);
+
+    tooltip.style.left = `${Math.max(0, left)}px`;
+    tooltip.style.bottom = `${Math.max(0, bottom)}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+    tooltip.style.opacity = '0.9';
+  }
+
+  /** Hides the shared axis-label tooltip overlay. */
+  protected _hideAxisLabelTooltip(): void {
+    if (this._axisLabelTooltipEl) {
+      this._axisLabelTooltipEl.style.opacity = '0';
+    }
+  }
+
+  private _getOrCreateAxisLabelTooltipElement(): HTMLDivElement {
+    if (this._axisLabelTooltipEl && this._axisLabelTooltipEl.isConnected) {
+      return this._axisLabelTooltipEl;
+    }
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'axis-label-tooltip';
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.style.opacity = '0';
+    this.shadowRoot!.appendChild(tooltip);
+    this._axisLabelTooltipEl = tooltip;
+    return tooltip;
+  }
+
+  /**
    * Positions the tooltip around an anchor point and keeps it within the host bounds.
    * `anchorX` / `anchorY` are physical host-relative coordinates (LTR geometry).
    */
@@ -672,6 +720,7 @@ export abstract class ChartBase extends FASTElement {
 
       this._renderDirty = false;
       this._isRTL = getRTL(this);
+      this._hideAxisLabelTooltip();
       this._performRender();
     });
   }

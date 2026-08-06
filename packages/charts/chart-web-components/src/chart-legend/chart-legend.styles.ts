@@ -92,6 +92,10 @@ export const styles: ElementStyles = css`
     background-color: ${colorSubtleBackgroundHover};
   }
 
+  .legend.selected {
+    font-weight: 600;
+  }
+
   .legend:focus-visible {
     outline: ${strokeWidthThick} solid ${colorStrokeFocus2};
     outline-offset: 1px;
@@ -104,14 +108,18 @@ export const styles: ElementStyles = css`
     border: ${strokeWidthThin} solid;
   }
 
+  .legend-rect.line {
+    height: 4px;
+  }
+
   .legend-rect.rounded {
     border-radius: ${borderRadiusSmall};
   }
 
-/* Same for overflow menu items */
-fluent-menu-item .legend-rect.rounded {
-  border-radius: ${borderRadiusSmall};
-}
+  /* Same for overflow menu items */
+  fluent-menu-item .legend-rect.rounded {
+    border-radius: ${borderRadiusSmall};
+  }
   .legend-text {
     ${typographyCaption1Styles}
     color: ${colorNeutralForeground1};
@@ -122,6 +130,14 @@ fluent-menu-item .legend-rect.rounded {
   }
 
   .legend.inactive .legend-text {
+    opacity: 0.67;
+  }
+
+  .legend.selected .legend-rect {
+    transform: scale(1.04);
+  }
+
+  .legend.selected .legend-text {
     opacity: 0.67;
   }
 
@@ -148,11 +164,23 @@ fluent-menu-item .legend-rect.rounded {
     border: ${strokeWidthThin} solid;
   }
 
+  fluent-menu-item .legend-rect.line {
+    height: 4px;
+  }
+
   fluent-menu-item.inactive .legend-rect {
     opacity: 0.1;
   }
 
   fluent-menu-item.inactive .legend-text {
+    opacity: 0.67;
+  }
+
+  fluent-menu-item.selected .legend-rect {
+    transform: scale(1.04);
+  }
+
+  fluent-menu-item.selected .legend-text {
     opacity: 0.67;
   }
 

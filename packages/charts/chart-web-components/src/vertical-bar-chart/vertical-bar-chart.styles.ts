@@ -46,6 +46,7 @@ export const styles: ElementStyles = css`
 
   fluent-chart-legend {
     grid-area: legend;
+    min-width: 0;
   }
 
   :host([title-position='bottom']) {
@@ -148,6 +149,23 @@ export const styles: ElementStyles = css`
     opacity: 1;
   }
 
+  .y-axis-grid-line {
+    stroke: ${colorNeutralForeground1};
+    stroke-width: 1;
+    opacity: 0.2;
+    pointer-events: none;
+  }
+
+  .bar-label {
+    fill: ${colorNeutralForeground2};
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .line-marker {
+    pointer-events: none;
+  }
+
   .bar.inactive {
     opacity: 0.1;
   }
@@ -165,7 +183,10 @@ export const styles: ElementStyles = css`
     z-index: 999;
     box-shadow: ${shadow4};
     border: ${strokeWidthThick};
+    border-radius: 4px;
     white-space: nowrap;
+    padding-block: 8px;
+    padding-inline: 12px;
   }
 
   .tooltip-header {

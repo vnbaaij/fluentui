@@ -304,7 +304,7 @@ export class GanttChart extends CartesianChartBase {
     // (undocumented)
     protected showYAxisLabelsTooltipChanged(): void;
     // (undocumented)
-    get tooltipInlineTransform(): "translateX(50%)" | "translateX(-50%)";
+    get tooltipInlineTransform(): "translateX(-50%)" | "translateX(50%)";
     // Warning: (ae-forgotten-export) The symbol "GanttTooltipProps" needs to be exported by the entry point index.d.ts
     tooltipProps: GanttTooltipProps;
     // (undocumented)
@@ -748,7 +748,7 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     // (undocumented)
     protected showYAxisLabelsTooltipChanged(): void;
     // (undocumented)
-    get tooltipInlineTransform(): "translateX(50%)" | "translateX(-50%)";
+    get tooltipInlineTransform(): "translateX(-50%)" | "translateX(50%)";
     // Warning: (ae-forgotten-export) The symbol "HBCWATooltipProps" needs to be exported by the entry point index.d.ts
     tooltipProps: HBCWATooltipProps;
     // (undocumented)
@@ -1235,6 +1235,14 @@ export class VerticalBarChart extends CartesianChartBase {
     // (undocumented)
     protected _getHostAriaLabel(): string;
     // (undocumented)
+    lineLegendColor?: string;
+    // (undocumented)
+    protected lineLegendColorChanged(): void;
+    // (undocumented)
+    lineLegendText?: string;
+    // (undocumented)
+    protected lineLegendTextChanged(): void;
+    // (undocumented)
     protected _performRender(): void;
     // (undocumented)
     get tooltipInlineTransform(): string;
@@ -1251,13 +1259,19 @@ export class VerticalBarChart extends CartesianChartBase {
 // @public (undocumented)
 export interface VerticalBarChartDataPoint {
     // (undocumented)
+    callOutAccessibilityData?: AccessibilityData;
+    // (undocumented)
     color?: string;
     // (undocumented)
     legend?: string;
+    // Warning: (ae-forgotten-export) The symbol "VerticalBarChartLineDataPoint" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    lineData?: VerticalBarChartLineDataPoint;
     // (undocumented)
     onClick?: VoidFunction;
     // (undocumented)
-    x: string | number;
+    x: string | number | Date;
     // (undocumented)
     y: number;
 }

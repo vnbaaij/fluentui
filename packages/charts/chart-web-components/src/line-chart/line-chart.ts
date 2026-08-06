@@ -348,10 +348,15 @@ export class LineChart extends CartesianChartBase {
       innerWidth,
       innerHeight,
       tickPadding: toNumber(this.tickPadding, 6),
+      isRTL: this._isRTL,
       rotateXAxisLabels: this.rotateXAxisLabels,
       wrapXAxisLabels: this.wrapXAxisLabels,
       hideTickOverlap: this.hideTickOverlap,
       showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
+      axisLabelTooltipHandlers: {
+        show: (target, fullLabel) => this._showAxisLabelTooltip(target, fullLabel),
+        hide: () => this._hideAxisLabelTooltip(),
+      },
       xAxisTitle: this.xAxisTitle,
     });
     renderPrimaryYAxisShared({

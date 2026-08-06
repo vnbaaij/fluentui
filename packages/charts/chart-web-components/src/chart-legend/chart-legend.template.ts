@@ -36,7 +36,8 @@ export function chartLegendTemplate<T extends ChartLegend>(): ElementViewTemplat
             @keydown="${(x, c) => c.parent._handleLegendKeydown(c.event as KeyboardEvent)}"
           >
             <div
-              class="${(x, c) => `legend-rect${c.parent.roundBoxes ? ' rounded' : ''}`}"
+              class="${(x, c) =>
+                `legend-rect${x.isLineLegendInBarChart ? ' line' : ''}${c.parent.roundBoxes ? ' rounded' : ''}`}"
               style="background-color: ${x => getColorFromToken(x.color)}; border-color: ${x =>
                 getColorFromToken(x.color)};"
             ></div>
@@ -72,7 +73,10 @@ export function chartLegendTemplate<T extends ChartLegend>(): ElementViewTemplat
                     <span slot="indicator"></span>
                     <div
                       slot="start"
-                      class="${(x, c) => `legend-rect${c.parent.roundBoxes ? ' rounded' : ''}`}"
+                      class="${(x, c) =>
+                        `legend-rect${x.isLineLegendInBarChart ? ' line' : ''}${
+                          c.parent.roundBoxes ? ' rounded' : ''
+                        }`}"
                       style="background-color: ${x => getColorFromToken(x.color)}; border-color: ${x =>
                         getColorFromToken(x.color)};"
                     ></div>
