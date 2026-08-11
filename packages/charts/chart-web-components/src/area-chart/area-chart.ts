@@ -147,14 +147,6 @@ export class AreaChart extends CartesianChartBase {
     this._requestRender();
   }
 
-  public get tooltipInlineTransform(): string {
-    // Position the tooltip to the right (LTR) or left (RTL) of the hover crosshair so it
-    // does not cover the indicator line and hover dots.  React's Callout uses
-    // DirectionalHint.topAutoEdge anchored on the highlighted circle, which has the same
-    // visual result: the tooltip appears beside the data point, not on top of it.
-    return this._isRTL ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)';
-  }
-
   protected dataChanged(): void {
     this._requestRender();
   }
@@ -664,7 +656,7 @@ export class AreaChart extends CartesianChartBase {
         xPos: anchorX,
         yPos: anchorY,
       };
-      this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
+      this._positionTooltipAvoidingOverlap(anchorX, anchorY, anchorY, !this.tooltipProps.isVisible);
     };
 
     const pointKeydown = (event: KeyboardEvent): void => {
@@ -818,6 +810,7 @@ export class AreaChart extends CartesianChartBase {
         const hostRect = this.getBoundingClientRect();
         const anchorX = svgRect.left - hostRect.left + leftMargin + cx;
         const anchorY = svgRect.top - hostRect.top + defaultMargins.top + topY;
+        const isFreshShow = !this.tooltipProps.isVisible || this.tooltipProps.xLabel !== found.xLabel;
         this._currentTooltipDataPoint = { xLabel: found.xLabel, entries };
         this.tooltipProps = {
           isVisible: true,
@@ -830,7 +823,7 @@ export class AreaChart extends CartesianChartBase {
           xPos: anchorX,
           yPos: anchorY,
         };
-        this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
+        this._positionTooltipAvoidingOverlap(anchorX, anchorY, anchorY, isFreshShow);
       }
     };
 

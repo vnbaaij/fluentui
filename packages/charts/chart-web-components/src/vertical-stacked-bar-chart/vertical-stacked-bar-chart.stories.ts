@@ -11,101 +11,87 @@ import {
   visuallyHiddenStyle,
 } from '../helpers.stories.js';
 import { definition } from './vertical-stacked-bar-chart.definition.js';
-import type { VerticalStackedBarChartProps } from './vertical-stacked-bar-chart.options.js';
+import type {
+  VerticalStackedBarChartDataPoint,
+  VerticalStackedBarChartProps,
+} from './vertical-stacked-bar-chart.options.js';
 import type { VerticalStackedBarChart } from './vertical-stacked-bar-chart.js';
 
 // ── Sample data ───────────────────────────────────────────────────────────────
+// Mirrors the React VerticalStackedBarDefault story's data, colors, and lineData.
+
+const firstChartPoints: VerticalStackedBarChartDataPoint[] = [
+  { legend: 'Metadata1', data: 40, color: 'qualitative.11' },
+  { legend: 'Metadata2', data: 5, color: 'darkblue' },
+  { legend: 'Metadata3', data: 20, color: 'qualitative.6' },
+  { legend: 'Metadata4', data: 10, color: 'qualitative.4' },
+  { legend: 'Metadata5', data: 23, color: 'qualitative.5' },
+  { legend: 'Metadata6', data: 0.4, color: 'qualitative.6' },
+  { legend: 'Metadata7', data: 0.5, color: 'qualitative.7' },
+  { legend: 'Metadata8', data: 0.3, color: 'qualitative.8' },
+  { legend: 'Metadata9', data: 0.7, color: 'qualitative.9' },
+  { legend: 'Metadata10', data: 0.1, color: 'qualitative.10' },
+];
+
+const secondChartPoints: VerticalStackedBarChartDataPoint[] = [
+  { legend: 'Metadata1', data: 30, color: 'qualitative.11' },
+  { legend: 'Metadata2', data: 20, color: 'darkblue' },
+  { legend: 'Metadata3', data: 40, color: 'qualitative.6' },
+];
+
+const thirdChartPoints: VerticalStackedBarChartDataPoint[] = [
+  { legend: 'Metadata1', data: 44, color: 'qualitative.11' },
+  { legend: 'Metadata2', data: 28, color: 'darkblue' },
+  { legend: 'Metadata3', data: 30, color: 'qualitative.6' },
+];
+
+const fourthChartPoints: VerticalStackedBarChartDataPoint[] = [
+  { legend: 'Metadata1', data: 88, color: 'qualitative.11' },
+  { legend: 'Metadata2', data: 22, color: 'darkblue' },
+  { legend: 'Metadata3', data: 30, color: 'qualitative.6' },
+];
 
 const basicData: VerticalStackedBarChartProps[] = [
   {
     xAxisPoint: 0,
-    chartData: [
-      { legend: 'Metadata1', data: 40, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: 5, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: 20, color: 'qualitative.3' },
-      { legend: 'Metadata4', data: 3, color: 'qualitative.4' },
-      { legend: 'Metadata5', data: 15, color: 'qualitative.5' },
-      { legend: 'Metadata6', data: 5, color: 'qualitative.6' },
-      { legend: 'Metadata7', data: 0.1, color: 'qualitative.7' },
-      { legend: 'Metadata8', data: 3, color: 'qualitative.8' },
-      { legend: 'Metadata9', data: 0.5, color: 'qualitative.9' },
-      { legend: 'Metadata10', data: 7, color: 'qualitative.10' },
+    chartData: firstChartPoints,
+    lineData: [
+      { y: 42, legend: 'Supported Builds', color: 'qualitative.2' },
+      { y: 10, legend: 'Recommended Builds', color: 'qualitative.17' },
     ],
   },
   {
     xAxisPoint: 20,
-    chartData: [
-      { legend: 'Metadata1', data: 25, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: 13, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: 30, color: 'qualitative.3' },
-      { legend: 'Metadata4', data: 3, color: 'qualitative.4' },
-      { legend: 'Metadata5', data: 20, color: 'qualitative.5' },
-      { legend: 'Metadata6', data: 25, color: 'qualitative.6' },
-      { legend: 'Metadata7', data: 0.1, color: 'qualitative.7' },
-      { legend: 'Metadata8', data: 5, color: 'qualitative.8' },
-      { legend: 'Metadata9', data: 0.5, color: 'qualitative.9' },
-      { legend: 'Metadata10', data: 7, color: 'qualitative.10' },
-    ],
+    chartData: secondChartPoints,
+    lineData: [{ y: 33, legend: 'Supported Builds', color: 'qualitative.2' }],
   },
   {
     xAxisPoint: 40,
-    chartData: [
-      { legend: 'Metadata1', data: 40, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: 8, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: 18, color: 'qualitative.3' },
-      { legend: 'Metadata4', data: 4, color: 'qualitative.4' },
-      { legend: 'Metadata5', data: 20, color: 'qualitative.5' },
-      { legend: 'Metadata6', data: 15, color: 'qualitative.6' },
-      { legend: 'Metadata7', data: 0.1, color: 'qualitative.7' },
-      { legend: 'Metadata8', data: 4, color: 'qualitative.8' },
-      { legend: 'Metadata9', data: 0.5, color: 'qualitative.9' },
-      { legend: 'Metadata10', data: 7, color: 'qualitative.10' },
+    chartData: thirdChartPoints,
+    lineData: [
+      { y: 60, legend: 'Supported Builds', color: 'qualitative.2' },
+      { y: 20, legend: 'Recommended Builds', color: 'qualitative.17' },
     ],
   },
   {
     xAxisPoint: 60,
-    chartData: [
-      { legend: 'Metadata1', data: 55, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: 8, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: 8, color: 'qualitative.3' },
-      { legend: 'Metadata4', data: 88, color: 'qualitative.4' },
-      { legend: 'Metadata5', data: 7, color: 'qualitative.5' },
-      { legend: 'Metadata6', data: 5, color: 'qualitative.6' },
-      { legend: 'Metadata7', data: 0.1, color: 'qualitative.7' },
-      { legend: 'Metadata8', data: 6, color: 'qualitative.8' },
-      { legend: 'Metadata9', data: 0.5, color: 'qualitative.9' },
-      { legend: 'Metadata10', data: 7, color: 'qualitative.10' },
+    chartData: firstChartPoints,
+    lineData: [
+      { y: 41, legend: 'Supported Builds', color: 'qualitative.2' },
+      { y: 10, legend: 'Recommended Builds', color: 'qualitative.17' },
     ],
   },
   {
     xAxisPoint: 80,
-    chartData: [
-      { legend: 'Metadata1', data: 45, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: 9, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: 19, color: 'qualitative.3' },
-      { legend: 'Metadata4', data: 8, color: 'qualitative.4' },
-      { legend: 'Metadata5', data: 27, color: 'qualitative.5' },
-      { legend: 'Metadata6', data: 10, color: 'qualitative.6' },
-      { legend: 'Metadata7', data: 0.1, color: 'qualitative.7' },
-      { legend: 'Metadata8', data: 5, color: 'qualitative.8' },
-      { legend: 'Metadata9', data: 0.5, color: 'qualitative.9' },
-      { legend: 'Metadata10', data: 7, color: 'qualitative.10' },
+    chartData: fourthChartPoints,
+    lineData: [
+      { y: 100, legend: 'Supported Builds', color: 'qualitative.2' },
+      { y: 70, legend: 'Recommended Builds', color: 'qualitative.17' },
     ],
   },
   {
     xAxisPoint: 100,
-    chartData: [
-      { legend: 'Metadata1', data: 39, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: 3, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: 13, color: 'qualitative.3' },
-      { legend: 'Metadata4', data: 5, color: 'qualitative.4' },
-      { legend: 'Metadata5', data: 12, color: 'qualitative.5' },
-      { legend: 'Metadata6', data: 7, color: 'qualitative.6' },
-      { legend: 'Metadata7', data: 0.1, color: 'qualitative.7' },
-      { legend: 'Metadata8', data: 4, color: 'qualitative.8' },
-      { legend: 'Metadata9', data: 0.5, color: 'qualitative.9' },
-      { legend: 'Metadata10', data: 7, color: 'qualitative.10' },
-    ],
+    chartData: firstChartPoints,
   },
 ];
 
@@ -353,6 +339,9 @@ export const Basic: Story<VerticalStackedBarChart> = () => {
   chart.chartTitle = basicTitle;
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
+  chart.setAttribute('x-axis-title', 'Number of days');
+  chart.setAttribute('y-axis-title', 'Variation of number of sales');
+  chart.setAttribute('rounded-ticks', '');
   return chart;
 };
 Basic.parameters = { docs: { story: { height: '470px' } } };
@@ -435,20 +424,25 @@ export const ChartAttributes: Story<VerticalStackedBarChart> = () => {
   sliderControls.setAttribute('style', controlsRowStyle);
   container.appendChild(sliderControls);
 
+  const toggleControls = document.createElement('div');
+  toggleControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(toggleControls);
+
   const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
   chart.data = basicData;
   chart.chartTitle = 'Vertical stacked bar chart chart attributes example';
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
   chart.setAttribute('style', 'margin-top:20px;');
+  chart.setAttribute('bar-gap-max', '2');
 
-  const barGapMaxControl = createSliderField('Bar Gap Max', 'vsbar-ca-bar-gap-max', 5, 0, 20, nextValue => {
+  const barGapMaxControl = createSliderField('Bar Gap Max', 'vsbar-ca-bar-gap-max', 2, 0, 20, nextValue => {
     barGapMaxControl.setValue(nextValue);
     chart.setAttribute('bar-gap-max', `${nextValue}`);
   });
   sliderControls.appendChild(barGapMaxControl.element);
 
-  const barWidthControl = createSliderField('Bar Width', 'vsbar-ca-bar-width', 0, 0, 60, nextValue => {
+  const barWidthControl = createSliderField('Bar Width', 'vsbar-ca-bar-width', 16, 0, 60, nextValue => {
     barWidthControl.setValue(nextValue);
     if (nextValue === 0) {
       chart.removeAttribute('bar-width');
@@ -457,6 +451,12 @@ export const ChartAttributes: Story<VerticalStackedBarChart> = () => {
     }
   });
   sliderControls.appendChild(barWidthControl.element);
+
+  toggleControls.appendChild(
+    createSwitchField('Enable Gradient', 'vsbar-ca-enable-gradient', false, checked => {
+      chart.toggleAttribute('enable-gradient', checked);
+    }).element,
+  );
 
   container.appendChild(chart);
   return container;

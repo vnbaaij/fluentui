@@ -23,7 +23,7 @@ export function verticalStackedBarChartTemplate<T extends VerticalStackedBarChar
         x => !x.hideTooltip && x.tooltipProps.isVisible,
         html<T>`
           <div
-            class="tooltip"
+            class="tooltip ${x => (x.isMeasuringTooltip ? 'measuring' : '')}"
             style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x =>
               x.tooltipProps.yPos}px; transform: ${x => x.tooltipInlineTransform}"
           >
@@ -31,11 +31,11 @@ export function verticalStackedBarChartTemplate<T extends VerticalStackedBarChar
               ${when(
                 x => !x.tooltipRenderer,
                 html<T>`
-                  <div class="tooltip-header">${x => x.tooltipProps.yValue}</div>
+                  <div class="tooltip-header">${x => x.tooltipProps.xValue}</div>
                   <div class="tooltip-info" style="border-color: ${x => x.tooltipProps.color};">
                     <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
                     <div class="tooltip-primary-value" style="color: ${x => x.tooltipProps.color};">
-                      ${x => x.tooltipProps.xValue}
+                      ${x => x.tooltipProps.yValue}
                     </div>
                   </div>
                 `,

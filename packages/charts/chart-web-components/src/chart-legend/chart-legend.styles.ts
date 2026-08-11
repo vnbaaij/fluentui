@@ -35,6 +35,10 @@ export const styles: ElementStyles = css`
     padding-inline-start: ${spacingHorizontalS};
     width: 100%;
     align-items: center;
+    /* Keep this in sync with LEGEND_ITEM_GAP in chart-legend.ts, which reserves
+       this same spacing when measuring overflow. Prevents adjacent legend items'
+       hover/focus outlines from touching or covering each other. */
+    gap: 8px;
   }
 
   :host([hidden]) {

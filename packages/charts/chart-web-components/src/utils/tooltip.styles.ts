@@ -33,6 +33,10 @@ export const tooltipBaseStyles = css`
     pointer-events: none;
   }
 
+  .tooltip.measuring {
+    visibility: hidden;
+  }
+
   .axis-label-tooltip {
     position: absolute;
     z-index: 1000;

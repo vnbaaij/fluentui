@@ -176,10 +176,6 @@ export class VerticalBarChart extends CartesianChartBase {
     this._requestRender();
   }
 
-  public get tooltipInlineTransform(): string {
-    return this._isRTL ? 'translateX(50%)' : 'translateX(-50%)';
-  }
-
   protected dataChanged(): void {
     this._requestRender();
   }
@@ -489,6 +485,9 @@ export class VerticalBarChart extends CartesianChartBase {
       xValueLabel: string,
       xCenter: number,
       color: string,
+      barTop: number,
+      barBottom: number,
+      clientY?: number,
     ): void => {
       if (!this._shouldShowTooltip(legend) || this.hideTooltip) {
         return;
@@ -498,7 +497,11 @@ export class VerticalBarChart extends CartesianChartBase {
       const hostRect = this.getBoundingClientRect();
       const svgRect = svg.getBoundingClientRect();
       const anchorX = svgRect.left - hostRect.left + margins.left + xCenter;
-      const anchorY = svgRect.top - hostRect.top + margins.top + yScale(point.y);
+      const minY = svgRect.top - hostRect.top + margins.top + barTop;
+      const maxY = svgRect.top - hostRect.top + margins.top + barBottom;
+      const fallbackY = (minY + maxY) / 2;
+      const anchorY = clientY === undefined ? fallbackY : Math.min(Math.max(clientY - hostRect.top, minY), maxY);
+      const isFreshShow = !this.tooltipProps.isVisible;
       this._currentTooltipDataPoint = point;
       const lineLegend = this.lineLegendText || 'Line';
       const lineColor = this.lineLegendColor ? getColorFromToken(this.lineLegendColor) : 'brown';
@@ -526,7 +529,7 @@ export class VerticalBarChart extends CartesianChartBase {
         yPos: anchorY,
         entries,
       };
-      this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
+      this._positionTooltipAvoidingOverlap(anchorX, minY, maxY, isFreshShow);
     };
 
     points.forEach((point, index) => {
@@ -544,6 +547,8 @@ export class VerticalBarChart extends CartesianChartBase {
       const yValue = yScale(point.y);
       const baselineY = yScale(0);
       const barHeight = Math.max(Math.abs(yValue - baselineY), 0);
+      const barTop = Math.min(yValue, baselineY);
+      const barBottom = Math.max(yValue, baselineY);
       const shouldRenderBar = !isNegativeBar || this.supportNegativeData;
       if (!shouldRenderBar || barHeight <= 0) {
         return;
@@ -567,11 +572,16 @@ export class VerticalBarChart extends CartesianChartBase {
         rect.setAttribute('stroke-width', String(this.strokeWidth));
         rect.setAttribute('stroke', color);
       }
-      rect.addEventListener('mouseenter', () =>
-        showBarTooltip(point, legend, tooltipLegend, xValueLabel, xCenter, color),
+      rect.addEventListener('mouseenter', event =>
+        showBarTooltip(point, legend, tooltipLegend, xValueLabel, xCenter, color, barTop, barBottom, event.clientY),
+      );
+      rect.addEventListener('mousemove', event =>
+        showBarTooltip(point, legend, tooltipLegend, xValueLabel, xCenter, color, barTop, barBottom, event.clientY),
       );
       rect.addEventListener('mouseleave', () => this._clearTooltip());
-      rect.addEventListener('focus', () => showBarTooltip(point, legend, tooltipLegend, xValueLabel, xCenter, color));
+      rect.addEventListener('focus', () =>
+        showBarTooltip(point, legend, tooltipLegend, xValueLabel, xCenter, color, barTop, barBottom),
+      );
       rect.addEventListener('blur', () => this._clearTooltip());
       rect.addEventListener('click', () => point.onClick?.());
       rect.addEventListener('keydown', (e: KeyboardEvent) => {

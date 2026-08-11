@@ -148,6 +148,31 @@ export const styles: ElementStyles = css`
     opacity: 1;
   }
 
+  .y-axis-grid-line {
+    stroke: ${colorNeutralForeground1};
+    stroke-width: 1;
+    opacity: 0.2;
+    pointer-events: none;
+  }
+
+  .bar-label {
+    fill: ${colorNeutralForeground2};
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .line-marker {
+    pointer-events: none;
+  }
+
+  .line-marker-hit-area {
+    cursor: pointer;
+  }
+
+  .line-hit-area {
+    cursor: pointer;
+  }
+
   .bar.inactive {
     opacity: 0.1;
   }
@@ -166,6 +191,10 @@ export const styles: ElementStyles = css`
     box-shadow: ${shadow4};
     border: ${strokeWidthThick};
     white-space: nowrap;
+  }
+
+  .tooltip.measuring {
+    visibility: hidden;
   }
 
   .tooltip-header {

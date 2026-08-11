@@ -23,8 +23,9 @@ export function stackedBarChartTemplate<T extends StackedBarChart>(): ElementVie
         x => !x.hideTooltip && x.tooltipProps.isVisible,
         html<T>`
           <div
-            class="tooltip"
-            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x => x.tooltipProps.yPos}px;"
+            class="tooltip ${x => (x.isMeasuringTooltip ? 'measuring' : '')}"
+            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x =>
+              x.tooltipProps.yPos}px; transform: ${x => x.tooltipInlineTransform}"
           >
             <div class="tooltip-body">
               ${when(

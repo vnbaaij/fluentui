@@ -77,10 +77,6 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     this._requestRender();
   }
 
-  public get tooltipInlineTransform(): string {
-    return this._isRTL ? 'translateX(50%)' : 'translateX(-50%)';
-  }
-
   protected dataChanged(): void {
     this._requestRender();
   }
@@ -206,14 +202,17 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
           rect.setAttribute('stroke-width', String(this.strokeWidth));
           rect.setAttribute('stroke', color);
         }
-        rect.addEventListener('mouseenter', () => {
+        const showTooltip = (event?: MouseEvent) => {
           if (!this._shouldShowTooltip(point.key) || this.hideTooltip) {
             return;
           }
           const hostRect = this.getBoundingClientRect();
           const svgRect = svg.getBoundingClientRect();
           const anchorX = svgRect.left - hostRect.left + margins.left + groupX + slotX + offset + actualWidth / 2;
-          const anchorY = svgRect.top - hostRect.top + margins.top + yScale(point.data);
+          const minY = svgRect.top - hostRect.top + margins.top + yScale(point.data);
+          const maxY = svgRect.top - hostRect.top + margins.top + innerHeight;
+          const anchorY = event ? Math.min(Math.max(event.clientY - hostRect.top, minY), maxY) : (minY + maxY) / 2;
+          const isFreshShow = !this.tooltipProps.isVisible;
           this._currentTooltipDataPoint = { ...point, xAxisPoint: group.xAxisPoint };
           this.tooltipProps = {
             isVisible: true,
@@ -224,8 +223,10 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
             xPos: anchorX,
             yPos: anchorY,
           };
-          this._positionTooltipFromAnchor(anchorX, anchorY, { outputAnchorX: true, preferredVertical: 'above' });
-        });
+          this._positionTooltipAvoidingOverlap(anchorX, minY, maxY, isFreshShow);
+        };
+        rect.addEventListener('mouseenter', showTooltip);
+        rect.addEventListener('mousemove', showTooltip);
         rect.addEventListener('mouseleave', () => this._clearTooltip());
         plotGroup.appendChild(rect);
       });

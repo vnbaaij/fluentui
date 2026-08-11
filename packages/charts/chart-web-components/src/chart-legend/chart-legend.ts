@@ -2,6 +2,9 @@ import { FASTElement, attr, observable } from '@microsoft/fast-element';
 import type { ChartLegendPosition, Legend } from '../utils/chart-options.js';
 import { jsonConverter } from '../utils/chart-helpers.js';
 
+// Keep in sync with the `gap` in chart-legend.styles.ts.
+const LEGEND_ITEM_GAP_PX = 8;
+
 /**
  * A reusable legend list used by all chart components.
  *
@@ -197,7 +200,9 @@ export class ChartLegend extends FASTElement {
       if (w > 0) this._itemWidths[i] = w;
     }
 
-    const totalWidth = this._itemWidths.slice(0, buttons.length).reduce((s, w) => s + (w ?? 0), 0);
+    const totalWidth =
+      this._itemWidths.slice(0, buttons.length).reduce((s, w) => s + (w ?? 0), 0) +
+      LEGEND_ITEM_GAP_PX * Math.max(buttons.length - 1, 0);
 
     if (totalWidth <= availableWidth) {
       // Everything fits — clear any previous overflow state.
@@ -220,8 +225,9 @@ export class ChartLegend extends FASTElement {
     let count = 0;
     for (let i = 0; i < buttons.length; i++) {
       const w = this._itemWidths[i] ?? 0;
-      if (used + w + overflowBtnWidth <= availableWidth) {
-        used += w;
+      const gapBeforeItem = i > 0 ? LEGEND_ITEM_GAP_PX : 0;
+      if (used + gapBeforeItem + w + LEGEND_ITEM_GAP_PX + overflowBtnWidth <= availableWidth) {
+        used += gapBeforeItem + w;
         count = i + 1;
       } else {
         break;

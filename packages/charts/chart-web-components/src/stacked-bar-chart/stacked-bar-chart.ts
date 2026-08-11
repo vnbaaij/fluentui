@@ -303,10 +303,12 @@ export class StackedBarChart extends ChartBase {
     _event: MouseEvent | FocusEvent,
     el: Element,
   ) {
-    const rect = this.getBoundingClientRect();
+    const hostRect = this.getBoundingClientRect();
     const targetRect = el.getBoundingClientRect();
-    const anchorX = targetRect.left - rect.left + targetRect.width / 2;
-    const anchorY = targetRect.top - rect.top;
+    const anchorX = targetRect.left - hostRect.left + targetRect.width / 2;
+    const topY = targetRect.top - hostRect.top;
+    const bottomY = targetRect.bottom - hostRect.top;
+    const isFreshShow = !this.tooltipProps.isVisible;
     this._currentTooltipDataPoint = dataPoint;
     this.tooltipProps = {
       isVisible: true,
@@ -314,8 +316,8 @@ export class StackedBarChart extends ChartBase {
       yValue: defaultNumberFormatter(dataPoint.data ?? 0),
       color,
       xPos: anchorX,
-      yPos: anchorY,
+      yPos: topY,
     };
-    this._positionTooltipFromAnchor(anchorX, anchorY, { preferredVertical: 'above', horizontalAlign: 'center' });
+    this._positionTooltipAvoidingOverlap(anchorX, topY, bottomY, isFreshShow);
   }
 }

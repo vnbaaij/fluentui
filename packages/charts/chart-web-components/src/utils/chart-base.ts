@@ -23,6 +23,12 @@ interface TooltipPositionOptions {
   outputAnchorX?: boolean;
   boundsWidth?: number;
   boundsHeight?: number;
+  /**
+   * When the preferred side doesn't have room, clamp to the bounds instead of
+   * flipping to the opposite side of the anchor — flipping would place the
+   * tooltip directly on top of (and obscure) the hovered element.
+   */
+  preventAnchorOverlap?: boolean;
 }
 
 /**
@@ -216,6 +222,25 @@ export abstract class ChartBase extends FASTElement {
 
   protected _isRTL: boolean = false;
 
+  /** CSS transform used by centered tooltip templates, adjusted for RTL inline positioning. */
+  @observable
+  protected _tooltipTransform: string = 'translateX(-50%)';
+
+  /** Keeps a freshly rendered tooltip hidden until its actual dimensions are measured. */
+  @observable
+  protected _isMeasuringTooltip: boolean = false;
+
+  private _lastTooltipHeight: number = 64;
+  private _lastTooltipWidth: number = 176;
+
+  public get tooltipInlineTransform(): string {
+    return this._tooltipTransform;
+  }
+
+  public get isMeasuringTooltip(): boolean {
+    return this._isMeasuringTooltip;
+  }
+
   /** Set to true in a subclass to automatically observe host resize and re-render. */
   protected _enableResizeObserver: boolean = false;
 
@@ -289,6 +314,9 @@ export abstract class ChartBase extends FASTElement {
       'selectedLegends',
       'legends',
       'tooltipProps',
+      'liveRegionText',
+      '_tooltipTransform',
+      '_isMeasuringTooltip',
     ] as const;
 
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
@@ -638,9 +666,9 @@ export abstract class ChartBase extends FASTElement {
     let top = preferredVertical === 'below' ? topBelow : topAbove;
 
     if (preferredVertical === 'above' && top < padding) {
-      top = topBelow;
+      top = options.preventAnchorOverlap ? padding : topBelow;
     } else if (preferredVertical === 'below' && top + estimatedHeight > heightForClamp - padding) {
-      top = topAbove;
+      top = options.preventAnchorOverlap ? heightForClamp - estimatedHeight - padding : topAbove;
     }
 
     const maxTop = heightForClamp - estimatedHeight - padding;
@@ -658,6 +686,67 @@ export abstract class ChartBase extends FASTElement {
 
     const inlineStart = this._isRTL ? widthForClamp - left - estimatedWidth : left;
     return { xPos: Math.max(0, inlineStart), yPos: top };
+  }
+
+  /**
+   * Positions a tooltip outside the active datum, then corrects that position after
+   * measuring the rendered tooltip. Subclasses provide the datum's vertical bounds.
+   */
+  protected _positionTooltipAvoidingOverlap(
+    anchorX: number,
+    topY: number,
+    bottomY: number = topY,
+    isFreshShow: boolean = true,
+  ): void {
+    const gap = 16;
+    const padding = 8;
+
+    this._tooltipTransform = this._isRTL ? 'translateX(50%)' : 'translateX(-50%)';
+
+    const applyPosition = (estimatedHeight: number, estimatedWidth: number): void => {
+      const hostHeight = this.offsetHeight;
+      const roomAbove = topY - padding;
+      const roomBelow = hostHeight - bottomY - padding;
+      const preferredVertical = roomAbove >= estimatedHeight + gap || roomAbove >= roomBelow ? 'above' : 'below';
+      const anchorY = preferredVertical === 'above' ? topY : bottomY;
+
+      this._positionTooltipFromAnchor(anchorX, anchorY, {
+        outputAnchorX: true,
+        preferredVertical,
+        preventAnchorOverlap: true,
+        estimatedHeight,
+        estimatedWidth,
+        gap,
+      });
+    };
+
+    applyPosition(this._lastTooltipHeight, this._lastTooltipWidth);
+
+    if (!isFreshShow) {
+      return;
+    }
+
+    this._isMeasuringTooltip = true;
+    const measure = (retriesLeft: number): void => {
+      if (!this.tooltipProps.isVisible) {
+        this._isMeasuringTooltip = false;
+        return;
+      }
+
+      const rect = this.shadowRoot?.querySelector<HTMLElement>('.tooltip')?.getBoundingClientRect();
+      if (rect && rect.height > 0 && rect.width > 0) {
+        this._lastTooltipHeight = rect.height;
+        this._lastTooltipWidth = rect.width;
+        applyPosition(rect.height, rect.width);
+        this._isMeasuringTooltip = false;
+      } else if (retriesLeft > 0) {
+        requestAnimationFrame(() => measure(retriesLeft - 1));
+      } else {
+        this._isMeasuringTooltip = false;
+      }
+    };
+
+    requestAnimationFrame(() => measure(2));
   }
   /**
    * Implements the roving tabindex keyboard pattern for a focusable group.

@@ -35,6 +35,17 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Should render gradient fills when enable-gradient is set', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    await element.evaluate(node => {
+      node.setAttribute('enable-gradient', '');
+    });
+
+    await expect(element.locator('linearGradient')).toHaveCount(4);
+    await expect(element.locator('.bar').first()).toHaveAttribute('fill', /^url\(#vsbc-gradient-0-0\)$/);
+  });
+
   test('Should render legend items', async ({ page }) => {
     const element = page.locator('fluent-vertical-stacked-bar-chart');
     await expect(element.locator('.legend-text')).toHaveCount(2);
@@ -73,31 +84,39 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('svg')).toHaveAttribute('width', '420');
   });
 
-  test('Should reduce visual gap when bar-gap-max is set', async ({ page }) => {
+  test('Should increase the gap between stacked segments when bar-gap-max is set', async ({ page }) => {
     const element = page.locator('fluent-vertical-stacked-bar-chart');
 
-    const getFirstStackBarWidth = async (): Promise<number> => {
-      const widthValue = await element.locator('.bar').first().getAttribute('width');
-      return Number(widthValue ?? 0);
+    const getFirstStackSegmentGap = async (): Promise<number> => {
+      return element.evaluate(node => {
+        // First two bars belong to the first stack (Q1): segment A (bottom), then B (above it).
+        const [first, second] = Array.from(node.shadowRoot!.querySelectorAll('.bar')) as SVGRectElement[];
+        const firstTop = Number(first.getAttribute('y'));
+        const secondBottom = Number(second.getAttribute('y')) + Number(second.getAttribute('height'));
+        return firstTop - secondBottom;
+      });
     };
 
-    const defaultBarWidth = await getFirstStackBarWidth();
+    const defaultGap = await getFirstStackSegmentGap();
 
     await element.evaluate(node => {
-      node.setAttribute('bar-gap-max', '0');
+      node.setAttribute('bar-gap-max', '20');
     });
 
-    await page.waitForFunction(previousWidth => {
-      const bar = document.querySelector('fluent-vertical-stacked-bar-chart')?.shadowRoot?.querySelector('.bar');
-      if (!(bar instanceof SVGRectElement)) {
+    await page.waitForFunction(previousGap => {
+      const node = document.querySelector('fluent-vertical-stacked-bar-chart');
+      const bars = Array.from(node?.shadowRoot?.querySelectorAll('.bar') ?? []) as SVGRectElement[];
+      if (bars.length < 2) {
         return false;
       }
-      const width = Number(bar.getAttribute('width') ?? 0);
-      return width > previousWidth;
-    }, defaultBarWidth);
+      const [first, second] = bars;
+      const firstTop = Number(first.getAttribute('y'));
+      const secondBottom = Number(second.getAttribute('y')) + Number(second.getAttribute('height'));
+      return firstTop - secondBottom > previousGap;
+    }, defaultGap);
 
-    const widenedBarWidth = await getFirstStackBarWidth();
-    expect(widenedBarWidth).toBeGreaterThan(defaultBarWidth);
+    const widenedGap = await getFirstStackSegmentGap();
+    expect(widenedGap).toBeGreaterThan(defaultGap);
   });
 
   test('Should render primary y-axis on right in RTL', async ({ page }) => {
