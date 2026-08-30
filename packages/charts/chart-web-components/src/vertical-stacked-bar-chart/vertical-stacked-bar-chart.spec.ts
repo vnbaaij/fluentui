@@ -35,6 +35,18 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Should render horizontal grid lines behind data marks', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await expect(element.locator('.y-axis-grid-line')).toHaveCount(5);
+
+    const gridRendersBehindBars = await element.evaluate(node => {
+      const grid = node.shadowRoot?.querySelector('.y-axis-grid');
+      const firstBar = node.shadowRoot?.querySelector('.bar');
+      return Boolean(grid && firstBar && grid.compareDocumentPosition(firstBar) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(gridRendersBehindBars).toBe(true);
+  });
+
   test('Should render gradient fills when enable-gradient is set', async ({ page }) => {
     const element = page.locator('fluent-vertical-stacked-bar-chart');
 

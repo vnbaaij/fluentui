@@ -142,6 +142,13 @@ test.describe('AreaChart', () => {
     });
 
     expect(firstGridLineWidth).toBeGreaterThan(100);
+
+    const gridRendersBehindAreas = await element.evaluate(node => {
+      const grid = node.shadowRoot?.querySelector('.y-axis-grid');
+      const firstArea = node.shadowRoot?.querySelector('.area-path');
+      return Boolean(grid && firstArea && grid.compareDocumentPosition(firstArea) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(gridRendersBehindAreas).toBe(true);
   });
 
   test('Should render legend items', async ({ page }) => {

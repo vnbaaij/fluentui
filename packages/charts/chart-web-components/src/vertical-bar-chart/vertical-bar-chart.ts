@@ -463,6 +463,12 @@ export class VerticalBarChart extends CartesianChartBase {
       this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? preparedYAxis.tickValues,
     );
+    renderHorizontalGridLinesShared({
+      plotGroup,
+      scale: yScale,
+      axis: yAxis as unknown as Axis<number>,
+      innerWidth,
+    });
 
     const singleColor = this.useSingleColor
       ? points[0].color
@@ -766,13 +772,6 @@ export class VerticalBarChart extends CartesianChartBase {
         xAxisTitle: this.xAxisTitle,
       });
     }
-    renderHorizontalGridLinesShared({
-      plotGroup,
-      scale: yScale,
-      axis: yAxis as unknown as Axis<number>,
-      innerWidth,
-    });
-
     renderPrimaryYAxisShared({
       svg,
       scale: yScale,

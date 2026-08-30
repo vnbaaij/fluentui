@@ -260,6 +260,13 @@ test.describe('VerticalBarChart', () => {
   test('Should render horizontal grid lines for y-axis ticks', async ({ page }) => {
     const element = page.locator('fluent-vertical-bar-chart');
     await expect(element.locator('.y-axis-grid-line')).toHaveCount(5);
+
+    const gridRendersBehindBars = await element.evaluate(node => {
+      const grid = node.shadowRoot?.querySelector('.y-axis-grid');
+      const firstBar = node.shadowRoot?.querySelector('.bar');
+      return Boolean(grid && firstBar && grid.compareDocumentPosition(firstBar) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(gridRendersBehindBars).toBe(true);
   });
 
   test('Should re-render on data change', async ({ page }) => {
