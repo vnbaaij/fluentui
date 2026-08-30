@@ -226,7 +226,7 @@ const axisTooltipData: VerticalStackedBarChartProps[] = [
 
 const dateAxisData: VerticalStackedBarChartProps[] = [
   {
-    xAxisPoint: '03/2018',
+    xAxisPoint: new Date('2018/03/01'),
     chartData: [
       { legend: 'meta data 1', data: 2, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 0.5, color: 'qualitative.9' },
@@ -234,7 +234,7 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
     ],
   },
   {
-    xAxisPoint: '05/2018',
+    xAxisPoint: new Date('2018/05/01'),
     chartData: [
       { legend: 'meta data 1', data: 30, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 3, color: 'qualitative.9' },
@@ -242,7 +242,7 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
     ],
   },
   {
-    xAxisPoint: '07/2018',
+    xAxisPoint: new Date('2018/07/01'),
     chartData: [
       { legend: 'meta data 1', data: 10, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 60, color: 'qualitative.9' },
@@ -250,7 +250,7 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
     ],
   },
   {
-    xAxisPoint: '09/2018',
+    xAxisPoint: new Date('2018/09/01'),
     chartData: [
       { legend: 'meta data 1', data: 2, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 0.5, color: 'qualitative.9' },
@@ -258,7 +258,7 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
     ],
   },
   {
-    xAxisPoint: '11/2018',
+    xAxisPoint: new Date('2018/11/01'),
     chartData: [
       { legend: 'meta data 1', data: 10, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 60, color: 'qualitative.9' },
@@ -266,7 +266,7 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
     ],
   },
   {
-    xAxisPoint: '02/2019',
+    xAxisPoint: new Date('2019/02/01'),
     chartData: [
       { legend: 'meta data 1', data: 2, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 0.5, color: 'qualitative.9' },
@@ -274,7 +274,7 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
     ],
   },
   {
-    xAxisPoint: '05/2019',
+    xAxisPoint: new Date('2019/05/01'),
     chartData: [
       { legend: 'meta data 1', data: 30, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 3, color: 'qualitative.9' },
@@ -282,7 +282,7 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
     ],
   },
   {
-    xAxisPoint: '07/2019',
+    xAxisPoint: new Date('2019/07/01'),
     chartData: [
       { legend: 'meta data 1', data: 10, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 60, color: 'qualitative.9' },
@@ -290,7 +290,7 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
     ],
   },
   {
-    xAxisPoint: '09/2019',
+    xAxisPoint: new Date('2019/09/01'),
     chartData: [
       { legend: 'meta data 1', data: 2, color: 'qualitative.8' },
       { legend: 'meta data 2', data: 0.5, color: 'qualitative.9' },
@@ -299,30 +299,84 @@ const dateAxisData: VerticalStackedBarChartProps[] = [
   },
 ];
 
+const createNegativeChartPoints = (values: Array<[number, string]>): VerticalStackedBarChartDataPoint[] =>
+  values.map(([data, yAxisCalloutData], index) => ({
+    legend: `Metadata${index + 1}`,
+    data,
+    color: `qualitative.${index + 1}`,
+    xAxisCalloutData: '2020/04/30',
+    yAxisCalloutData,
+  }));
+
+const negativeFirstChartPoints = createNegativeChartPoints([
+  [40, '68%'],
+  [5, '8.5%'],
+  [-20, '34%'],
+  [10, '17%'],
+  [23, '39%'],
+  [0.4, '0.7%'],
+  [-0.5, '0.85%'],
+  [-0.3, '0.5%'],
+  [0.7, '1.2%'],
+  [0.1, '0.2%'],
+]);
+const negativeSecondChartPoints = createNegativeChartPoints([
+  [-30, '33%'],
+  [-20, '22%'],
+  [-40, '45%'],
+]);
+const negativeThirdChartPoints = createNegativeChartPoints([
+  [44, '43%'],
+  [28, '27%'],
+  [30, '30%'],
+]);
+const negativeFourthChartPoints = createNegativeChartPoints([
+  [88, '63%'],
+  [22, '16%'],
+  [30, '21%'],
+]);
+
 const negativeData: VerticalStackedBarChartProps[] = [
   {
     xAxisPoint: 0,
-    chartData: [
-      { legend: 'Metadata1', data: 40, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: 5, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: -20, color: 'qualitative.3' },
+    chartData: negativeFirstChartPoints,
+    lineData: [
+      { y: 42, legend: 'Supported Builds', color: 'qualitative.5' },
+      { y: 10, legend: 'Recommended Builds', color: 'qualitative.9' },
     ],
   },
   {
     xAxisPoint: 20,
-    chartData: [
-      { legend: 'Metadata1', data: -30, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: -20, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: -40, color: 'qualitative.3' },
-    ],
+    chartData: negativeSecondChartPoints,
+    lineData: [{ y: 33, legend: 'Supported Builds', color: 'qualitative.5' }],
   },
   {
     xAxisPoint: 40,
-    chartData: [
-      { legend: 'Metadata1', data: 44, color: 'qualitative.1' },
-      { legend: 'Metadata2', data: 28, color: 'qualitative.2' },
-      { legend: 'Metadata3', data: 30, color: 'qualitative.3' },
+    chartData: negativeThirdChartPoints,
+    lineData: [
+      { y: 60, legend: 'Supported Builds', color: 'qualitative.5' },
+      { y: 20, legend: 'Recommended Builds', color: 'qualitative.9' },
     ],
+  },
+  {
+    xAxisPoint: 60,
+    chartData: negativeFirstChartPoints,
+    lineData: [
+      { y: 41, legend: 'Supported Builds', color: 'qualitative.5' },
+      { y: 10, legend: 'Recommended Builds', color: 'qualitative.9' },
+    ],
+  },
+  {
+    xAxisPoint: 80,
+    chartData: negativeFourthChartPoints,
+    lineData: [
+      { y: 100, legend: 'Supported Builds', color: 'qualitative.5' },
+      { y: 70, legend: 'Recommended Builds', color: 'qualitative.9' },
+    ],
+  },
+  {
+    xAxisPoint: 100,
+    chartData: negativeFirstChartPoints,
   },
 ];
 
@@ -336,6 +390,7 @@ const secondaryYAxisData: VerticalStackedBarChartProps[] = [
       { legend: 'Groceries', data: 200, color: 'qualitative.4' },
       { legend: 'Toys', data: 90, color: 'qualitative.5' },
     ],
+    lineData: [{ y: 150, legend: 'Sales Target', color: 'qualitative.9', useSecondaryYScale: true }],
   },
   {
     xAxisPoint: 20,
@@ -346,6 +401,7 @@ const secondaryYAxisData: VerticalStackedBarChartProps[] = [
       { legend: 'Groceries', data: 220, color: 'qualitative.4' },
       { legend: 'Toys', data: 110, color: 'qualitative.5' },
     ],
+    lineData: [{ y: 180, legend: 'Sales Target', color: 'qualitative.9', useSecondaryYScale: true }],
   },
   {
     xAxisPoint: 40,
@@ -356,6 +412,7 @@ const secondaryYAxisData: VerticalStackedBarChartProps[] = [
       { legend: 'Groceries', data: 250, color: 'qualitative.4' },
       { legend: 'Toys', data: 100, color: 'qualitative.5' },
     ],
+    lineData: [{ y: 200, legend: 'Sales Target', color: 'qualitative.9', useSecondaryYScale: true }],
   },
   {
     xAxisPoint: 60,
@@ -366,6 +423,7 @@ const secondaryYAxisData: VerticalStackedBarChartProps[] = [
       { legend: 'Groceries', data: 300, color: 'qualitative.4' },
       { legend: 'Toys', data: 120, color: 'qualitative.5' },
     ],
+    lineData: [{ y: 250, legend: 'Sales Target', color: 'qualitative.9', useSecondaryYScale: true }],
   },
 ];
 
@@ -865,60 +923,144 @@ AxisTooltip.parameters = { docs: { story: { height: '620px' } } };
 export const Callout: Story<VerticalStackedBarChart> = () => {
   const container = document.createElement('div');
 
-  const info = document.createElement('p');
-  info.textContent =
-    'WC VerticalStackedBarChart currently supports per-segment tooltips. This story ports the React callout variants using the shared tooltip renderer.';
-  container.appendChild(info);
-
   const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
+  controls.setAttribute('style', `${controlsRowStyle}flex-direction:column;align-items:flex-start;`);
   container.appendChild(controls);
 
+  const colors = ['qualitative.2', 'qualitative.1', 'qualitative.6'];
+  const legends = ['Metadata1', 'Metadata2', 'Metadata3'];
+  const createChartPoints = (values: number[]): VerticalStackedBarChartDataPoint[] =>
+    values.map((data, index) => ({ legend: legends[index], data, color: colors[index] }));
+  const calloutData: VerticalStackedBarChartProps[] = [
+    {
+      xAxisPoint: 'Jan',
+      chartData: createChartPoints([40, 5, 15]),
+      lineData: [{ y: 40, color: 'qualitative.10', legend: 'line1' }],
+    },
+    {
+      xAxisPoint: 'Feb',
+      chartData: createChartPoints([30, 3, 40]),
+      lineData: [
+        { y: 15, color: 'qualitative.10', legend: 'line1' },
+        { y: 70, color: 'qualitative.7', legend: 'line3' },
+      ],
+    },
+    {
+      xAxisPoint: 'March',
+      chartData: createChartPoints([10, 60, 30]),
+      lineData: [
+        { y: 65, color: 'qualitative.5', legend: 'line2' },
+        { y: 98, color: 'qualitative.7', legend: 'line3' },
+      ],
+    },
+    {
+      xAxisPoint: 'April',
+      chartData: createChartPoints([40, 10, 30]),
+      lineData: [
+        { y: 40, color: 'qualitative.10', legend: 'line1' },
+        { y: 50, color: 'qualitative.5', legend: 'line2' },
+        { y: 65, color: 'qualitative.7', legend: 'line3' },
+      ],
+    },
+    {
+      xAxisPoint: 'May',
+      chartData: createChartPoints([40, 40, 40]),
+      lineData: [
+        { y: 20, color: 'qualitative.10', legend: 'line1' },
+        { y: 65, color: 'qualitative.5', legend: 'line2' },
+      ],
+    },
+    {
+      xAxisPoint: 'June',
+      chartData: createChartPoints([40, 20, 40]),
+      lineData: [
+        { y: 54, color: 'qualitative.5', legend: 'line2' },
+        { y: 87, color: 'qualitative.7', legend: 'line3' },
+      ],
+    },
+    {
+      xAxisPoint: 'July',
+      chartData: createChartPoints([10, 80, 20]),
+      lineData: [
+        { y: 10, color: 'qualitative.10', legend: 'line1' },
+        { y: 110, color: 'qualitative.7', legend: 'line3' },
+      ],
+    },
+    {
+      xAxisPoint: 'August',
+      chartData: createChartPoints([50, 50, 20]),
+      lineData: [
+        { y: 45, color: 'qualitative.10', legend: 'line1' },
+        { y: 87, color: 'qualitative.5', legend: 'line2' },
+      ],
+    },
+    {
+      xAxisPoint: 'September',
+      chartData: createChartPoints([40, 5, 15]),
+      lineData: [
+        { y: 15, color: 'qualitative.10', legend: 'line1' },
+        { y: 60, color: 'qualitative.7', legend: 'line3' },
+      ],
+    },
+  ];
+
   const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
-  chart.data = basicData;
+  chart.data = calloutData;
   chart.chartTitle = 'Vertical stacked bar chart callout example';
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
   chart.setAttribute('bar-gap-max', '2');
+  chart.setAttribute('bar-width', '16');
+  chart.setAttribute('y-max-value', '120');
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
   let selectedCallout: 'singleCallout' | 'MultiCallout' | 'singleCustomCallout' | 'MultiCustomCallout' = 'MultiCallout';
+  let hideLines = false;
 
   const applyCalloutMode = () => {
-    if (selectedCallout === 'singleCustomCallout' || selectedCallout === 'MultiCustomCallout') {
-      chart.tooltipRenderer = (point, defaultRender) => {
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
-        wrapper.innerHTML = defaultRender(point);
-        return wrapper;
-      };
+    chart.toggleAttribute(
+      'is-callout-for-stack',
+      selectedCallout === 'MultiCallout' || selectedCallout === 'MultiCustomCallout',
+    );
+    if (selectedCallout === 'MultiCustomCallout' || (selectedCallout === 'singleCustomCallout' && hideLines)) {
+      chart.setTooltipRenderer(point => {
+        const content = document.createElement('pre');
+        content.style.margin = '0';
+        content.textContent = JSON.stringify(point, undefined, selectedCallout === 'MultiCustomCallout' ? 4 : 2);
+        return content;
+      });
     } else {
-      chart.tooltipRenderer = undefined;
+      chart.setTooltipRenderer(undefined);
     }
   };
 
-  controls.appendChild(
-    createRadioGroupField(
-      'Callout variant',
-      'vsbar-callout-mode',
-      [
-        { label: 'Single callout', value: 'singleCallout' },
-        { label: 'Stack callout', value: 'MultiCallout' },
-        { label: 'Single custom callout', value: 'singleCustomCallout' },
-        { label: 'Stack custom callout', value: 'MultiCustomCallout' },
-      ],
-      selectedCallout,
-      nextValue => {
-        selectedCallout = nextValue as 'singleCallout' | 'MultiCallout' | 'singleCustomCallout' | 'MultiCustomCallout';
-        applyCalloutMode();
+  const calloutVariantControl = createRadioGroupField(
+    'Callout variant',
+    'vsbar-callout-mode',
+    [
+      { label: "Single callout (won't work if lines are present)", value: 'singleCallout' },
+      { label: 'Stack callout', value: 'MultiCallout' },
+      {
+        label: "Single callout with custom content (won't work if lines are present)",
+        value: 'singleCustomCallout',
       },
-    ).element,
+      { label: 'Stack callout with custom content', value: 'MultiCustomCallout' },
+    ],
+    selectedCallout,
+    nextValue => {
+      selectedCallout = nextValue as 'singleCallout' | 'MultiCallout' | 'singleCustomCallout' | 'MultiCustomCallout';
+      applyCalloutMode();
+    },
   );
+  calloutVariantControl.element.querySelector('fluent-radio-group')?.setAttribute('orientation', 'vertical');
+  controls.appendChild(calloutVariantControl.element);
 
   controls.appendChild(
-    createSwitchField('Hide tooltip', 'vsbar-callout-hide-tooltip', false, checked => {
-      chart.toggleAttribute('hide-tooltip', checked);
+    createSwitchField('Hide lines', 'vsbar-callout-hide-lines', false, checked => {
+      hideLines = checked;
+      chart.data = checked ? calloutData.map(({ lineData: _lineData, ...stack }) => stack) : calloutData;
+      applyCalloutMode();
     }).element,
   );
 
@@ -972,7 +1114,10 @@ CustomAccessibility.parameters = { docs: { story: { height: '560px' } } };
 export const DateAxis: Story<VerticalStackedBarChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
+  controls.setAttribute('style', `${controlsRowStyle}flex-direction:column;align-items:flex-start;`);
+  const sliderControls = document.createElement('div');
+  sliderControls.setAttribute('style', controlsRowStyle);
+  controls.appendChild(sliderControls);
   container.appendChild(controls);
 
   const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
@@ -981,18 +1126,22 @@ export const DateAxis: Story<VerticalStackedBarChart> = () => {
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
   chart.setAttribute('bar-gap-max', '2');
-  chart.setAttribute('x-axis-title', 'Month');
-  chart.setAttribute('y-axis-title', 'Values');
-  chart.setAttribute('hide-legends', '');
+  chart.setAttribute('bar-corner-radius', '2');
+  chart.setAttribute('bar-minimum-height', '1');
+  chart.setAttribute('y-axis-tick-count', '10');
+  chart.setAttribute('y-max-value', '120');
+  chart.customYAxisTickFormatter = value => `${value} h`;
+  chart.tickFormat = '%m/%d';
+  chart.tickValues = dateAxisData.map(stack => stack.xAxisPoint as Date);
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
-  controls.appendChild(
+  sliderControls.appendChild(
     createSliderField('Bar Gap Max', 'vsbar-date-axis-bar-gap-max', 2, 0, 10, nextValue => {
       chart.setAttribute('bar-gap-max', `${nextValue}`);
     }).element,
   );
-  controls.appendChild(
+  sliderControls.appendChild(
     createSliderField('Bar Width', 'vsbar-date-axis-bar-width', 0, 0, 50, nextValue => {
       if (nextValue === 0) {
         chart.removeAttribute('bar-width');
@@ -1001,6 +1150,21 @@ export const DateAxis: Story<VerticalStackedBarChart> = () => {
       }
     }).element,
   );
+  const calloutControl = createRadioGroupField(
+    'Pick one',
+    'vsbar-date-axis-callout',
+    [
+      { label: 'Single callout', value: 'singleCallout' },
+      { label: 'Stack callout', value: 'MultiCallout' },
+    ],
+    'MultiCallout',
+    nextValue => {
+      chart.toggleAttribute('is-callout-for-stack', nextValue === 'MultiCallout');
+    },
+  );
+  calloutControl.element.querySelector('fluent-radio-group')?.setAttribute('orientation', 'vertical');
+  controls.appendChild(calloutControl.element);
+  chart.setAttribute('is-callout-for-stack', '');
 
   return container;
 };
@@ -1008,10 +1172,6 @@ DateAxis.parameters = { docs: { story: { height: '560px' } } };
 
 export const Negative: Story<VerticalStackedBarChart> = () => {
   const container = document.createElement('div');
-  const info = document.createElement('p');
-  info.textContent =
-    'Port of the React negative-values scenario. In the current WC implementation, negative stack segments are clamped during rendering.';
-  container.appendChild(info);
 
   const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
   chart.data = negativeData;
@@ -1019,6 +1179,10 @@ export const Negative: Story<VerticalStackedBarChart> = () => {
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
   chart.setAttribute('bar-gap-max', '2');
+  chart.setAttribute('support-negative-data', '');
+  chart.setAttribute('rounded-ticks', '');
+  chart.setAttribute('x-axis-title', 'Number of days');
+  chart.setAttribute('y-axis-title', 'Variation of number of sales');
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
@@ -1028,11 +1192,6 @@ Negative.parameters = { docs: { story: { height: '520px' } } };
 
 export const SecondaryYAxis: Story<VerticalStackedBarChart> = () => {
   const container = document.createElement('div');
-
-  const info = document.createElement('p');
-  info.textContent =
-    'Port of the React secondary y-axis scenario. The current WC VerticalStackedBarChart renders a single y-axis and this story mirrors the dataset and layout controls.';
-  container.appendChild(info);
 
   const controls = document.createElement('div');
   controls.setAttribute('style', controlsRowStyle);
@@ -1070,12 +1229,22 @@ export const AxisCategoryOrder: Story<VerticalStackedBarChart> = () => {
   const container = document.createElement('div');
 
   const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
+  controls.setAttribute('style', `${controlsRowStyle}flex-direction:column;align-items:flex-start;`);
   container.appendChild(controls);
 
+  const sliderControls = document.createElement('div');
+  sliderControls.className = 'axis-category-order-sliders';
+  sliderControls.setAttribute('style', controlsRowStyle);
+  controls.appendChild(sliderControls);
+
+  const orderControls = document.createElement('div');
+  orderControls.className = 'axis-category-order-dropdown';
+  orderControls.setAttribute('style', controlsRowStyle);
+  controls.appendChild(orderControls);
+
   const actions = document.createElement('div');
+  actions.className = 'axis-category-order-actions';
   actions.setAttribute('style', 'margin-top:16px;display:flex;align-items:center;gap:12px;');
-  container.appendChild(actions);
 
   const status = document.createElement('p');
   status.setAttribute('aria-live', 'polite');
@@ -1090,8 +1259,10 @@ export const AxisCategoryOrder: Story<VerticalStackedBarChart> = () => {
   chart.setAttribute('hide-legends', '');
   chart.setAttribute('hide-tick-overlap', '');
   chart.setAttribute('bar-gap-max', '2');
+  chart.setAttribute('support-negative-data', '');
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
+  container.appendChild(actions);
 
   let width = 650;
   let height = 350;
@@ -1114,25 +1285,25 @@ export const AxisCategoryOrder: Story<VerticalStackedBarChart> = () => {
     status.textContent = 'Vertical stacked bar chart axis-category-order data changed';
   };
 
-  controls.appendChild(
+  sliderControls.appendChild(
     createSliderField('Width', 'vsbar-axis-order-width', width, 200, 1000, nextValue => {
       width = nextValue;
       render();
     }).element,
   );
-  controls.appendChild(
+  sliderControls.appendChild(
     createSliderField('Height', 'vsbar-axis-order-height', height, 200, 1000, nextValue => {
       height = nextValue;
       render();
     }).element,
   );
-  controls.appendChild(
+  sliderControls.appendChild(
     createSliderField('Data Size', 'vsbar-axis-order-size', dataSize, 0, 50, nextValue => {
       dataSize = nextValue;
       refreshData();
     }).element,
   );
-  controls.appendChild(
+  orderControls.appendChild(
     createDropdownField(
       'xAxisCategoryOrder',
       'vsbar-axis-order-dropdown',

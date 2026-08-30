@@ -50,8 +50,6 @@ export class AreaChart extends CartesianChartBase {
     secondaryYAxisTitle: string;
     // (undocumented)
     protected secondaryYAxisTitleChanged(): void;
-    // (undocumented)
-    get tooltipInlineTransform(): string;
     // Warning: (ae-forgotten-export) The symbol "TooltipState" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -69,7 +67,11 @@ export interface AreaChartDataPoint {
     x: number | Date;
     xAxisCalloutAccessibilityData?: AccessibilityData;
     // (undocumented)
+    xAxisCalloutData?: string | Date;
+    // (undocumented)
     y: number;
+    // (undocumented)
+    yAxisCalloutData?: string;
 }
 
 // @public (undocumented)
@@ -481,8 +483,6 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     protected _getHostAriaLabel(): string;
     // (undocumented)
     protected _performRender(): void;
-    // (undocumented)
-    get tooltipInlineTransform(): string;
     // Warning: (ae-forgotten-export) The symbol "TooltipState_2" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -1231,6 +1231,10 @@ export class VerticalBarChart extends CartesianChartBase {
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // (undocumented)
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
@@ -1245,7 +1249,9 @@ export class VerticalBarChart extends CartesianChartBase {
     // (undocumented)
     protected _performRender(): void;
     // (undocumented)
-    get tooltipInlineTransform(): string;
+    secondaryYAxisTitle?: string;
+    // (undocumented)
+    protected secondaryYAxisTitleChanged(): void;
     // Warning: (ae-forgotten-export) The symbol "TooltipState_5" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -1263,6 +1269,8 @@ export interface VerticalBarChartDataPoint {
     // (undocumented)
     color?: string;
     // (undocumented)
+    gradient?: [string, string];
+    // (undocumented)
     legend?: string;
     // Warning: (ae-forgotten-export) The symbol "VerticalBarChartLineDataPoint" needs to be exported by the entry point index.d.ts
     //
@@ -1273,7 +1281,11 @@ export interface VerticalBarChartDataPoint {
     // (undocumented)
     x: string | number | Date;
     // (undocumented)
+    xAxisCalloutData?: string | Date;
+    // (undocumented)
     y: number;
+    // (undocumented)
+    yAxisCalloutData?: string;
 }
 
 // @public (undocumented)
@@ -1312,17 +1324,26 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // (undocumented)
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
+    isCalloutForStack: boolean;
     // (undocumented)
     protected _performRender(): void;
     // (undocumented)
-    get tooltipInlineTransform(): string;
+    secondaryYAxisTitle?: string;
+    // (undocumented)
+    protected secondaryYAxisTitleChanged(): void;
     // Warning: (ae-forgotten-export) The symbol "TooltipState_6" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
     tooltipProps: TooltipState_6;
+    // (undocumented)
+    protected tooltipPropsChanged(old: TooltipProps, newValue: TooltipProps): void;
 }
 
 // @public (undocumented)
@@ -1332,7 +1353,13 @@ export interface VerticalStackedBarChartDataPoint {
     // (undocumented)
     data: number;
     // (undocumented)
+    gradient?: [string, string];
+    // (undocumented)
     legend: string;
+    // (undocumented)
+    xAxisCalloutData?: string | Date;
+    // (undocumented)
+    yAxisCalloutData?: string;
 }
 
 // @public (undocumented)
@@ -1342,8 +1369,12 @@ export const VerticalStackedBarChartDefinition: PartialFASTElementDefinition;
 export interface VerticalStackedBarChartProps {
     // (undocumented)
     chartData: VerticalStackedBarChartDataPoint[];
+    // Warning: (ae-forgotten-export) The symbol "VerticalStackedBarChartLineDataPoint" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    xAxisPoint: string | number;
+    lineData?: VerticalStackedBarChartLineDataPoint[];
+    // (undocumented)
+    xAxisPoint: string | number | Date;
 }
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

@@ -63,6 +63,300 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.tooltip-primary-value')).toHaveText('40%');
   });
 
+  test('Should show all bar and line values for a stack when stack callouts are enabled', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-stacked-bar-chart
+        data='${JSON.stringify([
+          {
+            xAxisPoint: 'Jan',
+            chartData: [
+              { legend: 'Metadata1', data: 40, color: '#637cef' },
+              { legend: 'Metadata2', data: 5, color: '#e3008c', yAxisCalloutData: '5%' },
+              { legend: 'Metadata3', data: 15, color: '#00b7c3' },
+            ],
+            lineData: [
+              { legend: 'line1', y: 42, color: '#498205' },
+              { legend: 'line2', y: 10, color: '#8764b8' },
+            ],
+          },
+        ])}'
+        is-callout-for-stack
+        width='500'
+        height='300'
+      ></fluent-vertical-stacked-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+
+    await expect(element.locator('.tooltip-header')).toHaveText('Jan');
+    await expect(element.locator('.tooltip-info')).toHaveCount(5);
+    await expect(element.locator('.tooltip-legend-text')).toHaveText([
+      'Metadata1',
+      'Metadata2',
+      'Metadata3',
+      'line1',
+      'line2',
+    ]);
+    await expect(element.locator('.tooltip-primary-value')).toHaveText(['40', '5%', '15', '42', '10']);
+  });
+
+  test('Should keep per-segment callouts as the default', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.tooltip-info')).toHaveCount(1);
+    await expect(element.locator('.tooltip-legend-text')).toHaveText('A');
+  });
+
+  test('Should pass the full stack to a custom stack callout renderer', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & {
+        isCalloutForStack: boolean;
+        tooltipRenderer: (point: VerticalStackedBarChartProps) => HTMLElement;
+      };
+      chart.isCalloutForStack = true;
+      chart.tooltipRenderer = point => {
+        const content = document.createElement('div');
+        content.className = 'custom-stack-callout';
+        content.textContent = `${point.xAxisPoint}: ${point.chartData.length}`;
+        return content;
+      };
+    });
+
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.custom-stack-callout')).toHaveText('Q1: 2');
+  });
+
+  test('Should restore the default tooltip when a custom renderer is removed', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & { tooltipRenderer?: () => HTMLElement };
+      chart.tooltipRenderer = () => {
+        const content = document.createElement('div');
+        content.className = 'custom-callout';
+        content.textContent = 'Custom content';
+        return content;
+      };
+    });
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.custom-callout')).toHaveText('Custom content');
+
+    await element.evaluate(node => {
+      (
+        node as HTMLElement & {
+          setTooltipRenderer: (renderer: (() => HTMLElement) | undefined) => void;
+        }
+      ).setTooltipRenderer(undefined);
+    });
+    await expect(element.locator('.custom-callout')).toBeHidden();
+    await expect(element.locator('.tooltip-legend-text')).toBeVisible();
+    await expect(element.locator('.tooltip-legend-text')).toHaveText('A');
+
+    await element.locator('svg').dispatchEvent('mouseleave');
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.custom-callout')).toBeHidden();
+    await expect(element.locator('.tooltip-legend-text')).toBeVisible();
+    await expect(element.locator('.tooltip-legend-text')).toHaveText('A');
+  });
+
+  test('Should show custom content when a renderer is added to a visible stack tooltip', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.evaluate(node => {
+      (node as HTMLElement & { isCalloutForStack: boolean }).isCalloutForStack = true;
+    });
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.tooltip-legend-text')).toHaveText(['A', 'B']);
+
+    await element.evaluate(node => {
+      (
+        node as HTMLElement & {
+          setTooltipRenderer: (renderer: (point: VerticalStackedBarChartProps) => HTMLElement) => void;
+        }
+      ).setTooltipRenderer(point => {
+        const content = document.createElement('div');
+        content.className = 'custom-stack-callout';
+        content.textContent = `${point.xAxisPoint}: ${point.chartData.length}`;
+        return content;
+      });
+    });
+
+    await expect(element.locator('.tooltip-default-content')).toBeHidden();
+    await expect(element.locator('.custom-stack-callout')).toBeVisible();
+    await expect(element.locator('.custom-stack-callout')).toHaveText('Q1: 2');
+  });
+
+  test('Should switch the Callout story from default stack content to custom stack content', async ({ page }) => {
+    await page.goto(fixtureURL('components-verticalstackedbarchart--callout'));
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    await page.locator('fluent-radio[value="MultiCallout"]').click();
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.tooltip-default-content')).toBeVisible();
+
+    await page.locator('fluent-radio[value="MultiCustomCallout"]').click();
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.tooltip-default-content')).toBeHidden();
+    await expect(element.locator('.tooltip-custom-content pre')).toBeVisible();
+    await expect(element.locator('.tooltip-custom-content pre')).toContainText('"xAxisPoint": "Jan"');
+  });
+
+  test('Should match the React Date Axis labels and callout options', async ({ page }) => {
+    await page.goto(fixtureURL('components-verticalstackedbarchart--date-axis'));
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    await expect(element.locator('.x-axis .axis-text')).toHaveText([
+      '03/01',
+      '05/01',
+      '07/01',
+      '09/01',
+      '11/01',
+      '02/01',
+      '05/01',
+      '07/01',
+      '09/01',
+    ]);
+    await expect(element.locator('.y-axis .y-axis-text').first()).toHaveText('0 h');
+    await expect(element.locator('.bar-label').first()).toHaveText('2.5 h');
+    await expect(element.locator('fluent-chart-legend')).toBeVisible();
+    await expect(page.locator('fluent-radio[value="singleCallout"]')).toBeVisible();
+    await expect(page.locator('fluent-radio[value="MultiCallout"]')).toHaveAttribute('checked', '');
+    await expect(page.locator('fluent-radio-group[name="vsbar-date-axis-callout"]')).toHaveAttribute(
+      'orientation',
+      'vertical',
+    );
+    const sliderBounds = await page.locator('#vsbar-date-axis-bar-gap-max').boundingBox();
+    const singleRadioBounds = await page.locator('fluent-radio[value="singleCallout"]').boundingBox();
+    const stackRadioBounds = await page.locator('fluent-radio[value="MultiCallout"]').boundingBox();
+    expect(singleRadioBounds?.y).toBeGreaterThan(sliderBounds?.y ?? Number.POSITIVE_INFINITY);
+    expect(stackRadioBounds?.y).toBeGreaterThan(singleRadioBounds?.y ?? Number.POSITIVE_INFINITY);
+
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.tooltip-info')).toHaveCount(3);
+    await page.locator('fluent-radio[value="singleCallout"]').click();
+    await element.locator('.bar').first().dispatchEvent('mouseenter');
+    await expect(element.locator('.tooltip-info')).toHaveCount(1);
+  });
+
+  test('Should use the React Negative story data', async ({ page }) => {
+    await page.goto(fixtureURL('components-verticalstackedbarchart--negative'));
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    const storyData = await element.evaluate(node => {
+      const chartData = (node as HTMLElement & { data: VerticalStackedBarChartProps[] }).data;
+      return {
+        xAxisPoints: chartData.map(stack => stack.xAxisPoint),
+        segmentValues: chartData.map(stack => stack.chartData.map(point => point.data)),
+        yAxisCalloutData: chartData.map(stack => stack.chartData.map(point => point.yAxisCalloutData)),
+        xAxisCalloutData: chartData.flatMap(stack => stack.chartData.map(point => point.xAxisCalloutData)),
+        lineValues: chartData.map(stack => stack.lineData?.map(point => point.y) ?? []),
+      };
+    });
+
+    expect(storyData.xAxisPoints).toEqual([0, 20, 40, 60, 80, 100]);
+    expect(storyData.segmentValues).toEqual([
+      [40, 5, -20, 10, 23, 0.4, -0.5, -0.3, 0.7, 0.1],
+      [-30, -20, -40],
+      [44, 28, 30],
+      [40, 5, -20, 10, 23, 0.4, -0.5, -0.3, 0.7, 0.1],
+      [88, 22, 30],
+      [40, 5, -20, 10, 23, 0.4, -0.5, -0.3, 0.7, 0.1],
+    ]);
+    expect(storyData.yAxisCalloutData[0]).toEqual([
+      '68%',
+      '8.5%',
+      '34%',
+      '17%',
+      '39%',
+      '0.7%',
+      '0.85%',
+      '0.5%',
+      '1.2%',
+      '0.2%',
+    ]);
+    expect(new Set(storyData.xAxisCalloutData)).toEqual(new Set(['2020/04/30']));
+    expect(storyData.lineValues).toEqual([[42, 10], [33], [60, 20], [41, 10], [100, 70], []]);
+    await expect(element.locator('.bar')).toHaveCount(39);
+    const negativeBars = element.locator('.bar[data-value^="-"]');
+    await expect(negativeBars).toHaveCount(12);
+    expect(await negativeBars.evaluateAll(bars => bars.every(bar => Number(bar.getAttribute('height')) > 0))).toBe(
+      true,
+    );
+    expect(await element.locator('.y-axis .y-axis-text').allTextContents()).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^-/)]),
+    );
+    await expect(element.locator('.bar-label')).toContainText(['58.4', '-90', '102', '58.4', '140', '58.4']);
+    await expect(element.locator('.x-axis-title')).toHaveText('Number of days');
+    await expect(element.locator('.y-axis-title')).toHaveText('Variation of number of sales');
+  });
+
+  test('Should render the React secondary y-axis data', async ({ page }) => {
+    await page.goto(fixtureURL('components-verticalstackedbarchart--secondary-y-axis'));
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    const lineData = await element.evaluate(node =>
+      (node as HTMLElement & { data: VerticalStackedBarChartProps[] }).data.map(stack => stack.lineData),
+    );
+    expect(lineData).toEqual([
+      [{ y: 150, legend: 'Sales Target', color: 'qualitative.9', useSecondaryYScale: true }],
+      [{ y: 180, legend: 'Sales Target', color: 'qualitative.9', useSecondaryYScale: true }],
+      [{ y: 200, legend: 'Sales Target', color: 'qualitative.9', useSecondaryYScale: true }],
+      [{ y: 250, legend: 'Sales Target', color: 'qualitative.9', useSecondaryYScale: true }],
+    ]);
+    await expect(element.locator('.y-axis-secondary')).toBeVisible();
+    await expect(element.locator('.y-axis-secondary .y-axis-text')).not.toHaveCount(0);
+    await expect(element.locator('.line-path')).toHaveCount(1);
+    await expect(element.locator('fluent-chart-legend')).toContainText('Sales Target');
+  });
+
+  test('Should arrange Axis Category Order controls around the chart', async ({ page }) => {
+    await page.goto(fixtureURL('components-verticalstackedbarchart--axis-category-order'));
+
+    const sliderRow = page.locator('.axis-category-order-sliders');
+    const dropdownRow = page.locator('.axis-category-order-dropdown');
+    const actionRow = page.locator('.axis-category-order-actions');
+    const chart = page.locator('fluent-vertical-stacked-bar-chart');
+    await expect(sliderRow.locator('fluent-slider')).toHaveCount(3);
+    await expect(dropdownRow.locator('#vsbar-axis-order-dropdown')).toBeVisible();
+    await expect(actionRow).toContainText('Change data');
+
+    const dataSizeSlider = page.locator('#vsbar-axis-order-size');
+    const dataSizeMessage = page.locator('fluent-field:has(#vsbar-axis-order-size) fluent-label[slot="message"]');
+    await dataSizeSlider.evaluate(slider => {
+      (slider as HTMLElement & { value: string }).value = '12';
+      slider.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(await dataSizeMessage.evaluate(message => message.textContent)).toBe('12');
+
+    const sliderBounds = await sliderRow.boundingBox();
+    const dropdownBounds = await dropdownRow.boundingBox();
+    const chartBounds = await chart.boundingBox();
+    const actionBounds = await actionRow.boundingBox();
+    expect(dropdownBounds?.y).toBeGreaterThan(sliderBounds?.y ?? Number.POSITIVE_INFINITY);
+    expect(actionBounds?.y).toBeGreaterThanOrEqual(
+      (chartBounds?.y ?? Number.POSITIVE_INFINITY) + (chartBounds?.height ?? 0),
+    );
+
+    await expect(chart).toHaveAttribute('support-negative-data', '');
+    const changeDataButton = actionRow.getByText('Change data');
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const hasNegativeValue = await chart.evaluate(node =>
+        (node as HTMLElement & { data: VerticalStackedBarChartProps[] }).data.some(stack =>
+          stack.chartData.some(point => point.data < 0),
+        ),
+      );
+      if (hasNegativeValue) {
+        break;
+      }
+      await changeDataButton.click();
+    }
+    const negativeBars = chart.locator('.bar[data-value^="-"]');
+    await expect(negativeBars).not.toHaveCount(0);
+    expect(await negativeBars.evaluateAll(bars => bars.every(bar => Number(bar.getAttribute('height')) > 0))).toBe(
+      true,
+    );
+  });
+
   test('Should format date callout data using the configured culture', async ({ page }) => {
     await page.setContent(/* html */ `
       <fluent-vertical-stacked-bar-chart culture='de-DE' width='500' height='300'></fluent-vertical-stacked-bar-chart>

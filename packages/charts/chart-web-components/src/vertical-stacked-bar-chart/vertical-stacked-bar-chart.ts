@@ -1,8 +1,8 @@
 import { attr } from '@microsoft/fast-element';
-import { max } from 'd3-array';
+import { extent, max } from 'd3-array';
 import { type Axis, axisBottom, axisLeft, axisRight } from 'd3-axis';
 import { format } from 'd3-format';
-import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear } from 'd3-scale';
+import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear, type ScaleTime, scaleTime } from 'd3-scale';
 import { line as createLine } from 'd3-shape';
 import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
@@ -20,6 +20,7 @@ import {
   toOptionalAxisNumber as toOptionalNumber,
 } from '../utils/cartesian-axis-shared.js';
 import {
+  escapeHtml,
   formatLocaleNumber,
   getColorFromToken,
   getNextColor,
@@ -36,9 +37,10 @@ import type {
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
 
-type TooltipState = TooltipProps & { xValue: string };
+export type TooltipEntry = { legend: string; color: string; value: string };
+type TooltipState = TooltipProps & { xValue: string; entries: TooltipEntry[] };
 type LinePlotPoint = {
-  xAxisPoint: string | number;
+  xAxisPoint: string | number | Date;
   xCenter: number;
   entry: VerticalStackedBarChartLineDataPoint;
 };
@@ -76,6 +78,12 @@ const formatDateValue = (chart: VerticalStackedBarChart, value: Date): string =>
   }
 };
 
+const formatXAxisValue = (chart: VerticalStackedBarChart, value: string | number | Date): string =>
+  value instanceof Date ? formatDateValue(chart, value) : String(value);
+
+const formatYAxisTickValue = (chart: VerticalStackedBarChart, value: number): string =>
+  chart.customYAxisTickFormatter?.(value) ?? formatNumberValue(value, chart.yAxisTickFormat, chart.culture);
+
 const formatXAxisCalloutValue = (
   chart: VerticalStackedBarChart,
   value: VerticalStackedBarChartDataPoint['xAxisCalloutData'],
@@ -105,6 +113,10 @@ export class VerticalStackedBarChart extends CartesianChartBase {
   @attr({ attribute: 'enable-gradient', mode: 'boolean' })
   public enableGradient: boolean = false;
 
+  /** Shows all bar and line values for the hovered x-axis category in one tooltip. */
+  @attr({ attribute: 'is-callout-for-stack', mode: 'boolean' })
+  public isCalloutForStack: boolean = false;
+
   @attr({ attribute: 'secondary-y-axis-title' })
   public secondaryYAxisTitle?: string;
 
@@ -112,7 +124,14 @@ export class VerticalStackedBarChart extends CartesianChartBase {
 
   public connectedCallback() {
     const self = this as Record<string, unknown>;
-    const attrFields = ['data', 'barGapMax', 'barWidth', 'enableGradient', 'secondaryYAxisTitle'] as const;
+    const attrFields = [
+      'data',
+      'barGapMax',
+      'barWidth',
+      'enableGradient',
+      'isCalloutForStack',
+      'secondaryYAxisTitle',
+    ] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -128,7 +147,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       }
     }
 
-    this.tooltipProps = { ...this.tooltipProps, xValue: '' } as TooltipState;
+    this.tooltipProps = { ...this.tooltipProps, xValue: '', entries: [] } as TooltipState;
     this._requestRender();
   }
 
@@ -146,7 +165,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     bottom: number,
     margins: { top: number; bottom: number; left: number; right: number },
     svg: SVGSVGElement,
-    content: { legend: string; xValue: string; yValue: string; color: string },
+    content: { legend: string; xValue: string; yValue: string; color: string; entries: TooltipEntry[] },
   ): void {
     const isFreshShow = !this.tooltipProps.isVisible;
     const hostRect = this.getBoundingClientRect();
@@ -163,6 +182,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       xValue: content.xValue,
       yValue: content.yValue,
       color: content.color,
+      entries: content.entries,
       xPos: anchorX,
       yPos: anchorY,
     };
@@ -180,7 +200,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     cy: number,
     margins: { top: number; bottom: number; left: number; right: number },
     svg: SVGSVGElement,
-    content: { legend: string; xValue: string; yValue: string; color: string },
+    content: { legend: string; xValue: string; yValue: string; color: string; entries: TooltipEntry[] },
     cyMin: number = cy - 10,
     cyMax: number = cy + 10,
   ): void {
@@ -199,6 +219,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       xValue: content.xValue,
       yValue: content.yValue,
       color: content.color,
+      entries: content.entries,
       xPos: anchorX,
       yPos: anchorY,
     };
@@ -226,17 +247,42 @@ export class VerticalStackedBarChart extends CartesianChartBase {
   }
 
   protected override _clearTooltip(): void {
-    this.tooltipProps = { isVisible: false, legend: '', xValue: '', yValue: '', color: '', xPos: 0, yPos: 0 };
+    this.tooltipProps = {
+      isVisible: false,
+      legend: '',
+      xValue: '',
+      yValue: '',
+      color: '',
+      xPos: 0,
+      yPos: 0,
+      entries: [],
+    };
+  }
+
+  protected override tooltipPropsChanged(old: TooltipProps, newValue: TooltipProps): void {
+    super.tooltipPropsChanged(old, newValue);
+    if (newValue.isVisible && !this.hideTooltip) {
+      const state = newValue as TooltipState;
+      this.liveRegionText = [state.xValue, ...state.entries.map(entry => `${entry.legend}: ${entry.value}`)]
+        .filter(Boolean)
+        .join('. ');
+    }
   }
 
   protected override _buildDefaultTooltipHTML(): string {
-    return [
-      `<div class="tooltip-header">${this.tooltipProps.xValue}</div>`,
-      `<div class="tooltip-info" style="border-color: ${this.tooltipProps.color};">`,
-      `<div class="tooltip-legend-text">${this.tooltipProps.legend}</div>`,
-      `<div class="tooltip-primary-value" style="color: ${this.tooltipProps.color};">${this.tooltipProps.yValue}</div>`,
-      `</div>`,
-    ].join('');
+    const entries = this.tooltipProps.entries
+      .map(
+        entry =>
+          `<div class="tooltip-info" style="border-color: ${escapeHtml(
+            entry.color,
+          )};"><div class="tooltip-legend-text">${escapeHtml(
+            entry.legend,
+          )}</div><div class="tooltip-primary-value" style="color: ${escapeHtml(entry.color)};">${escapeHtml(
+            entry.value,
+          )}</div></div>`,
+      )
+      .join('');
+    return `<div class="tooltip-header">${escapeHtml(this.tooltipProps.xValue)}</div>${entries}`;
   }
 
   protected override _performRender(): void {
@@ -270,30 +316,65 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     };
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
-    const groupsByCategory = new Map<string, number[]>();
-    stacks.forEach(stack => {
-      groupsByCategory.set(
-        String(stack.xAxisPoint),
-        stack.chartData.map(point => point.data),
+    const isDateAxis = stacks.every(
+      stack => stack.xAxisPoint instanceof Date && !Number.isNaN(stack.xAxisPoint.getTime()),
+    );
+    let xScaleBand: ScaleBand<string> | undefined;
+    let xScaleTime: ScaleTime<number, number> | undefined;
+    let xAxis: Axis<string | Date>;
+    if (isDateAxis) {
+      const dateValues = stacks.map(stack => stack.xAxisPoint as Date);
+      const dateExtent = extent(dateValues, value => value.getTime());
+      xScaleTime = scaleTime()
+        .domain([new Date(dateExtent[0] ?? 0), new Date(dateExtent[1] ?? 0)])
+        .range([0, innerWidth]);
+      xAxis = axisBottom(xScaleTime).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<string | Date>;
+      const dateTickValues = (this.tickValues ?? [])
+        .map(value => (value instanceof Date ? value : undefined))
+        .filter((value): value is Date => value !== undefined);
+      applyAxisTickConfig(xAxis as Axis<Date>, this.xAxisTickCount, dateTickValues);
+    } else {
+      const groupsByCategory = new Map<string, number[]>();
+      stacks.forEach(stack => {
+        groupsByCategory.set(
+          String(stack.xAxisPoint),
+          stack.chartData.map(point => point.data),
+        );
+      });
+      const domain = sortCategoryGroups(
+        Array.from(groupsByCategory.entries()).map(([key, values]) => ({ key, points: values })),
+        this.xAxisCategoryOrder,
+        stacks.map(stack => String(stack.xAxisPoint)),
+        group => group.points,
+      ).map(group => group.key);
+      const xAxisInnerPadding = toOptionalNumber(this.xAxisInnerPadding) ?? 2 / 3;
+      const xAxisOuterPadding = toOptionalNumber(this.xAxisOuterPadding) ?? 0;
+      xScaleBand = scaleBand<string>()
+        .domain(domain)
+        .range([0, innerWidth])
+        .paddingInner(xAxisInnerPadding)
+        .paddingOuter(xAxisOuterPadding);
+      xAxis = axisBottom(xScaleBand).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<string | Date>;
+      applyAxisTickConfig(
+        xAxis as Axis<string>,
+        this.xAxisTickCount,
+        this.tickValues?.map(value => String(value)),
       );
-    });
-    const domain = sortCategoryGroups(
-      Array.from(groupsByCategory.entries()).map(([key, values]) => ({ key, points: values })),
-      this.xAxisCategoryOrder,
-      stacks.map(stack => String(stack.xAxisPoint)),
-      group => group.points,
-    ).map(group => group.key);
-    const xAxisInnerPadding = toOptionalNumber(this.xAxisInnerPadding) ?? 2 / 3;
-    const xAxisOuterPadding = toOptionalNumber(this.xAxisOuterPadding) ?? 0;
-    const xScale = scaleBand<string>()
-      .domain(domain)
-      .range([0, innerWidth])
-      .paddingInner(xAxisInnerPadding)
-      .paddingOuter(xAxisOuterPadding);
-    const maxTotal =
-      max(stacks, stack => stack.chartData.reduce((sum, point) => sum + Math.max(point.data, 0), 0)) ?? 0;
+    }
+    const getXCenter = (stack: VerticalStackedBarChartProps): number =>
+      xScaleTime
+        ? xScaleTime(stack.xAxisPoint as Date)
+        : (xScaleBand!(String(stack.xAxisPoint)) ?? 0) + xScaleBand!.bandwidth() / 2;
+    const positiveTotals = stacks.map(stack =>
+      stack.chartData.reduce((sum, point) => sum + Math.max(point.data, 0), 0),
+    );
+    const negativeTotals = stacks.map(stack =>
+      stack.chartData.reduce((sum, point) => sum + Math.min(point.data, 0), 0),
+    );
+    const maxTotal = max(positiveTotals) ?? 0;
+    const minTotal = this.supportNegativeData ? Math.min(...negativeTotals, 0) : 0;
     const preparedYAxis = computePreparedNumericYAxis({
-      minValue: toOptionalNumber(this.yMinValue) ?? 0,
+      minValue: toOptionalNumber(this.yMinValue) ?? minTotal,
       maxValue: toOptionalNumber(this.yMaxValue) ?? Math.max(maxTotal, 1),
       tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
       roundedTicks: this.roundedTicks,
@@ -349,11 +430,32 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       });
     });
 
+    const getStackTooltipEntries = (stack: VerticalStackedBarChartProps): TooltipEntry[] => [
+      ...stack.chartData
+        .filter(entry => this._shouldShowTooltip(entry.legend))
+        .map(entry => ({
+          legend: entry.legend,
+          color: colorMap.get(entry.legend) ?? getNextColor(0, 0),
+          value: entry.yAxisCalloutData || formatNumberValue(entry.data, this.yAxisTickFormat, this.culture),
+        })),
+      ...(stack.lineData ?? [])
+        .filter(entry => this._shouldShowTooltip(entry.legend))
+        .map(entry => ({
+          legend: entry.legend,
+          color: lineColorMap.get(entry.legend) ?? getNextColor(0, 10),
+          value: entry.yAxisCalloutData || formatNumberValue(entry.y, this.yAxisTickFormat, this.culture),
+        })),
+    ];
+
+    const getSingleTooltipEntry = (legend: string, color: string, value: string): TooltipEntry[] => [
+      { legend, color, value },
+    ];
+
     const buildLinePoints = (legend: string): LinePlotPoint[] => {
       return stacks.reduce<LinePlotPoint[]>((points, stack) => {
         const entry = stack.lineData?.find(item => item.legend === legend);
         if (entry && typeof entry.y === 'number' && Number.isFinite(entry.y)) {
-          const xCenter = (xScale(String(stack.xAxisPoint)) ?? 0) + xScale.bandwidth() / 2;
+          const xCenter = getXCenter(stack);
           points.push({ xAxisPoint: stack.xAxisPoint, xCenter, entry });
         }
         return points;
@@ -380,12 +482,6 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
     svg.appendChild(plotGroup);
 
-    const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6));
-    applyAxisTickConfig(
-      xAxis,
-      this.xAxisTickCount,
-      this.tickValues?.map(value => String(value)),
-    );
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
       yAxis,
@@ -404,52 +500,78 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     const cornerRadius = this.roundCorners ? 3 : 0;
 
     stacks.forEach((stack, stackIndex) => {
-      const x = xScale(String(stack.xAxisPoint)) ?? 0;
-      const step = xScale.step();
+      const xCenter = getXCenter(stack);
+      const step = xScaleBand?.step() ?? innerWidth;
       // Match React's default categorical bar width cap; explicit bar-width can grow it.
-      let actualWidth = Math.min(xScale.bandwidth(), defaultCategoricalBarWidth);
+      let actualWidth = Math.min(xScaleBand?.bandwidth() ?? defaultCategoricalBarWidth, defaultCategoricalBarWidth);
       const requestedWidth = toOptionalNumber(this.barWidth);
       actualWidth = Math.min(Math.max(requestedWidth ?? actualWidth, 1), step);
-      const offset = (xScale.bandwidth() - actualWidth) / 2;
+      const x = xCenter - actualWidth / 2;
 
-      const stackTotal = stack.chartData.reduce((sum, segment) => sum + Math.max(segment.data, 0), 0);
+      const positiveTotal = stack.chartData.reduce((sum, segment) => sum + Math.max(segment.data, 0), 0);
+      const negativeTotal = this.supportNegativeData
+        ? stack.chartData.reduce((sum, segment) => sum + Math.min(segment.data, 0), 0)
+        : 0;
+      const stackTotal = stack.chartData.reduce((sum, segment) => sum + segment.data, 0);
       // bar-gap-max controls the visual gap between stacked segments within a bar (matching
       // React's VerticalStackedBarChart), capped at 20% of the stack's height and never below 1px.
       // Defaults to 2px (this component's prior fixed gap) when the attribute is not set.
       const barGapMax = toOptionalNumber(this.barGapMax) ?? 2;
-      const gapsCount = barGapMax > 0 ? Math.max(stack.chartData.length - 1, 0) : 0;
-      const totalHeightPx = Math.max(yScale(0) - yScale(stackTotal), 0);
-      const desiredGapPx = gapsCount > 0 ? Math.max(1, Math.min(barGapMax, (totalHeightPx * 0.2) / gapsCount)) : 0;
-      const usableHeightPx = Math.max(totalHeightPx - desiredGapPx * gapsCount, 0);
-      // Mirror React's VerticalStackedBarChart scaling: segments under 1% of the stack are
-      // treated as 1% when computing the scale, then rendered at least that tall — otherwise
-      // tiny segments would round down to an invisible, unhoverable sliver.
-      const sumOfPercent =
-        stackTotal > 0
-          ? stack.chartData.reduce((sum, segment) => {
-              const percent = (Math.max(segment.data, 0) / stackTotal) * 100;
-              return sum + (percent > 0 && percent < 1 ? 1 : percent);
-            }, 0)
-          : 0;
-      const scalingRatio = sumOfPercent > 0 ? sumOfPercent / 100 : 1;
-      const heightValueScale = stackTotal > 0 ? usableHeightPx / (stackTotal * scalingRatio) : 0;
-      const minSegmentHeight = (heightValueScale * stackTotal) / 100;
+      const positiveValues = stack.chartData.map(segment => Math.max(segment.data, 0)).filter(value => value > 0);
+      const negativeValues = this.supportNegativeData
+        ? stack.chartData.map(segment => Math.abs(Math.min(segment.data, 0))).filter(value => value > 0)
+        : [];
+      const getSideMetrics = (values: number[], total: number, endpoint: number) => {
+        const gapsCount = barGapMax > 0 ? Math.max(values.length - 1, 0) : 0;
+        const totalHeightPx = Math.abs(yScale(0) - yScale(endpoint));
+        const gap = gapsCount > 0 ? Math.max(1, Math.min(barGapMax, (totalHeightPx * 0.2) / gapsCount)) : 0;
+        const usableHeightPx = Math.max(totalHeightPx - gap * gapsCount, 0);
+        const sumOfPercent = values.reduce((sum, value) => {
+          const percent = (value / total) * 100;
+          return sum + (percent < 1 ? 1 : percent);
+        }, 0);
+        const scalingRatio = sumOfPercent > 0 ? sumOfPercent / 100 : 1;
+        const heightValueScale = total > 0 ? usableHeightPx / (total * scalingRatio) : 0;
+        return { gap, heightValueScale, minSegmentHeight: (heightValueScale * total) / 100 };
+      };
+      const positiveMetrics = getSideMetrics(positiveValues, positiveTotal, positiveTotal);
+      const negativeMagnitude = Math.abs(negativeTotal);
+      const negativeMetrics = getSideMetrics(negativeValues, negativeMagnitude, negativeTotal);
 
-      let cumulativeBottom = yScale(0);
+      let positiveBottom = yScale(0);
+      let negativeTop = yScale(0);
+      let positiveIndex = 0;
+      let negativeIndex = 0;
       stack.chartData.forEach((segment, segmentIndex) => {
         const color = colorMap.get(segment.legend) ?? getNextColor(0, 0);
-        const segmentValue = Math.max(segment.data, 0);
-        let segmentHeight = heightValueScale * segmentValue;
-        if (segmentValue > 0 && segmentHeight < minSegmentHeight) {
-          segmentHeight = minSegmentHeight;
+        const isNegative = this.supportNegativeData && segment.data < 0;
+        const segmentValue = isNegative ? Math.abs(segment.data) : Math.max(segment.data, 0);
+        const metrics = isNegative ? negativeMetrics : positiveMetrics;
+        let segmentHeight = metrics.heightValueScale * segmentValue;
+        if (segmentValue > 0 && segmentHeight < metrics.minSegmentHeight) {
+          segmentHeight = metrics.minSegmentHeight;
         }
-        const bottom = cumulativeBottom;
-        const top = bottom - segmentHeight;
+        let top: number;
+        let bottom: number;
+        if (isNegative) {
+          top = negativeTop;
+          bottom = top + segmentHeight;
+          negativeIndex += 1;
+          negativeTop = bottom + (negativeIndex < negativeValues.length ? metrics.gap : 0);
+        } else {
+          bottom = positiveBottom;
+          top = bottom - segmentHeight;
+          if (segmentValue > 0) {
+            positiveIndex += 1;
+            positiveBottom = top - (positiveIndex < positiveValues.length ? metrics.gap : 0);
+          }
+        }
 
         const rect = createSvgElement<SVGRectElement>('rect');
         rect.classList.add('bar');
         rect.dataset.legend = segment.legend;
-        rect.setAttribute('x', String(x + offset));
+        rect.dataset.value = String(segment.data);
+        rect.setAttribute('x', String(x));
         rect.setAttribute('y', String(top));
         rect.setAttribute('width', String(actualWidth));
         rect.setAttribute('height', String(Math.max(bottom - top, 0)));
@@ -465,38 +587,48 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           if (!this._shouldShowTooltip(segment.legend) || this.hideTooltip) {
             return;
           }
-          this._currentTooltipDataPoint = { ...segment, xAxisPoint: stack.xAxisPoint };
-          this._showBarSegmentTooltipAtY(event.clientY, x, offset, actualWidth, top, bottom, margins, svg, {
+          this._currentTooltipDataPoint = this.isCalloutForStack ? stack : { ...segment, xAxisPoint: stack.xAxisPoint };
+          const value = segment.yAxisCalloutData || formatNumberValue(segment.data, this.yAxisTickFormat, this.culture);
+          this._showBarSegmentTooltipAtY(event.clientY, x, 0, actualWidth, top, bottom, margins, svg, {
             legend: segment.legend,
-            xValue: formatXAxisCalloutValue(this, segment.xAxisCalloutData, String(stack.xAxisPoint)),
-            yValue: segment.yAxisCalloutData || formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
+            xValue: formatXAxisCalloutValue(this, segment.xAxisCalloutData, formatXAxisValue(this, stack.xAxisPoint)),
+            yValue: value,
             color,
+            entries: this.isCalloutForStack
+              ? getStackTooltipEntries(stack)
+              : getSingleTooltipEntry(segment.legend, color, value),
           });
         });
         rect.addEventListener('mousemove', event => {
           if (!this._shouldShowTooltip(segment.legend) || this.hideTooltip) {
             return;
           }
-          this._showBarSegmentTooltipAtY(event.clientY, x, offset, actualWidth, top, bottom, margins, svg, {
+          this._showBarSegmentTooltipAtY(event.clientY, x, 0, actualWidth, top, bottom, margins, svg, {
             legend: segment.legend,
-            xValue: formatXAxisCalloutValue(this, segment.xAxisCalloutData, String(stack.xAxisPoint)),
+            xValue: formatXAxisCalloutValue(this, segment.xAxisCalloutData, formatXAxisValue(this, stack.xAxisPoint)),
             yValue: segment.yAxisCalloutData || formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
             color,
+            entries: this.isCalloutForStack
+              ? getStackTooltipEntries(stack)
+              : getSingleTooltipEntry(
+                  segment.legend,
+                  color,
+                  segment.yAxisCalloutData || formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
+                ),
           });
         });
         plotGroup.appendChild(rect);
-        cumulativeBottom = top - (segmentIndex < stack.chartData.length - 1 ? desiredGapPx : 0);
       });
 
       const shouldShowLabel =
-        !this.hideLabels && actualWidth >= 16 && stackTotal > 0 && this._getHighlightedLegends().length === 0;
+        !this.hideLabels && actualWidth >= 16 && stackTotal !== 0 && this._getHighlightedLegends().length === 0;
       if (shouldShowLabel) {
         const label = createSvgElement<SVGTextElement>('text');
         label.classList.add('bar-label');
-        label.setAttribute('x', String(x + offset + actualWidth / 2));
-        label.setAttribute('y', String(yScale(stackTotal) - 6));
+        label.setAttribute('x', String(x + actualWidth / 2));
+        label.setAttribute('y', String(stackTotal >= 0 ? positiveBottom - 6 : negativeTop + 12));
         label.setAttribute('text-anchor', 'middle');
-        label.textContent = formatNumberValue(stackTotal, this.yAxisTickFormat, this.culture);
+        label.textContent = formatYAxisTickValue(this, stackTotal);
         plotGroup.appendChild(label);
       }
     });
@@ -569,9 +701,13 @@ export class VerticalStackedBarChart extends CartesianChartBase {
         const localX = event.clientX - svgRect.left - margins.left;
         const nearest = findNearestLinePoint(localX);
         const nearestCy = getLineScale(nearest.entry)(nearest.entry.y);
+        const nearestStack = stacks.find(stack => String(stack.xAxisPoint) === String(nearest.xAxisPoint));
         this._activeLineMarkerXValue = String(nearest.xAxisPoint);
         this._syncLineMarkerVisibility();
-        this._currentTooltipDataPoint = { ...nearest.entry, xAxisPoint: nearest.xAxisPoint };
+        this._currentTooltipDataPoint =
+          this.isCalloutForStack && nearestStack ? nearestStack : { ...nearest.entry, xAxisPoint: nearest.xAxisPoint };
+        const value =
+          nearest.entry.yAxisCalloutData || formatNumberValue(nearest.entry.y, this.yAxisTickFormat, this.culture);
         this._showLinePointTooltipAtY(
           event.clientY,
           nearest.xCenter,
@@ -580,10 +716,13 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           svg,
           {
             legend,
-            xValue: String(nearest.xAxisPoint),
-            yValue:
-              nearest.entry.yAxisCalloutData || formatNumberValue(nearest.entry.y, this.yAxisTickFormat, this.culture),
+            xValue: formatXAxisValue(this, nearest.xAxisPoint),
+            yValue: value,
             color: lineColor,
+            entries:
+              this.isCalloutForStack && nearestStack
+                ? getStackTooltipEntries(nearestStack)
+                : getSingleTooltipEntry(legend, lineColor, value),
           },
           lineCyMin,
           lineCyMax,
@@ -636,25 +775,38 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           if (!this._shouldShowTooltip(legend) || this.hideTooltip) {
             return;
           }
-          this._currentTooltipDataPoint = { ...point.entry, xAxisPoint: point.xAxisPoint };
+          const pointStack = stacks.find(stack => String(stack.xAxisPoint) === String(point.xAxisPoint));
+          this._currentTooltipDataPoint =
+            this.isCalloutForStack && pointStack ? pointStack : { ...point.entry, xAxisPoint: point.xAxisPoint };
+          const value =
+            point.entry.yAxisCalloutData || formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture);
           this._showLinePointTooltipAtY(event.clientY, cx, cy, margins, svg, {
             legend,
-            xValue: String(point.xAxisPoint),
-            yValue:
-              point.entry.yAxisCalloutData || formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture),
+            xValue: formatXAxisValue(this, point.xAxisPoint),
+            yValue: value,
             color: lineColor,
+            entries:
+              this.isCalloutForStack && pointStack
+                ? getStackTooltipEntries(pointStack)
+                : getSingleTooltipEntry(legend, lineColor, value),
           });
         });
         markerHitArea.addEventListener('mousemove', event => {
           if (!this._shouldShowTooltip(legend) || this.hideTooltip) {
             return;
           }
+          const pointStack = stacks.find(stack => String(stack.xAxisPoint) === String(point.xAxisPoint));
+          const value =
+            point.entry.yAxisCalloutData || formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture);
           this._showLinePointTooltipAtY(event.clientY, cx, cy, margins, svg, {
             legend,
-            xValue: String(point.xAxisPoint),
-            yValue:
-              point.entry.yAxisCalloutData || formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture),
+            xValue: formatXAxisValue(this, point.xAxisPoint),
+            yValue: value,
             color: lineColor,
+            entries:
+              this.isCalloutForStack && pointStack
+                ? getStackTooltipEntries(pointStack)
+                : getSingleTooltipEntry(legend, lineColor, value),
           });
         });
         markerHitArea.addEventListener('mouseleave', () => {
@@ -666,11 +818,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       });
     });
 
-    renderBottomAxisShared({
+    const axisRenderOptions = {
       svg,
-      scale: xScale,
-      axis: xAxis,
-      formatter: value => value,
       axisLeft: margins.left,
       axisTop: margins.top,
       innerWidth,
@@ -682,16 +831,31 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       hideTickOverlap: this.hideTickOverlap,
       showXAxisLabelsTooltip: this.showXAxisLabelsTooltip,
       axisLabelTooltipHandlers: {
-        show: (target, fullLabel) => this._showAxisLabelTooltip(target, fullLabel),
+        show: (target: SVGTextElement, fullLabel: string) => this._showAxisLabelTooltip(target, fullLabel),
         hide: () => this._hideAxisLabelTooltip(),
       },
       xAxisTitle: this.xAxisTitle,
-    });
+    };
+    if (xScaleTime) {
+      renderBottomAxisShared({
+        ...axisRenderOptions,
+        scale: xScaleTime,
+        axis: xAxis as Axis<Date>,
+        formatter: value => formatDateValue(this, value),
+      });
+    } else {
+      renderBottomAxisShared({
+        ...axisRenderOptions,
+        scale: xScaleBand!,
+        axis: xAxis as Axis<string>,
+        formatter: value => value,
+      });
+    }
     renderPrimaryYAxisShared({
       svg,
       scale: yScale,
       axis: yAxis as unknown as Axis<number>,
-      formatter: value => formatNumberValue(value, this.yAxisTickFormat, this.culture),
+      formatter: value => formatYAxisTickValue(this, value),
       axisStartX: margins.left,
       axisTop: margins.top,
       innerHeight,
@@ -712,7 +876,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
         svg,
         scale: yScaleSecondary,
         axis: yAxisSecondary as unknown as Axis<number>,
-        formatter: value => formatNumberValue(value, this.yAxisTickFormat, this.culture),
+        formatter: value => formatYAxisTickValue(this, value),
         axisStartX: margins.left,
         axisTop: margins.top,
         innerHeight,

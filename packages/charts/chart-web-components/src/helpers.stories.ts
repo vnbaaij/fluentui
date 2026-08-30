@@ -148,7 +148,10 @@ export const createSliderField = (
   message.textContent = `${value}`;
   field.appendChild(message);
 
-  slider.addEventListener('change', () => onChange(Number(slider.value)));
+  slider.addEventListener('change', () => {
+    message.textContent = slider.value;
+    onChange(Number(slider.value));
+  });
 
   return {
     element: field,
@@ -334,7 +337,11 @@ export const createRadioGroupField = (
     if (option.value === currentValue) {
       radio.toggleAttribute('checked', true);
     }
-    radio.addEventListener('change', () => onChange(option.value));
+    radio.addEventListener('change', () => {
+      if (radio.checked) {
+        onChange(option.value);
+      }
+    });
     itemField.appendChild(radio);
 
     const itemLabel = document.createElement('label');

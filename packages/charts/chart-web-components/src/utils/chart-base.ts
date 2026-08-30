@@ -139,9 +139,46 @@ export abstract class ChartBase extends FASTElement {
    */
   private _lastRenderedTooltipDataPoint: unknown = undefined;
 
+  /** Updates the custom tooltip renderer and refreshes a currently visible tooltip. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public setTooltipRenderer(value: TooltipRenderer<any> | undefined): void {
+    this.tooltipRenderer = value;
+    this.tooltipRendererChanged();
+  }
+
+  protected tooltipRendererChanged(): void {
+    this._lastRenderedTooltipDataPoint = undefined;
+    if (this.tooltipProps.isVisible) {
+      this.tooltipProps = { ...this.tooltipProps };
+      this._syncTooltipRendererContent();
+    }
+  }
+
+  private _syncTooltipRendererContent(): void {
+    requestAnimationFrame(() => {
+      const tooltipBody = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-body');
+      const defaultContent = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-default-content');
+      const customContent = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-custom-content');
+      if (!this.tooltipRenderer && tooltipBody && !defaultContent) {
+        tooltipBody.innerHTML = this._buildDefaultTooltipHTML(this._currentTooltipDataPoint);
+        return;
+      }
+      if (defaultContent) {
+        defaultContent.hidden = !!this.tooltipRenderer;
+      }
+      if (customContent) {
+        customContent.hidden = !this.tooltipRenderer;
+        if (!this.tooltipRenderer) {
+          customContent.innerHTML = '';
+        }
+      }
+    });
+  }
+
   protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void {
     if (newValue.isVisible && !this.hideTooltip) {
       this.liveRegionText = [newValue.legend, newValue.yValue].filter(Boolean).join(': ');
+      this._syncTooltipRendererContent();
       // Only invoke the renderer when the hovered data point has changed.
       //
       // This intentionally allows re-rendering on true→true isVisible transitions
@@ -150,8 +187,12 @@ export abstract class ChartBase extends FASTElement {
       // GanttChart's position-clamping RAF, which updates only xPos and leaves
       // _currentTooltipDataPoint unchanged.
       if (this.tooltipRenderer && this._currentTooltipDataPoint !== this._lastRenderedTooltipDataPoint) {
+        const renderer = this.tooltipRenderer;
         this._lastRenderedTooltipDataPoint = this._currentTooltipDataPoint;
         requestAnimationFrame(() => {
+          if (this.tooltipRenderer !== renderer) {
+            return;
+          }
           // Call the renderer BEFORE querying .tooltip-body.
           //
           // On the very first hover, FAST's when() directive hasn't yet run its own
@@ -159,37 +200,51 @@ export abstract class ChartBase extends FASTElement {
           // We still need to invoke the renderer so that the host (e.g. Blazor) is
           // notified and can re-render its portal.  The bridge's MutationObserver will
           // push the portal content once Blazor renders AND FAST has inserted the body.
-          const result = this.tooltipRenderer!(this._currentTooltipDataPoint, (p: unknown) =>
-            this._buildDefaultTooltipHTML(p),
-          );
+          const result = renderer(this._currentTooltipDataPoint, (p: unknown) => this._buildDefaultTooltipHTML(p));
 
-          const el = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-body');
+          const getTarget = () =>
+            this.shadowRoot?.querySelector<HTMLElement>('.tooltip-custom-content') ??
+            this.shadowRoot?.querySelector<HTMLElement>('.tooltip-body');
+          const renderResult = (el: HTMLElement) => {
+            el.innerHTML = '';
+            if (result instanceof Promise) {
+              result.then(r => {
+                if (!this.tooltipProps?.isVisible || this.tooltipRenderer !== renderer) return;
+                const body = getTarget();
+                if (!body) return;
+                if (typeof r === 'string') {
+                  body.innerHTML = r;
+                } else {
+                  body.appendChild(r);
+                }
+              });
+            } else if (typeof result === 'string') {
+              el.innerHTML = result;
+            } else {
+              el.appendChild(result);
+            }
+          };
+
+          const tooltipBody = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-body');
+          const customContent = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-custom-content');
+          if (tooltipBody?.classList.contains('preserve-default-content') && !customContent) {
+            requestAnimationFrame(() => {
+              if (this.tooltipRenderer !== renderer) return;
+              const deferredTarget = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-custom-content');
+              if (deferredTarget) {
+                renderResult(deferredTarget);
+              }
+            });
+            return;
+          }
+
+          const el = getTarget();
           if (!el) {
             // .tooltip-body is not in the shadow DOM yet — FAST will insert it in the
             // next rAF.  The bridge MutationObserver handles populating it once ready.
             return;
           }
-
-          el.innerHTML = '';
-          if (result instanceof Promise) {
-            result.then(r => {
-              if (!this.tooltipProps?.isVisible) return;
-              const body = this.shadowRoot?.querySelector<HTMLElement>('.tooltip-body');
-              if (!body) return;
-              if (typeof r === 'string') {
-                body.innerHTML = r;
-              } else {
-                body.appendChild(r);
-              }
-            });
-          } else {
-            el.innerHTML = '';
-            if (typeof result === 'string') {
-              el.innerHTML = result;
-            } else {
-              el.appendChild(result);
-            }
-          }
+          renderResult(el);
         });
       }
     } else {

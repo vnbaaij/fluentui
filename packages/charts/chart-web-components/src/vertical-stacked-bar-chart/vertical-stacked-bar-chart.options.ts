@@ -23,7 +23,7 @@ export interface VerticalStackedBarChartLineDataPoint {
 
 /** @public */
 export interface VerticalStackedBarChartProps {
-  /** @public */ xAxisPoint: string | number;
+  /** @public */ xAxisPoint: string | number | Date;
   /** @public */ chartData: VerticalStackedBarChartDataPoint[];
   /** @public */ lineData?: VerticalStackedBarChartLineDataPoint[];
 }

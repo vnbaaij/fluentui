@@ -205,6 +205,12 @@ export abstract class CartesianChartBase extends ChartBase {
    */
   public customDateTimeFormatter?: (dateTime: Date) => string;
 
+  /**
+   * Optional custom formatter function for numeric y-axis tick labels.
+   * Cannot be set via HTML attribute — assign directly on the element.
+   */
+  public customYAxisTickFormatter?: (value: number) => string;
+
   // ── Lifecycle ────────────────────────────────────────────────────
 
   connectedCallback() {
