@@ -4,14 +4,15 @@ import { type Axis, axisBottom, axisLeft, axisRight } from 'd3-axis';
 import { format } from 'd3-format';
 import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear } from 'd3-scale';
 import { line as createLine } from 'd3-shape';
+import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  renderAxisGridLinesShared,
   renderBottomAxisShared,
-  renderHorizontalGridLinesShared,
   renderPrimaryYAxisShared,
   renderSecondaryYAxisShared,
   sortCategoryGroups,
@@ -27,6 +28,7 @@ import {
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
 import type {
+  VerticalStackedBarChartDataPoint,
   VerticalStackedBarChartLineDataPoint,
   VerticalStackedBarChartProps,
 } from './vertical-stacked-bar-chart.options.js';
@@ -35,7 +37,11 @@ const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
 
 type TooltipState = TooltipProps & { xValue: string };
-type LinePlotPoint = { xAxisPoint: string | number; xCenter: number; entry: VerticalStackedBarChartLineDataPoint };
+type LinePlotPoint = {
+  xAxisPoint: string | number;
+  xCenter: number;
+  entry: VerticalStackedBarChartLineDataPoint;
+};
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
 const defaultCategoricalBarWidth = 16;
@@ -49,6 +55,36 @@ const formatNumberValue = (value: number, specifier: string | undefined, culture
     }
   }
   return formatLocaleNumber(value, culture);
+};
+
+const formatDateValue = (chart: VerticalStackedBarChart, value: Date): string => {
+  if (chart.customDateTimeFormatter) {
+    return chart.customDateTimeFormatter(value);
+  }
+  if (chart.tickFormat) {
+    try {
+      return (chart.useUTC ? utcFormat(chart.tickFormat) : timeFormat(chart.tickFormat))(value);
+    } catch {
+      // Fall back to Intl below.
+    }
+  }
+  const options = chart.dateLocalizeOptions ?? { year: 'numeric', month: '2-digit', day: '2-digit' };
+  try {
+    return new Intl.DateTimeFormat(chart.culture, options).format(value);
+  } catch {
+    return new Intl.DateTimeFormat(undefined, options).format(value);
+  }
+};
+
+const formatXAxisCalloutValue = (
+  chart: VerticalStackedBarChart,
+  value: VerticalStackedBarChartDataPoint['xAxisCalloutData'],
+  fallback: string,
+): string => {
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return formatDateValue(chart, new Date((value as Date).getTime()));
+  }
+  return typeof value === 'string' && value ? value : fallback;
 };
 
 /** @public */
@@ -356,14 +392,17 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? preparedYAxis.tickValues,
     );
-    renderHorizontalGridLinesShared({
-      plotGroup,
+    renderAxisGridLinesShared({
+      layer: plotGroup,
+      orientation: 'horizontal',
       scale: yScale,
       axis: yAxis as unknown as Axis<number>,
-      innerWidth,
+      spanStart: 0,
+      spanEnd: innerWidth,
     });
 
     const cornerRadius = this.roundCorners ? 3 : 0;
+
     stacks.forEach((stack, stackIndex) => {
       const x = xScale(String(stack.xAxisPoint)) ?? 0;
       const step = xScale.step();
@@ -429,8 +468,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           this._currentTooltipDataPoint = { ...segment, xAxisPoint: stack.xAxisPoint };
           this._showBarSegmentTooltipAtY(event.clientY, x, offset, actualWidth, top, bottom, margins, svg, {
             legend: segment.legend,
-            xValue: String(stack.xAxisPoint),
-            yValue: formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
+            xValue: formatXAxisCalloutValue(this, segment.xAxisCalloutData, String(stack.xAxisPoint)),
+            yValue: segment.yAxisCalloutData || formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
             color,
           });
         });
@@ -440,8 +479,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           }
           this._showBarSegmentTooltipAtY(event.clientY, x, offset, actualWidth, top, bottom, margins, svg, {
             legend: segment.legend,
-            xValue: String(stack.xAxisPoint),
-            yValue: formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
+            xValue: formatXAxisCalloutValue(this, segment.xAxisCalloutData, String(stack.xAxisPoint)),
+            yValue: segment.yAxisCalloutData || formatNumberValue(segment.data, this.yAxisTickFormat, this.culture),
             color,
           });
         });
@@ -542,7 +581,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           {
             legend,
             xValue: String(nearest.xAxisPoint),
-            yValue: formatNumberValue(nearest.entry.y, this.yAxisTickFormat, this.culture),
+            yValue:
+              nearest.entry.yAxisCalloutData || formatNumberValue(nearest.entry.y, this.yAxisTickFormat, this.culture),
             color: lineColor,
           },
           lineCyMin,
@@ -600,7 +640,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           this._showLinePointTooltipAtY(event.clientY, cx, cy, margins, svg, {
             legend,
             xValue: String(point.xAxisPoint),
-            yValue: formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture),
+            yValue:
+              point.entry.yAxisCalloutData || formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture),
             color: lineColor,
           });
         });
@@ -611,7 +652,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
           this._showLinePointTooltipAtY(event.clientY, cx, cy, margins, svg, {
             legend,
             xValue: String(point.xAxisPoint),
-            yValue: formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture),
+            yValue:
+              point.entry.yAxisCalloutData || formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture),
             color: lineColor,
           });
         });

@@ -131,7 +131,7 @@ test.describe('AreaChart', () => {
 
   test('Should render horizontal grid lines for y-axis ticks', async ({ page }) => {
     const element = page.locator('fluent-area-chart');
-    const gridLines = element.locator('.y-axis-grid-line');
+    const gridLines = element.locator('.axis-grid-line');
 
     await expect(gridLines).toHaveCount(5);
 
@@ -144,7 +144,7 @@ test.describe('AreaChart', () => {
     expect(firstGridLineWidth).toBeGreaterThan(100);
 
     const gridRendersBehindAreas = await element.evaluate(node => {
-      const grid = node.shadowRoot?.querySelector('.y-axis-grid');
+      const grid = node.shadowRoot?.querySelector('.axis-grid');
       const firstArea = node.shadowRoot?.querySelector('.area-path');
       return Boolean(grid && firstArea && grid.compareDocumentPosition(firstArea) & Node.DOCUMENT_POSITION_FOLLOWING);
     });
@@ -308,6 +308,38 @@ test.describe('AreaChart', () => {
     await expect(customTooltip).toBeVisible();
     await expect(customTooltip).toContainText('Custom renderer');
     await expect(customTooltip).toContainText('Series A');
+  });
+
+  test('Should use culture-aware axis callout data in focused and grouped tooltips', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-area-chart culture='de-DE' width='600' height='300'></fluent-area-chart>
+    `);
+
+    const element = page.locator('fluent-area-chart');
+    await element.evaluate(node => {
+      (node as HTMLElement & { data: AreaChartSeries[] }).data = [
+        {
+          legend: 'Series A',
+          data: [{ x: 20, y: 7000, xAxisCalloutData: new Date(2026, 0, 1), yAxisCalloutData: '35%' }],
+        },
+      ];
+    });
+    const point = element.locator('.data-point-focus-target');
+    await expect(point).toHaveCount(1);
+    await point.focus();
+
+    await expect(element.locator('.tooltip-header')).toHaveText('01.01.2026');
+    await expect(element.locator('.tooltip-primary-value')).toHaveText('35%');
+
+    const pointBounds = await point.boundingBox();
+    expect(pointBounds).not.toBeNull();
+    await element.locator('rect[fill-opacity="0"]').dispatchEvent('mousemove', {
+      clientX: pointBounds!.x + pointBounds!.width / 2,
+      clientY: pointBounds!.y + pointBounds!.height / 2,
+    });
+
+    await expect(element.locator('.tooltip-header')).toHaveText('01.01.2026');
+    await expect(element.locator('.tooltip-primary-value')).toHaveText('35%');
   });
 
   test('Should keep multi-series hover tooltip rows aligned to visual stack order', async ({ page }) => {

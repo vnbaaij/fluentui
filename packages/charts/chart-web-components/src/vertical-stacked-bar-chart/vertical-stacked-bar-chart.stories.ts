@@ -20,35 +20,127 @@ import type { VerticalStackedBarChart } from './vertical-stacked-bar-chart.js';
 // ── Sample data ───────────────────────────────────────────────────────────────
 // Mirrors the React VerticalStackedBarDefault story's data, colors, and lineData.
 
+const basicCalloutDate = new Date(2026, 3, 30);
+
 const firstChartPoints: VerticalStackedBarChartDataPoint[] = [
-  { legend: 'Metadata1', data: 40, color: 'qualitative.11' },
-  { legend: 'Metadata2', data: 5, color: 'darkblue' },
-  { legend: 'Metadata3', data: 20, color: 'qualitative.6' },
-  { legend: 'Metadata4', data: 10, color: 'qualitative.4' },
-  { legend: 'Metadata5', data: 23, color: 'qualitative.5' },
-  { legend: 'Metadata6', data: 0.4, color: 'qualitative.6' },
-  { legend: 'Metadata7', data: 0.5, color: 'qualitative.7' },
-  { legend: 'Metadata8', data: 0.3, color: 'qualitative.8' },
-  { legend: 'Metadata9', data: 0.7, color: 'qualitative.9' },
-  { legend: 'Metadata10', data: 0.1, color: 'qualitative.10' },
+  {
+    legend: 'Metadata1',
+    data: 40,
+    color: 'qualitative.11',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '40%',
+  },
+  { legend: 'Metadata2', data: 5, color: 'darkblue', xAxisCalloutData: basicCalloutDate, yAxisCalloutData: '5%' },
+  {
+    legend: 'Metadata3',
+    data: 20,
+    color: 'qualitative.6',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '20%',
+  },
+  {
+    legend: 'Metadata4',
+    data: 10,
+    color: 'qualitative.4',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '10%',
+  },
+  {
+    legend: 'Metadata5',
+    data: 23,
+    color: 'qualitative.5',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '23%',
+  },
+  {
+    legend: 'Metadata6',
+    data: 0.4,
+    color: 'qualitative.6',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '0.4%',
+  },
+  {
+    legend: 'Metadata7',
+    data: 0.5,
+    color: 'qualitative.7',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '0.5%',
+  },
+  {
+    legend: 'Metadata8',
+    data: 0.3,
+    color: 'qualitative.8',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '0.3%',
+  },
+  {
+    legend: 'Metadata9',
+    data: 0.7,
+    color: 'qualitative.9',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '0.7%',
+  },
+  {
+    legend: 'Metadata10',
+    data: 0.1,
+    color: 'qualitative.10',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '0.1%',
+  },
 ];
 
 const secondChartPoints: VerticalStackedBarChartDataPoint[] = [
-  { legend: 'Metadata1', data: 30, color: 'qualitative.11' },
-  { legend: 'Metadata2', data: 20, color: 'darkblue' },
-  { legend: 'Metadata3', data: 40, color: 'qualitative.6' },
+  {
+    legend: 'Metadata1',
+    data: 30,
+    color: 'qualitative.11',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '33%',
+  },
+  { legend: 'Metadata2', data: 20, color: 'darkblue', xAxisCalloutData: basicCalloutDate, yAxisCalloutData: '22%' },
+  {
+    legend: 'Metadata3',
+    data: 40,
+    color: 'qualitative.6',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '45%',
+  },
 ];
 
 const thirdChartPoints: VerticalStackedBarChartDataPoint[] = [
-  { legend: 'Metadata1', data: 44, color: 'qualitative.11' },
-  { legend: 'Metadata2', data: 28, color: 'darkblue' },
-  { legend: 'Metadata3', data: 30, color: 'qualitative.6' },
+  {
+    legend: 'Metadata1',
+    data: 44,
+    color: 'qualitative.11',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '43%',
+  },
+  { legend: 'Metadata2', data: 28, color: 'darkblue', xAxisCalloutData: basicCalloutDate, yAxisCalloutData: '27%' },
+  {
+    legend: 'Metadata3',
+    data: 30,
+    color: 'qualitative.6',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '30%',
+  },
 ];
 
 const fourthChartPoints: VerticalStackedBarChartDataPoint[] = [
-  { legend: 'Metadata1', data: 88, color: 'qualitative.11' },
-  { legend: 'Metadata2', data: 22, color: 'darkblue' },
-  { legend: 'Metadata3', data: 30, color: 'qualitative.6' },
+  {
+    legend: 'Metadata1',
+    data: 88,
+    color: 'qualitative.11',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '63%',
+  },
+  { legend: 'Metadata2', data: 22, color: 'darkblue', xAxisCalloutData: basicCalloutDate, yAxisCalloutData: '16%' },
+  {
+    legend: 'Metadata3',
+    data: 30,
+    color: 'qualitative.6',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '21%',
+  },
 ];
 
 const basicData: VerticalStackedBarChartProps[] = [
@@ -491,13 +583,31 @@ TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '470px' } } };
 
 export const Culture: Story<VerticalStackedBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
   const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
   chart.data = basicData;
-  chart.chartTitle = 'Vertical stacked bar chart culture example (de-DE)';
+  chart.chartTitle = `Vertical stacked bar chart culture example (${currentCulture})`;
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
-  chart.setAttribute('culture', 'de-DE');
-  return chart;
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'vsbar-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.chartTitle = `Vertical stacked bar chart culture example (${currentCulture})`;
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
 };
 Culture.parameters = { docs: { story: { height: '470px' } } };
 

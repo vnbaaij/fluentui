@@ -12,15 +12,80 @@ import type { VerticalBarChart } from './vertical-bar-chart.js';
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 
+const basicCalloutDate = new Date(2026, 3, 30);
+
 const basicData: VerticalBarChartDataPoint[] = [
-  { x: 0, y: 10000, legend: 'Oranges', color: 'dodgerblue', lineData: { y: 7000 } },
-  { x: 10000, y: 50000, legend: 'Dogs', color: 'midnightblue', lineData: { y: 30000 } },
-  { x: 25000, y: 30000, legend: 'Apples', color: 'darkblue', lineData: { y: 3000 } },
-  { x: 40000, y: 13000, legend: 'Bananas', color: 'blue' },
-  { x: 52000, y: 43000, legend: 'Giraffes', color: 'darkslateblue', lineData: { y: 30000 } },
-  { x: 68000, y: 30000, legend: 'Cats', color: 'royalblue', lineData: { y: 5000 } },
-  { x: 80000, y: 20000, legend: 'Elephants', color: 'slateblue', lineData: { y: 16000 } },
-  { x: 92000, y: 45000, legend: 'Monkeys', color: 'steelblue', lineData: { y: 40000 } },
+  {
+    x: 0,
+    y: 10000,
+    legend: 'Oranges',
+    color: 'dodgerblue',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '4%',
+    lineData: { y: 7000, yAxisCalloutData: '3%' },
+  },
+  {
+    x: 10000,
+    y: 50000,
+    legend: 'Dogs',
+    color: 'midnightblue',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '21%',
+    lineData: { y: 30000, yAxisCalloutData: '12%' },
+  },
+  {
+    x: 25000,
+    y: 30000,
+    legend: 'Apples',
+    color: 'darkblue',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '12%',
+    lineData: { y: 3000, yAxisCalloutData: '1%' },
+  },
+  {
+    x: 40000,
+    y: 13000,
+    legend: 'Bananas',
+    color: 'blue',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '5%',
+  },
+  {
+    x: 52000,
+    y: 43000,
+    legend: 'Giraffes',
+    color: 'darkslateblue',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '18%',
+    lineData: { y: 30000, yAxisCalloutData: '12%' },
+  },
+  {
+    x: 68000,
+    y: 30000,
+    legend: 'Cats',
+    color: 'royalblue',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '12%',
+    lineData: { y: 5000, yAxisCalloutData: '2%' },
+  },
+  {
+    x: 80000,
+    y: 20000,
+    legend: 'Elephants',
+    color: 'slateblue',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '8%',
+    lineData: { y: 16000, yAxisCalloutData: '7%' },
+  },
+  {
+    x: 92000,
+    y: 45000,
+    legend: 'Monkeys',
+    color: 'steelblue',
+    xAxisCalloutData: basicCalloutDate,
+    yAxisCalloutData: '19%',
+    lineData: { y: 40000, yAxisCalloutData: '16%' },
+  },
 ];
 
 const attributesData: VerticalBarChartDataPoint[] = [
@@ -617,16 +682,34 @@ TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '470px' } } };
 
 export const Culture: Story<VerticalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
   const chart = document.createElement('fluent-vertical-bar-chart') as VerticalBarChart;
   chart.data = basicData;
-  chart.chartTitle = 'Vertical bar chart culture example (de-DE)';
+  chart.chartTitle = `Vertical bar chart culture example (${currentCulture})`;
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
   chart.setAttribute('line-legend-text', 'just line');
   chart.setAttribute('line-legend-color', 'brown');
   chart.setAttribute('line-border-width', '2');
-  chart.setAttribute('culture', 'de-DE');
-  return chart;
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'vbar-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.chartTitle = `Vertical bar chart culture example (${currentCulture})`;
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
 };
 Culture.parameters = { docs: { story: { height: '470px' } } };
 

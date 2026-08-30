@@ -359,36 +359,49 @@ export type PrimaryYAxisRenderOptions = {
   tickLabelMaxWidth?: number;
 };
 
-export type HorizontalGridLinesRenderOptions = {
-  plotGroup: SVGGElement;
-  scale: AxisScaleLike<number>;
-  axis: Axis<number>;
-  innerWidth: number;
-  className?: string;
+export type AxisGridLineOrientation = 'horizontal' | 'vertical';
+
+type AxisGridLinePositionSource<Domain extends AxisDomain> =
+  | { axis: Axis<Domain>; scale: AxisScaleLike<Domain>; positions?: never }
+  | { axis?: never; scale?: never; positions: readonly number[] };
+
+export type AxisGridLinesRenderOptions<Domain extends AxisDomain> = AxisGridLinePositionSource<Domain> & {
+  layer: SVGGElement;
+  orientation: AxisGridLineOrientation;
+  spanStart: number;
+  spanEnd: number;
 };
 
-export const renderHorizontalGridLinesShared = ({
-  plotGroup,
-  scale,
-  axis,
-  innerWidth,
-  className = 'y-axis-grid-line',
-}: HorizontalGridLinesRenderOptions): void => {
+/** Renders plot gridlines using one class and coordinate contract for either orientation. */
+export const renderAxisGridLinesShared = <Domain extends AxisDomain>(
+  options: AxisGridLinesRenderOptions<Domain>,
+): void => {
+  const { layer, orientation, spanStart, spanEnd } = options;
+  const positions =
+    options.positions ??
+    getAxisTickValues(options.axis, options.scale).map(value => getAxisPosition(options.scale, value));
   const gridGroup = createSvgElement<SVGGElement>('g');
-  gridGroup.classList.add('y-axis-grid');
+  gridGroup.classList.add('axis-grid');
+  gridGroup.dataset.orientation = orientation;
 
-  getAxisTickValues(axis, scale).forEach(value => {
-    const y = getAxisPosition(scale, value);
+  positions.forEach(position => {
     const line = createSvgElement<SVGLineElement>('line');
-    line.classList.add(className);
-    line.setAttribute('x1', '0');
-    line.setAttribute('x2', String(innerWidth));
-    line.setAttribute('y1', String(y));
-    line.setAttribute('y2', String(y));
+    line.classList.add('axis-grid-line');
+    if (orientation === 'horizontal') {
+      line.setAttribute('x1', String(spanStart));
+      line.setAttribute('x2', String(spanEnd));
+      line.setAttribute('y1', String(position));
+      line.setAttribute('y2', String(position));
+    } else {
+      line.setAttribute('x1', String(position));
+      line.setAttribute('x2', String(position));
+      line.setAttribute('y1', String(spanStart));
+      line.setAttribute('y2', String(spanEnd));
+    }
     gridGroup.appendChild(line);
   });
 
-  plotGroup.appendChild(gridGroup);
+  layer.appendChild(gridGroup);
 };
 
 const truncateTextToWidth = (text: SVGTextElement, sourceText: string, maxWidth: number): string => {
@@ -700,6 +713,8 @@ export const renderBandYAxisShared = <Domain extends AxisDomain>({
 
 export type ContinuousBottomAxisRenderOptions = {
   axisLayer: SVGGElement;
+  gridLayer: SVGGElement;
+  gridLineSpan: { start: number; end: number };
   width: number;
   height: number;
   margins: { left: number; right: number; bottom: number };
@@ -719,6 +734,8 @@ export type ContinuousBottomAxisRenderOptions = {
 
 export const renderContinuousBottomAxisShared = ({
   axisLayer,
+  gridLayer,
+  gridLineSpan,
   width,
   height,
   margins,
@@ -745,15 +762,24 @@ export const renderContinuousBottomAxisShared = ({
   const span = max - min || 1;
   const toX = (value: number) => rangeStart + ((value - min) / span) * (rangeEnd - rangeStart);
   const range: [number, number] = [min, max];
+  const tickPositions = ticks.map(toX);
 
-  ticks.forEach(tick => {
-    const x = toX(tick);
+  renderAxisGridLinesShared({
+    layer: gridLayer,
+    orientation: 'vertical',
+    positions: tickPositions,
+    spanStart: gridLineSpan.start,
+    spanEnd: gridLineSpan.end,
+  });
+
+  ticks.forEach((tick, index) => {
+    const x = tickPositions[index];
     const tickLine = createSvgElement<SVGLineElement>('line');
     tickLine.setAttribute('class', 'axis-tick-line');
     tickLine.setAttribute('x1', `${x}`);
     tickLine.setAttribute('x2', `${x}`);
     tickLine.setAttribute('y1', `${axisY}`);
-    tickLine.setAttribute('y2', `${20}`);
+    tickLine.setAttribute('y2', `${axisY + 6}`);
     axisLayer.appendChild(tickLine);
 
     const labelY = axisY + tickPadding + 12;

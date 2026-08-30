@@ -351,7 +351,7 @@ export default {
   title: 'Components/HorizontalBarChart',
 } as Meta<FluentHorizontalBarChart>;
 
-export const Basic: Story<FluentHorizontalBarChart> = renderComponent(storyTemplate).bind({});;
+export const Basic: Story<FluentHorizontalBarChart> = renderComponent(storyTemplate).bind({});
 Basic.parameters = { docs: { story: { height: '440px' } } };
 
 export const StandardAttributes: Story<FluentHorizontalBarChart> = () => {
@@ -486,7 +486,6 @@ export const singleDataPoint: Story<FluentHorizontalBarChart> = renderComponent(
   </div>
 `);
 
-
 singleDataPoint.parameters = { docs: { story: { height: '280px' } } };
 export const Benchmark: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
   <fluent-horizontal-bar-chart
@@ -497,7 +496,6 @@ export const Benchmark: Story<FluentHorizontalBarChart> = renderComponent(html<S
   >
   </fluent-horizontal-bar-chart>
 `);
-
 
 Benchmark.parameters = { docs: { story: { height: '280px' } } };
 export const singleBarNMVariant: Story<FluentHorizontalBarChart> = renderComponent(html<
@@ -514,7 +512,6 @@ export const singleBarNMVariant: Story<FluentHorizontalBarChart> = renderCompone
   </div>
 `);
 
-
 singleBarNMVariant.parameters = { docs: { story: { height: '280px' } } };
 export const singleBarHBC: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
   <div>
@@ -528,7 +525,6 @@ export const singleBarHBC: Story<FluentHorizontalBarChart> = renderComponent(htm
   </div>
 `);
 
-
 singleBarHBC.parameters = { docs: { story: { height: '280px' } } };
 export const HideLabels: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
   <fluent-horizontal-bar-chart
@@ -539,7 +535,6 @@ export const HideLabels: Story<FluentHorizontalBarChart> = renderComponent(html<
   >
   </fluent-horizontal-bar-chart>
 `);
-
 
 HideLabels.parameters = { docs: { story: { height: '440px' } } };
 export const RoundedCorners: Story<FluentHorizontalBarChart> = () => {
@@ -596,7 +591,6 @@ export const ChartDataModeFraction: Story<FluentHorizontalBarChart> = renderComp
   </fluent-horizontal-bar-chart>
 `);
 
-
 ChartDataModeFraction.parameters = { docs: { story: { height: '440px' } } };
 export const ChartDataModePercentage: Story<FluentHorizontalBarChart> = renderComponent(html<
   StoryArgs<FluentHorizontalBarChart>
@@ -611,7 +605,6 @@ export const ChartDataModePercentage: Story<FluentHorizontalBarChart> = renderCo
   </fluent-horizontal-bar-chart>
 `);
 
-
 ChartDataModePercentage.parameters = { docs: { story: { height: '440px' } } };
 export const HideRatio: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
   <fluent-horizontal-bar-chart
@@ -623,7 +616,6 @@ export const HideRatio: Story<FluentHorizontalBarChart> = renderComponent(html<S
   >
   </fluent-horizontal-bar-chart>
 `);
-
 
 HideRatio.parameters = { docs: { story: { height: '440px' } } };
 export const HideLegends: Story<FluentHorizontalBarChart> = () => {
@@ -701,7 +693,6 @@ export const LegendListLabel: Story<FluentHorizontalBarChart> = renderComponent(
   >
   </fluent-horizontal-bar-chart>
 `);
-
 
 LegendListLabel.parameters = { docs: { story: { height: '440px' } } };
 export const MultipleLegendSelection: Story<FluentHorizontalBarChart> = () => {
@@ -878,11 +869,13 @@ const hideRatioPerBarData: HorizontalBarChartProps[] = [
   },
 ];
 
-export const HideRatioPerBar: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+export const HideRatioPerBar: Story<FluentHorizontalBarChart> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChart>
+>`
   <fluent-horizontal-bar-chart
     style="width: 100%"
     chart-title="Horizontal bar chart hide ratio per bar example"
-    hide-ratio-per-bar='[true,false,false]'
+    hide-ratio-per-bar="[true,false,false]"
     data="${JSON.stringify(hideRatioPerBarData)}"
   >
   </fluent-horizontal-bar-chart>
@@ -903,9 +896,10 @@ const singlePointLegendData: HorizontalBarChartProps[] = [
   },
 ];
 
-
 HideRatioPerBar.parameters = { docs: { story: { height: '440px' } } };
-export const LegendForSinglePointBar: Story<FluentHorizontalBarChart> = renderComponent(html<StoryArgs<FluentHorizontalBarChart>>`
+export const LegendForSinglePointBar: Story<FluentHorizontalBarChart> = renderComponent(html<
+  StoryArgs<FluentHorizontalBarChart>
+>`
   <fluent-horizontal-bar-chart
     style="width: 100%"
     chart-title="Horizontal bar chart single point legend example"
@@ -922,7 +916,7 @@ export const Culture: Story<FluentHorizontalBarChart> = () => {
   controls.setAttribute('style', controlsRowStyle);
   container.appendChild(controls);
 
-  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
   let currentCulture: string = 'en-US';
 
   const chart = document.createElement('fluent-horizontal-bar-chart') as FluentHorizontalBarChart;

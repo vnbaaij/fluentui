@@ -128,13 +128,38 @@ TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '160px' } } };
 
 export const Culture: Story<SparklineChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
   const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
   chart.data = sampleData;
   chart.variant = 'line';
+  chart.chartTitle = `Sparkline chart culture example (${currentCulture})`;
   chart.setAttribute('width', '220');
   chart.setAttribute('height', '60');
-  chart.setAttribute('culture', 'de-DE');
-  return chart;
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField(
+    'Culture',
+    'sparkline-culture',
+    [...cultures],
+    currentCulture,
+    nextCulture => {
+      currentCulture = nextCulture;
+      chart.setAttribute('culture', currentCulture);
+      chart.chartTitle = `Sparkline chart culture example (${currentCulture})`;
+    },
+  );
+  controls.appendChild(cultureControl.element);
+
+  return container;
 };
 Culture.parameters = { docs: { story: { height: '160px' } } };
 

@@ -10,6 +10,7 @@ import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  renderAxisGridLinesShared,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   sortCategoryGroups,
@@ -180,6 +181,14 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
       this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? preparedYAxis.tickValues,
     );
+    renderAxisGridLinesShared({
+      layer: plotGroup,
+      orientation: 'horizontal',
+      scale: yScale,
+      axis: yAxis as unknown as Axis<number>,
+      spanStart: 0,
+      spanEnd: innerWidth,
+    });
 
     groups.forEach(group => {
       const groupX = xScale(group.xAxisPoint) ?? 0;

@@ -15,6 +15,7 @@ import {
   typographyCaption1Styles,
   typographySubtitle2StrongerStyles,
 } from '@fluentui/web-components';
+import { axisGridLineStyles } from '../utils/cartesian-grid.styles.js';
 import { tooltipBaseStyles } from '../utils/tooltip.styles.js';
 
 export const styles: ElementStyles = css`
@@ -148,12 +149,7 @@ export const styles: ElementStyles = css`
     opacity: 1;
   }
 
-  .y-axis-grid-line {
-    stroke: ${colorNeutralForeground1};
-    stroke-width: 1;
-    opacity: 0.2;
-    pointer-events: none;
-  }
+  ${axisGridLineStyles}
 
   .bar-label {
     fill: ${colorNeutralForeground2};

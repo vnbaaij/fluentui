@@ -259,10 +259,10 @@ test.describe('VerticalBarChart', () => {
 
   test('Should render horizontal grid lines for y-axis ticks', async ({ page }) => {
     const element = page.locator('fluent-vertical-bar-chart');
-    await expect(element.locator('.y-axis-grid-line')).toHaveCount(5);
+    await expect(element.locator('.axis-grid-line')).toHaveCount(5);
 
     const gridRendersBehindBars = await element.evaluate(node => {
-      const grid = node.shadowRoot?.querySelector('.y-axis-grid');
+      const grid = node.shadowRoot?.querySelector('.axis-grid');
       const firstBar = node.shadowRoot?.querySelector('.bar');
       return Boolean(grid && firstBar && grid.compareDocumentPosition(firstBar) & Node.DOCUMENT_POSITION_FOLLOWING);
     });
@@ -333,6 +333,65 @@ test.describe('VerticalBarChart', () => {
     await expect(tooltip).toHaveCSS('border-radius', '4px');
   });
 
+  test('Should use axis callout data to override tooltip values', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-bar-chart
+        data='${JSON.stringify([
+          {
+            x: 52000,
+            y: 43000,
+            legend: 'Giraffes',
+            xAxisCalloutData: '2020/04/30',
+            yAxisCalloutData: '43%',
+            lineData: { y: 30000, yAxisCalloutData: '30%' },
+          },
+        ])}'
+        line-legend-text='just line'
+        width='500'
+        height='300'
+      ></fluent-vertical-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-bar-chart');
+    await element.locator('.bar').dispatchEvent('mouseenter');
+
+    await expect(element.locator('.tooltip-header')).toHaveText('2020/04/30');
+    await expect(element.locator('.tooltip-primary-value')).toHaveText(['30%', '43%']);
+  });
+
+  test('Should format date callout data using the configured culture', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-bar-chart culture='de-DE' width='500' height='300'></fluent-vertical-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-bar-chart');
+    await element.evaluate(node => {
+      const frame = document.createElement('iframe');
+      document.body.appendChild(frame);
+      const FrameDate = (frame.contentWindow as unknown as { Date: DateConstructor }).Date;
+      const calloutDate = new FrameDate(2026, 3, 30);
+      (node as HTMLElement & { data: VerticalBarChartDataPoint[] }).data = [
+        { x: 52000, y: 43000, legend: 'Giraffes', xAxisCalloutData: calloutDate },
+      ];
+      frame.remove();
+    });
+    await expect(element.locator('.bar')).toHaveCount(1);
+    await element.locator('.bar').dispatchEvent('mouseenter');
+
+    await expect(element.locator('.tooltip-header')).toHaveText('30.04.2026');
+
+    const browserDefaultDate = await page.evaluate(() =>
+      new Intl.DateTimeFormat(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }).format(
+        new Date(2026, 3, 30),
+      ),
+    );
+    await element.evaluate(node => node.removeAttribute('culture'));
+    await expect(element.locator('.bar')).toHaveCount(1);
+    await element.locator('.bar').dispatchEvent('mouseenter');
+
+    await expect(element.locator('.tooltip-header')).toHaveText(browserDefaultDate);
+  });
+
   test('Should render a line border path when line-border-width is provided', async ({ page }) => {
     const dataWithLine = [
       { x: 0, y: 40, legend: 'A', lineData: { y: 20 } },
@@ -399,6 +458,88 @@ test.describe('VerticalBarChart', () => {
     const legendLabels = await element.locator('.legend-text').allTextContents();
     expect(legendLabels[0]).toBe('just line');
     await expect(element.locator('.legend-rect').first()).toHaveClass(/line/);
+  });
+
+  test('Should show the line callout tooltip when the line legend is selected', async ({ page }) => {
+    const dataWithLine = [
+      {
+        x: 0,
+        y: 40,
+        legend: 'A',
+        xAxisCalloutData: '2026/04/30',
+        yAxisCalloutData: '40%',
+        lineData: { y: 20, yAxisCalloutData: '20%' },
+      },
+      {
+        x: 10000,
+        y: 70,
+        legend: 'B',
+        xAxisCalloutData: '2026/05/01',
+        yAxisCalloutData: '70%',
+        lineData: { y: 55, yAxisCalloutData: '55%' },
+      },
+    ];
+
+    await page.setContent(/* html */ `
+      <fluent-vertical-bar-chart
+        data='${JSON.stringify(dataWithLine)}'
+        line-legend-text='just line'
+        width='500'
+        height='300'
+      ></fluent-vertical-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-bar-chart');
+    await element.locator('.line-marker-hit-area').first().dispatchEvent('mouseenter');
+
+    await expect(element.locator('.tooltip-primary-value')).toHaveText(['20%', '40%']);
+    await expect(element.locator('.tooltip-info')).toHaveCount(2);
+
+    await element.getByRole('option', { name: 'just line' }).click();
+    await expect(element.locator('.bar').first()).toHaveClass(/inactive/);
+    await element.locator('.line-marker-hit-area').first().dispatchEvent('click');
+
+    await expect(element.locator('.tooltip-header')).toHaveText('2026/04/30');
+    await expect(element.locator('.tooltip-info')).toHaveCount(1);
+    await expect(element.locator('.tooltip-primary-value')).toHaveText('20%');
+
+    const lineBounds = await element.locator('.line-hit-area').boundingBox();
+    expect(lineBounds).not.toBeNull();
+    await element.locator('.line-hit-area').dispatchEvent('mousemove', {
+      clientX: lineBounds!.x + lineBounds!.width,
+      clientY: lineBounds!.y + lineBounds!.height / 2,
+    });
+    await expect(element.locator('.tooltip-primary-value')).toHaveText('55%');
+  });
+
+  test('Should exclude the inactive line value from a selected bar tooltip', async ({ page }) => {
+    const dataWithLine = [
+      {
+        x: 0,
+        y: 40,
+        legend: 'Oranges',
+        xAxisCalloutData: '2026/04/30',
+        yAxisCalloutData: '40%',
+        lineData: { y: 20, yAxisCalloutData: '20%' },
+      },
+    ];
+
+    await page.setContent(/* html */ `
+      <fluent-vertical-bar-chart
+        data='${JSON.stringify(dataWithLine)}'
+        line-legend-text='just line'
+        width='500'
+        height='300'
+      ></fluent-vertical-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-bar-chart');
+    await element.getByRole('option', { name: 'Oranges' }).click();
+    await expect(element.locator('.line-path')).toHaveClass(/inactive/);
+    await element.locator('.bar').dispatchEvent('mouseenter');
+
+    await expect(element.locator('.tooltip-primary-value')).toHaveText('40%');
+    await expect(element.locator('.tooltip-info')).toHaveCount(1);
   });
 
   test('Should position numeric x values by scale instead of equal category spacing', async ({ page }) => {

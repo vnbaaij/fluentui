@@ -10,33 +10,33 @@ import {
   type StoryArgs,
 } from '../helpers.stories.js';
 import { definition } from './area-chart.definition.js';
-import type { AreaChartSeries } from './area-chart.options.js';
+import type { AreaChartDataPoint, AreaChartSeries } from './area-chart.options.js';
 import type { AreaChart } from './area-chart.js';
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 
-const chart1Points = [
-  { x: 20, y: 7000 },
-  { x: 25, y: 9000 },
-  { x: 30, y: 13000 },
-  { x: 35, y: 15000 },
-  { x: 40, y: 11000 },
-  { x: 45, y: 8760 },
-  { x: 50, y: 3500 },
-  { x: 55, y: 20000 },
-  { x: 60, y: 17000 },
-  { x: 65, y: 1000 },
-  { x: 70, y: 12000 },
-  { x: 75, y: 6876 },
-  { x: 80, y: 12000 },
-  { x: 85, y: 7000 },
-  { x: 90, y: 10000 },
+const chart1Points: AreaChartDataPoint[] = [
+  { x: 20, y: 7000, xAxisCalloutData: new Date(2026, 0, 1), yAxisCalloutData: '35%' },
+  { x: 25, y: 9000, xAxisCalloutData: new Date(2026, 0, 15), yAxisCalloutData: '45%' },
+  { x: 30, y: 13000, xAxisCalloutData: new Date(2026, 0, 28), yAxisCalloutData: '65%' },
+  { x: 35, y: 15000, xAxisCalloutData: new Date(2026, 1, 1), yAxisCalloutData: '75%' },
+  { x: 40, y: 11000, xAxisCalloutData: new Date(2026, 2, 1), yAxisCalloutData: '55%' },
+  { x: 45, y: 8760, xAxisCalloutData: new Date(2026, 2, 15), yAxisCalloutData: '43%' },
+  { x: 50, y: 3500, xAxisCalloutData: new Date(2026, 2, 28), yAxisCalloutData: '18%' },
+  { x: 55, y: 20000, xAxisCalloutData: new Date(2026, 3, 4), yAxisCalloutData: '100%' },
+  { x: 60, y: 17000, xAxisCalloutData: new Date(2026, 3, 15), yAxisCalloutData: '85%' },
+  { x: 65, y: 1000, xAxisCalloutData: new Date(2026, 4, 5), yAxisCalloutData: '5%' },
+  { x: 70, y: 12000, xAxisCalloutData: new Date(2026, 5, 1), yAxisCalloutData: '60%' },
+  { x: 75, y: 6876, xAxisCalloutData: new Date(2026, 0, 15), yAxisCalloutData: '34%' },
+  { x: 80, y: 12000, xAxisCalloutData: new Date(2026, 3, 30), yAxisCalloutData: '60%' },
+  { x: 85, y: 7000, xAxisCalloutData: new Date(2026, 4, 4), yAxisCalloutData: '35%' },
+  { x: 90, y: 10000, xAxisCalloutData: new Date(2026, 5, 1), yAxisCalloutData: '50%' },
 ];
 
 const basicData: AreaChartSeries[] = [
   { legend: 'legend1', data: chart1Points },
-  { legend: 'legend2', data: chart1Points.map(p => ({ x: p.x, y: p.y + 5000 })) },
-  { legend: 'legend3', data: chart1Points.map(p => ({ x: p.x, y: p.y + 7000 })) },
+  { legend: 'legend2', data: chart1Points.map(point => ({ ...point, y: point.y + 5000 })) },
+  { legend: 'legend3', data: chart1Points.map(point => ({ ...point, y: point.y + 7000 })) },
 ];
 
 const multipleData: AreaChartSeries[] = [
@@ -616,7 +616,7 @@ export const Culture: Story<AreaChart> = () => {
   controls.setAttribute('style', controlsRowStyle);
   container.appendChild(controls);
 
-  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
   let currentCulture: string = 'en-US';
 
   const chart = document.createElement('fluent-area-chart') as AreaChart;

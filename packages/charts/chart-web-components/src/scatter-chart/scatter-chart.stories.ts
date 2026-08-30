@@ -154,15 +154,39 @@ TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '470px' } } };
 
 export const Culture: Story<ScatterChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
   const chart = document.createElement('fluent-scatter-chart') as ScatterChart;
   chart.data = basicData;
-  chart.chartTitle = 'Scatter chart culture example (de-DE)';
+  chart.chartTitle = `Scatter chart culture example (${currentCulture})`;
   chart.setAttribute('width', '650');
   chart.setAttribute('height', '350');
-  chart.setAttribute('culture', 'de-DE');
+  chart.setAttribute('culture', currentCulture);
   chart.setAttribute('x-axis-title', 'Days since project start');
   chart.setAttribute('y-axis-title', 'Revenue in dollars');
-  return chart;
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField(
+    'Culture',
+    'scatter-culture',
+    [...cultures],
+    currentCulture,
+    nextCulture => {
+      currentCulture = nextCulture;
+      chart.setAttribute('culture', currentCulture);
+      chart.chartTitle = `Scatter chart culture example (${currentCulture})`;
+    },
+  );
+  controls.appendChild(cultureControl.element);
+
+  return container;
 };
 Culture.parameters = { docs: { story: { height: '470px' } } };
 

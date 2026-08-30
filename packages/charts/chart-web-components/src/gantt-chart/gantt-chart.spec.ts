@@ -48,6 +48,33 @@ test.describe('GanttChart - Basic', () => {
     await expect(bars).toHaveCount(basicData.length);
   });
 
+  test('Should render shared vertical grid lines behind bars with separate short ticks', async ({ page }) => {
+    const element = page.locator('fluent-gantt-chart');
+    const gridLines = element.locator('.axis-grid-line');
+    await expect(gridLines).not.toHaveCount(0);
+    await expect(element.locator('.axis-grid')).toHaveAttribute('data-orientation', 'vertical');
+
+    const result = await element.evaluate(node => {
+      const grid = node.shadowRoot!.querySelector<SVGGElement>('.axis-grid')!;
+      const line = grid.querySelector<SVGLineElement>('.axis-grid-line')!;
+      const bar = node.shadowRoot!.querySelector<SVGRectElement>('.bar')!;
+      const xAxisTick = [...node.shadowRoot!.querySelectorAll<SVGLineElement>('.axis-tick-line')].find(
+        tick => tick.getAttribute('x1') === tick.getAttribute('x2'),
+      )!;
+      return {
+        gridIsVertical: line.getAttribute('x1') === line.getAttribute('x2'),
+        gridSpansPlot: Number(line.getAttribute('y2')) > Number(line.getAttribute('y1')),
+        gridBeforeBar: Boolean(grid.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING),
+        tickLength: Math.abs(Number(xAxisTick.getAttribute('y2')) - Number(xAxisTick.getAttribute('y1'))),
+      };
+    });
+
+    expect(result.gridIsVertical).toBe(true);
+    expect(result.gridSpansPlot).toBe(true);
+    expect(result.gridBeforeBar).toBe(true);
+    expect(result.tickLength).toBe(6);
+  });
+
   test('Should render bars with correct fill colors', async ({ page }) => {
     const element = page.locator('fluent-gantt-chart');
     const bars = element.locator('.bar');

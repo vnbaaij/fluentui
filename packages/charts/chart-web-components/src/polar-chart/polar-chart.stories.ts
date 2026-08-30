@@ -145,13 +145,31 @@ TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '570px' } } };
 
 export const Culture: Story<PolarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
   const chart = document.createElement('fluent-polar-chart') as PolarChart;
   chart.data = basicData;
-  chart.chartTitle = 'Academic Performance (de-DE)';
+  chart.chartTitle = `Academic Performance (${currentCulture})`;
   chart.setAttribute('width', '500');
   chart.setAttribute('height', '450');
-  chart.setAttribute('culture', 'de-DE');
-  return chart;
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'polar-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.chartTitle = `Academic Performance (${currentCulture})`;
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
 };
 Culture.parameters = { docs: { story: { height: '570px' } } };
 

@@ -658,7 +658,7 @@ export const Culture: Story<FluentHeatMapChart> = () => {
   controls.setAttribute('style', controlsRowStyle);
   container.appendChild(controls);
 
-  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
   let currentCulture: string = 'en-US';
 
   const chart = document.createElement('fluent-heat-map-chart') as FluentHeatMapChart;

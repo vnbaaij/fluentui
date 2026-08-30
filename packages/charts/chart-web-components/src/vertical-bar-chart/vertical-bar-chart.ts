@@ -12,8 +12,8 @@ import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  renderAxisGridLinesShared,
   renderBottomAxisShared,
-  renderHorizontalGridLinesShared,
   renderPrimaryYAxisShared,
   renderSecondaryYAxisShared,
   sortCategoryGroups,
@@ -95,11 +95,23 @@ const formatDateValue = (chart: VerticalBarChart, value: Date): string => {
       // Fall back to Intl below.
     }
   }
+  const options = chart.dateLocalizeOptions ?? { year: 'numeric', month: '2-digit', day: '2-digit' };
   try {
-    return new Intl.DateTimeFormat(chart.culture, chart.dateLocalizeOptions).format(value);
+    return new Intl.DateTimeFormat(chart.culture, options).format(value);
   } catch {
-    return new Intl.DateTimeFormat(undefined, chart.dateLocalizeOptions).format(value);
+    return new Intl.DateTimeFormat(undefined, options).format(value);
   }
+};
+
+const formatXAxisCalloutValue = (
+  chart: VerticalBarChart,
+  value: VerticalBarChartDataPoint['xAxisCalloutData'],
+  fallback: string,
+): string => {
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return formatDateValue(chart, new Date((value as Date).getTime()));
+  }
+  return typeof value === 'string' && value ? value : fallback;
 };
 
 const getNormalizedXValue = (value: VerticalBarChartDataPoint['x']): number | Date | undefined => {
@@ -463,11 +475,13 @@ export class VerticalBarChart extends CartesianChartBase {
       this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? preparedYAxis.tickValues,
     );
-    renderHorizontalGridLinesShared({
-      plotGroup,
+    renderAxisGridLinesShared({
+      layer: plotGroup,
+      orientation: 'horizontal',
       scale: yScale,
       axis: yAxis as unknown as Axis<number>,
-      innerWidth,
+      spanStart: 0,
+      spanEnd: innerWidth,
     });
 
     const singleColor = this.useSingleColor
@@ -511,25 +525,27 @@ export class VerticalBarChart extends CartesianChartBase {
       this._currentTooltipDataPoint = point;
       const lineLegend = this.lineLegendText || 'Line';
       const lineColor = this.lineLegendColor ? getColorFromToken(this.lineLegendColor) : 'brown';
+      const barCalloutValue = point.yAxisCalloutData || formatAxisNumber(point.y, this.yAxisTickFormat, this.culture);
       const entries: TooltipEntry[] = [
         {
           legend: tooltipLegend,
           color,
-          value: formatAxisNumber(point.y, this.yAxisTickFormat, this.culture),
+          value: barCalloutValue,
         },
       ];
-      if (point.lineData && typeof point.lineData.y === 'number') {
+      if (point.lineData && typeof point.lineData.y === 'number' && this._shouldShowTooltip(lineLegend)) {
         entries.unshift({
           legend: lineLegend,
           color: lineColor,
-          value: formatAxisNumber(point.lineData.y, this.yAxisTickFormat, this.culture),
+          value:
+            point.lineData.yAxisCalloutData || formatAxisNumber(point.lineData.y, this.yAxisTickFormat, this.culture),
         });
       }
       this.tooltipProps = {
         isVisible: true,
         legend,
-        xValue: xValueLabel,
-        yValue: formatAxisNumber(point.y, this.yAxisTickFormat, this.culture),
+        xValue: formatXAxisCalloutValue(this, point.xAxisCalloutData, xValueLabel),
+        yValue: barCalloutValue,
         color,
         xPos: anchorX,
         yPos: anchorY,
@@ -637,6 +653,50 @@ export class VerticalBarChart extends CartesianChartBase {
         this.lineBorderWidth !== undefined ? Number.parseFloat(this.lineBorderWidth.toString()) : 0;
       const lineBorderColor = this.lineBorderColor || 'var(--colorNeutralBackground1, #fff)';
       const lineStrokeLinecap = this.lineStrokeLinecap || 'square';
+      const lineGenerator = createLine<VerticalBarChartDataPoint>()
+        .x(point => getXCenter(point))
+        .y(point => getLineScale(point)(point.lineData?.y ?? 0));
+      const linePathData = lineGenerator(linePoints) ?? '';
+
+      const showLineTooltip = (point: VerticalBarChartDataPoint, event?: MouseEvent): void => {
+        if (!this._shouldShowTooltip(lineLegend) || this.hideTooltip || !point.lineData) {
+          return;
+        }
+
+        const hostRect = this.getBoundingClientRect();
+        const svgRect = svg.getBoundingClientRect();
+        const anchorX = svgRect.left - hostRect.left + margins.left + getXCenter(point);
+        const pointY = svgRect.top - hostRect.top + margins.top + getLineScale(point)(point.lineData.y);
+        const anchorY = event ? Math.min(Math.max(event.clientY - hostRect.top, pointY - 10), pointY + 10) : pointY;
+        const isFreshShow = !this.tooltipProps.isVisible;
+        const xValueLabel = point.x instanceof Date ? formatDateValue(this, point.x) : String(point.x);
+        const lineValue =
+          point.lineData.yAxisCalloutData || formatAxisNumber(point.lineData.y, this.yAxisTickFormat, this.culture);
+        const entries: TooltipEntry[] = [{ legend: lineLegend, color: lineColor, value: lineValue }];
+        if (this._shouldShowTooltip(point.legend ?? String(point.x))) {
+          const barColor = barLegendMap.get(point.legend ?? String(point.x)) ?? getNextColor(0, 0);
+          entries.push({
+            legend: point.legend ?? '',
+            color: barColor,
+            value: point.yAxisCalloutData || formatAxisNumber(point.y, this.yAxisTickFormat, this.culture),
+          });
+        }
+
+        this._activeLineMarkerXValue = String(point.x);
+        this._syncLineMarkerVisibility();
+        this._currentTooltipDataPoint = { ...point.lineData, x: point.x };
+        this.tooltipProps = {
+          isVisible: true,
+          legend: lineLegend,
+          xValue: formatXAxisCalloutValue(this, point.xAxisCalloutData, xValueLabel),
+          yValue: lineValue,
+          color: lineColor,
+          xPos: anchorX,
+          yPos: anchorY,
+          entries,
+        };
+        this._positionTooltipAvoidingOverlap(anchorX, anchorY, anchorY, isFreshShow);
+      };
 
       if (lineBorderWidth > 0) {
         const lineBorderPath = createSvgElement<SVGPathElement>('path');
@@ -652,12 +712,7 @@ export class VerticalBarChart extends CartesianChartBase {
         if (this.lineStrokeDashoffset !== undefined) {
           lineBorderPath.setAttribute('stroke-dashoffset', String(this.lineStrokeDashoffset));
         }
-        lineBorderPath.setAttribute(
-          'd',
-          createLine<VerticalBarChartDataPoint>()
-            .x(point => getXCenter(point))
-            .y(point => getLineScale(point)(point.lineData?.y ?? 0))(linePoints) ?? '',
-        );
+        lineBorderPath.setAttribute('d', linePathData);
         plotGroup.appendChild(lineBorderPath);
       }
 
@@ -674,13 +729,28 @@ export class VerticalBarChart extends CartesianChartBase {
       if (this.lineStrokeDashoffset !== undefined) {
         linePath.setAttribute('stroke-dashoffset', String(this.lineStrokeDashoffset));
       }
-      linePath.setAttribute(
-        'd',
-        createLine<VerticalBarChartDataPoint>()
-          .x(point => getXCenter(point))
-          .y(point => getLineScale(point)(point.lineData?.y ?? 0))(linePoints) ?? '',
-      );
+      linePath.setAttribute('d', linePathData);
       plotGroup.appendChild(linePath);
+
+      const lineHitArea = createSvgElement<SVGPathElement>('path');
+      lineHitArea.classList.add('line-hit-area');
+      lineHitArea.dataset.legend = lineLegend;
+      lineHitArea.setAttribute('fill', 'none');
+      lineHitArea.setAttribute('stroke', 'transparent');
+      lineHitArea.setAttribute('stroke-width', '16');
+      lineHitArea.setAttribute('d', linePathData);
+      const showNearestLineTooltip = (event: MouseEvent): void => {
+        const svgRect = svg.getBoundingClientRect();
+        const localX = event.clientX - svgRect.left - margins.left;
+        const nearestPoint = linePoints.reduce((nearest, point) =>
+          Math.abs(getXCenter(point) - localX) < Math.abs(getXCenter(nearest) - localX) ? point : nearest,
+        );
+        showLineTooltip(nearestPoint, event);
+      };
+      lineHitArea.addEventListener('mouseenter', showNearestLineTooltip);
+      lineHitArea.addEventListener('mousemove', showNearestLineTooltip);
+      lineHitArea.addEventListener('mouseleave', () => this._clearTooltip());
+      plotGroup.appendChild(lineHitArea);
 
       linePoints.forEach((point, index) => {
         const marker = createSvgElement<SVGCircleElement>('circle');
@@ -698,6 +768,27 @@ export class VerticalBarChart extends CartesianChartBase {
         marker.addEventListener('click', () => point.lineData?.onClick?.());
         marker.id = `vbc-line-marker-${index}`;
         plotGroup.appendChild(marker);
+
+        const markerHitArea = createSvgElement<SVGCircleElement>('circle');
+        markerHitArea.classList.add('line-marker-hit-area');
+        markerHitArea.dataset.legend = lineLegend;
+        markerHitArea.setAttribute('cx', String(getXCenter(point)));
+        markerHitArea.setAttribute('cy', String(getLineScale(point)(point.lineData?.y ?? 0)));
+        markerHitArea.setAttribute('r', '10');
+        markerHitArea.setAttribute('fill', 'transparent');
+        markerHitArea.setAttribute('role', 'img');
+        markerHitArea.setAttribute(
+          'aria-label',
+          `${lineLegend}: ${point.lineData?.yAxisCalloutData || point.lineData?.y}`,
+        );
+        markerHitArea.addEventListener('mouseenter', event => showLineTooltip(point, event));
+        markerHitArea.addEventListener('mousemove', event => showLineTooltip(point, event));
+        markerHitArea.addEventListener('mouseleave', () => this._clearTooltip());
+        markerHitArea.addEventListener('click', event => {
+          showLineTooltip(point, event);
+          point.lineData?.onClick?.();
+        });
+        plotGroup.appendChild(markerHitArea);
       });
     }
 

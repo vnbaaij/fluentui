@@ -35,12 +35,71 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Should use axis callout data to override segment tooltip values', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-stacked-bar-chart
+        data='${JSON.stringify([
+          {
+            xAxisPoint: 0,
+            chartData: [
+              {
+                legend: 'Metadata1',
+                data: 40,
+                xAxisCalloutData: '2026/04/30',
+                yAxisCalloutData: '40%',
+              },
+            ],
+          },
+        ])}'
+        width='500'
+        height='300'
+      ></fluent-vertical-stacked-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.locator('.bar').dispatchEvent('mouseenter');
+
+    await expect(element.locator('.tooltip-header')).toHaveText('2026/04/30');
+    await expect(element.locator('.tooltip-primary-value')).toHaveText('40%');
+  });
+
+  test('Should format date callout data using the configured culture', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-stacked-bar-chart culture='de-DE' width='500' height='300'></fluent-vertical-stacked-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.evaluate(node => {
+      (node as HTMLElement & { data: VerticalStackedBarChartProps[] }).data = [
+        {
+          xAxisPoint: 0,
+          chartData: [
+            { legend: 'Metadata1', data: 40, xAxisCalloutData: new Date(2026, 3, 30), yAxisCalloutData: '40%' },
+          ],
+        },
+      ];
+    });
+    await expect(element.locator('.bar')).toHaveCount(1);
+    await element.locator('.bar').dispatchEvent('mouseenter');
+    await expect(element.locator('.tooltip-header')).toHaveText('30.04.2026');
+
+    const browserDefaultDate = await page.evaluate(() =>
+      new Intl.DateTimeFormat(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }).format(
+        new Date(2026, 3, 30),
+      ),
+    );
+    await element.evaluate(node => node.removeAttribute('culture'));
+    await expect(element.locator('.bar')).toHaveCount(1);
+    await element.locator('.bar').dispatchEvent('mouseenter');
+    await expect(element.locator('.tooltip-header')).toHaveText(browserDefaultDate);
+  });
+
   test('Should render horizontal grid lines behind data marks', async ({ page }) => {
     const element = page.locator('fluent-vertical-stacked-bar-chart');
-    await expect(element.locator('.y-axis-grid-line')).toHaveCount(5);
+    await expect(element.locator('.axis-grid-line')).toHaveCount(5);
 
     const gridRendersBehindBars = await element.evaluate(node => {
-      const grid = node.shadowRoot?.querySelector('.y-axis-grid');
+      const grid = node.shadowRoot?.querySelector('.axis-grid');
       const firstBar = node.shadowRoot?.querySelector('.bar');
       return Boolean(grid && firstBar && grid.compareDocumentPosition(firstBar) & Node.DOCUMENT_POSITION_FOLLOWING);
     });

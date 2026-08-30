@@ -67,7 +67,7 @@ export const Basic: Story<FluentFunnelChart> = () => {
   chart.setAttribute('height', '500');
   chart.setAttribute('orientation', 'horizontal');
   return chart;
-};;
+};
 Basic.parameters = { docs: { story: { height: '560px' } } };
 
 export const StandardAttributes: Story<FluentFunnelChart> = () => {
@@ -401,7 +401,7 @@ export const Culture: Story<FluentFunnelChart> = () => {
   controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
   container.appendChild(controls);
 
-  const cultures = ['en-US', 'de-DE', 'fr-FR', 'es-ES', 'ja-JP', 'ar-SA'] as const;
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
   let currentCulture: string = 'en-US';
 
   const chart = document.createElement('fluent-funnel-chart') as FluentFunnelChart;

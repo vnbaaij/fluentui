@@ -409,12 +409,23 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     const defs = createSvgElement<SVGDefsElement>('defs');
     svg.appendChild(defs);
 
-    const axisLayer = createSvgElement<SVGGElement>('g');
+    const gridLayer = createSvgElement<SVGGElement>('g');
     const barsLayer = createSvgElement<SVGGElement>('g');
-    svg.appendChild(axisLayer);
+    const axisLayer = createSvgElement<SVGGElement>('g');
+    svg.appendChild(gridLayer);
     svg.appendChild(barsLayer);
+    svg.appendChild(axisLayer);
 
-    this._renderXAxis(axisLayer, width, height, margins, xAxisScale.domain, xAxisScale.ticks);
+    this._renderXAxis(
+      axisLayer,
+      gridLayer,
+      width,
+      height,
+      margins,
+      plotLayout.margins,
+      xAxisScale.domain,
+      xAxisScale.ticks,
+    );
     this._renderYAxis(axisLayer, groups, numericYAxis, width, height, plotLayout.margins, yPositionForGroup, yValues);
     this._renderOriginLine(axisLayer, plotLayout.margins, height, xAxisScale.domain, innerWidth);
 
@@ -811,14 +822,18 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
 
   private _renderXAxis(
     axisLayer: SVGGElement,
+    gridLayer: SVGGElement,
     width: number,
     height: number,
     margins: { left: number; right: number; bottom: number },
+    plotMargins: { top: number; bottom: number },
     domain: [number, number],
     ticks: number[],
   ) {
     renderContinuousBottomAxisShared({
       axisLayer,
+      gridLayer,
+      gridLineSpan: { start: plotMargins.top, end: height - plotMargins.bottom },
       width,
       height,
       margins,

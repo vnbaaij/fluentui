@@ -12,6 +12,10 @@ export interface VerticalBarChartLineDataPoint {
 export interface VerticalBarChartDataPoint {
   /** @public */ x: string | number | Date;
   /** @public */ y: number;
+  /** Text or date that overrides the x value displayed in the tooltip. Dates are formatted using the chart culture. */
+  /** @public */ xAxisCalloutData?: string | Date;
+  /** Text that overrides the bar value displayed in the tooltip. */
+  /** @public */ yAxisCalloutData?: string;
   /** @public */ legend?: string;
   /** @public */ color?: string;
   /** @public */ gradient?: [string, string];

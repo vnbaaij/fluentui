@@ -12,8 +12,8 @@ import {
   type AxisScaleLike,
   computePreparedNumericYAxis,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  renderAxisGridLinesShared,
   renderBottomAxisShared,
-  renderHorizontalGridLinesShared,
   renderPrimaryYAxisShared,
   renderSecondaryYAxisShared,
   toAxisNumber as toNumber,
@@ -79,11 +79,23 @@ const formatDateValue = (chart: AreaChart, value: Date): string => {
       // Fall back to Intl below.
     }
   }
+  const options = chart.dateLocalizeOptions ?? { year: 'numeric', month: '2-digit', day: '2-digit' };
   try {
-    return new Intl.DateTimeFormat(chart.culture, chart.dateLocalizeOptions).format(value);
+    return new Intl.DateTimeFormat(chart.culture, options).format(value);
   } catch {
-    return new Intl.DateTimeFormat(undefined, chart.dateLocalizeOptions).format(value);
+    return new Intl.DateTimeFormat(undefined, options).format(value);
   }
+};
+
+const formatXAxisCalloutValue = (
+  chart: AreaChart,
+  value: AreaChartDataPoint['xAxisCalloutData'],
+  fallback: string,
+): string => {
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    return formatDateValue(chart, new Date((value as Date).getTime()));
+  }
+  return typeof value === 'string' && value ? value : fallback;
 };
 
 const getNormalizedXValue = (value: number | Date): XValue => {
@@ -232,11 +244,12 @@ export class AreaChart extends CartesianChartBase {
       const color = series.color ? getColorFromToken(series.color) : getNextColor(index, 0);
       const data = series.data.map(point => {
         const x = getNormalizedXValue(point.x);
+        const defaultXLabel =
+          x instanceof Date ? formatDateValue(this, x) : formatNumberValue(x, this.xAxisTickFormat, this.culture);
         return {
+          ...point,
           x,
-          y: point.y,
-          xLabel:
-            x instanceof Date ? formatDateValue(this, x) : formatNumberValue(x, this.xAxisTickFormat, this.culture),
+          xLabel: formatXAxisCalloutValue(this, point.xAxisCalloutData, defaultXLabel),
           cx: 0,
           cy: 0,
         };
@@ -479,11 +492,13 @@ export class AreaChart extends CartesianChartBase {
       this.yAxisTickValues ?? preparedPrimaryYAxis.tickValues,
     );
 
-    renderHorizontalGridLinesShared({
-      plotGroup,
+    renderAxisGridLinesShared({
+      layer: plotGroup,
+      orientation: 'horizontal',
       scale: yScale,
       axis: yAxis as unknown as Axis<number>,
-      innerWidth,
+      spanStart: 0,
+      spanEnd: innerWidth,
     });
 
     // Pre-compute a lookup map from x-value key → all series entries at that x.
@@ -497,6 +512,7 @@ export class AreaChart extends CartesianChartBase {
       y: number;
       stackedY1: number;
       isSecondaryY: boolean;
+      value: string;
       callOutAriaLabel?: string;
     };
     type CalloutPoint = { xLabel: string; cx: number; xAxisAriaLabel?: string; entries: (CalloutEntry | undefined)[] };
@@ -523,6 +539,7 @@ export class AreaChart extends CartesianChartBase {
           y: point.y,
           stackedY1,
           isSecondaryY: isSecondaryByIndex[si],
+          value: point.yAxisCalloutData || formatNumberValue(point.y, this.yAxisTickFormat, this.culture),
           callOutAriaLabel: point.callOutAccessibilityData?.ariaLabel,
         };
       });
@@ -631,7 +648,7 @@ export class AreaChart extends CartesianChartBase {
       const targetRect = element.getBoundingClientRect();
       const anchorX = targetRect.left - hostRect.left + targetRect.width / 2;
       const anchorY = targetRect.top - hostRect.top + targetRect.height / 2;
-      const value = formatNumberValue(point.y, this.yAxisTickFormat, this.culture);
+      const value = point.yAxisCalloutData || formatNumberValue(point.y, this.yAxisTickFormat, this.culture);
 
       element.setAttribute('fill', '#fff');
       element.setAttribute('stroke', series.color);
@@ -789,7 +806,7 @@ export class AreaChart extends CartesianChartBase {
           hoverEntries.push({
             legend: series.legend,
             color: series.color,
-            value: formatNumberValue(entry.y, this.yAxisTickFormat, this.culture),
+            value: entry.value,
             callOutAriaLabel: entry.callOutAriaLabel,
             cy,
           });

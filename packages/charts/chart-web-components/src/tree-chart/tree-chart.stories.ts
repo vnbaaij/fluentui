@@ -98,6 +98,14 @@ TooltipRendererStory.storyName = 'Tooltip Renderer';
 TooltipRendererStory.parameters = { docs: { story: { height: '420px' } } };
 
 export const Culture: Story<TreeChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
   const chart = document.createElement('fluent-tree-chart') as TreeChart;
   chart.data = {
     name: 'CEO',
@@ -108,11 +116,21 @@ export const Culture: Story<TreeChart> = () => {
       { name: 'COO', fill: '#107c10' },
     ],
   };
-  chart.chartTitle = 'Tree chart culture example (de-DE)';
-  chart.setAttribute('culture', 'de-DE');
+  chart.chartTitle = `Tree chart culture example (${currentCulture})`;
+  chart.setAttribute('culture', currentCulture);
   chart.setAttribute('width', '600');
   chart.setAttribute('height', '300');
-  return chart;
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'tree-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.chartTitle = `Tree chart culture example (${currentCulture})`;
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
 };
 Culture.parameters = { docs: { story: { height: '420px' } } };
 

@@ -35,6 +35,38 @@ test.describe('GroupedVerticalBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Should render horizontal grid lines behind grouped bars', async ({ page }) => {
+    const element = page.locator('fluent-grouped-vertical-bar-chart');
+    const gridLines = element.locator('.axis-grid-line');
+
+    await expect(gridLines).toHaveCount(5);
+    await expect(element.locator('.axis-grid')).toHaveAttribute('data-orientation', 'horizontal');
+
+    const gridGeometry = await gridLines.first().evaluate(line => ({
+      x1: line.getAttribute('x1'),
+      x2: Number(line.getAttribute('x2')),
+      y1: line.getAttribute('y1'),
+      y2: line.getAttribute('y2'),
+    }));
+    expect(gridGeometry.x1).toBe('0');
+    expect(gridGeometry.x2).toBeGreaterThan(0);
+    expect(gridGeometry.y1).toBe(gridGeometry.y2);
+
+    const gridRendersBehindBars = await element.evaluate(node => {
+      const grid = node.shadowRoot?.querySelector('.axis-grid');
+      const firstBar = node.shadowRoot?.querySelector('.bar');
+      return Boolean(grid && firstBar && grid.compareDocumentPosition(firstBar) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(gridRendersBehindBars).toBe(true);
+  });
+
+  test('Should use explicit y-axis tick values for grid lines', async ({ page }) => {
+    const element = page.locator('fluent-grouped-vertical-bar-chart');
+    await element.evaluate(node => node.setAttribute('y-axis-tick-values', '[0,30,60]'));
+
+    await expect(element.locator('.axis-grid-line')).toHaveCount(3);
+  });
+
   test('Should render legend items', async ({ page }) => {
     const element = page.locator('fluent-grouped-vertical-bar-chart');
     await expect(element.locator('.legend-text')).toHaveCount(2);
