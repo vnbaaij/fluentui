@@ -96,6 +96,28 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     await expect(element.locator('.y-axis-text').filter({ hasText: 'String One' })).toHaveCount(1);
   });
 
+  test('renders annotations with custom Cartesian margins', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & {
+        margins: { top: number; right: number; bottom: number; left: number };
+        annotations: Array<{ text: string; coordinates: { type: 'data'; x: number; y: string } }>;
+      };
+      chart.margins = { top: 30, right: 40, bottom: 50, left: 80 };
+      chart.annotations = [{ text: 'Bar target', coordinates: { type: 'data', x: 1000, y: 'String One' } }];
+    });
+
+    await expect(element.locator('.annotation-layer')).toHaveAttribute('transform', 'translate(80, 38)');
+    await expect(element.locator('.chart-annotation-text')).toHaveText('Bar target');
+  });
+
   test('renders shared vertical grid lines behind bars and keeps axis ticks short', async ({ page }) => {
     await page.setContent(/* html */ `
       <div style="width: 800px">

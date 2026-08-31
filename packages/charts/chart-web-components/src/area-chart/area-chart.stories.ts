@@ -1,15 +1,11 @@
-import { html } from '@microsoft/fast-element';
 import {
   controlsRowStyle,
   createDropdownField,
   createSliderField,
   createSwitchField,
   type Meta,
-  renderComponent,
   type Story,
-  type StoryArgs,
 } from '../helpers.stories.js';
-import { definition } from './area-chart.definition.js';
 import type { AreaChartDataPoint, AreaChartSeries } from './area-chart.options.js';
 import type { AreaChart } from './area-chart.js';
 
@@ -730,17 +726,19 @@ export const TitleAndLegendPositions: Story<AreaChart> = () => {
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '470px' } } };
 
-export const RTL: Story<AreaChart> = renderComponent(html<StoryArgs<AreaChart>>`
-  <div dir="rtl">
-    <fluent-area-chart
-      chart-title="Area chart RTL example"
-      data="${JSON.stringify(basicData)}"
-      width="700"
-      height="300"
-      x-axis-title="Number of days"
-      y-axis-title="Variation of stock market prices"
-    >
-    </fluent-area-chart>
-  </div>
-`);
+export const RTL: Story<AreaChart> = () => {
+  const container = document.createElement('div');
+  container.dir = 'rtl';
+
+  const chart = document.createElement('fluent-area-chart') as AreaChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Area chart RTL example';
+  chart.setAttribute('width', '700');
+  chart.setAttribute('height', '300');
+  chart.setAttribute('x-axis-title', 'Number of days');
+  chart.setAttribute('y-axis-title', 'Variation of stock market prices');
+  container.appendChild(chart);
+
+  return container;
+};
 RTL.parameters = { docs: { story: { height: '420px' } } };

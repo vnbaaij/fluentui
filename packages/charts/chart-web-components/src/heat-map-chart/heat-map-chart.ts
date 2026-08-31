@@ -3,6 +3,7 @@ import { type Axis, axisBottom, axisLeft } from 'd3-axis';
 import { type ScaleBand, scaleBand, scaleLinear } from 'd3-scale';
 import { format as d3Format } from 'd3-format';
 import { timeFormat as d3TimeFormat } from 'd3-time-format';
+import { resolveChartMargins } from '../utils/cartesian-axis-helpers.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
   type AxisScaleLike,
@@ -681,10 +682,13 @@ export class HeatMapChart extends CartesianChartBase {
 
     const isRTL = this._isRTL;
     const yLabelMargin = this._measureLongestYLabel(yLabels);
-    const marginLeft = isRTL ? MARGIN_RIGHT : yLabelMargin;
-    const marginRight = isRTL ? yLabelMargin : MARGIN_RIGHT;
-    const innerWidth = w - marginLeft - marginRight;
-    const innerHeight = h - MARGIN_TOP - MARGIN_BOTTOM;
+    const margins = resolveChartMargins(
+      { top: MARGIN_TOP, right: MARGIN_RIGHT, bottom: MARGIN_BOTTOM, left: yLabelMargin },
+      this.margins,
+      isRTL,
+    );
+    const innerWidth = w - margins.left - margins.right;
+    const innerHeight = h - margins.top - margins.bottom;
 
     // ── Scales ───────────────────────────────────────────────────────────────
 
@@ -701,18 +705,13 @@ export class HeatMapChart extends CartesianChartBase {
 
     // ── SVG structure ─────────────────────────────────────────────────────────
 
-    const svg = createSvgElement<SVGSVGElement>('svg');
-    svg.setAttribute('class', 'chart-svg');
-    svg.setAttribute('role', 'none');
-    svg.setAttribute('width', `${w}`);
-    svg.setAttribute('height', `${h}`);
-    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    const svg = this._createChartSvg(w, h, { role: 'none' });
 
     this._lastSvgWidth = w;
     this._lastSvgHeight = h;
 
     const g = createSvgElement<SVGGElement>('g');
-    g.setAttribute('transform', `translate(${marginLeft},${MARGIN_TOP})`);
+    g.setAttribute('transform', `translate(${margins.left},${margins.top})`);
     svg.appendChild(g);
 
     // ── Axes ──────────────────────────────────────────────────────────────────
@@ -723,13 +722,15 @@ export class HeatMapChart extends CartesianChartBase {
       scale: xScale as AxisScaleLike<string>,
       axis: xAxis as Axis<string>,
       formatter: value => value,
-      axisLeft: marginLeft,
-      axisTop: MARGIN_TOP,
+      axisLeft: margins.left,
+      axisTop: margins.top,
       innerWidth,
       innerHeight,
       tickPadding: 8,
       isRTL,
       showTickLines: false,
+      xAxisTitle: this.xAxisTitle,
+      titleClassName: 'axis-title',
     });
 
     const yAxis = axisLeft(yScale).tickPadding(0);
@@ -738,14 +739,16 @@ export class HeatMapChart extends CartesianChartBase {
       scale: yScale as AxisScaleLike<string>,
       axis: yAxis as Axis<string>,
       formatter: value => value,
-      axisX: marginLeft,
-      axisTop: MARGIN_TOP,
+      axisX: margins.left,
+      axisTop: margins.top,
       innerHeight,
       isRTL,
       tickPadding: 0,
       showTickLines: false,
       ltrLabelX: -6,
       rtlLabelX: innerWidth + 6,
+      yAxisTitle: this.yAxisTitle,
+      titleClassName: 'axis-title',
       tickLabelMaxWidth: toOptionalNumber(this.yAxisTickLabelMaxWidth),
     });
 
@@ -844,29 +847,20 @@ export class HeatMapChart extends CartesianChartBase {
       });
     });
 
-    // ── Axis titles ───────────────────────────────────────────────────────────
-
-    if (this.xAxisTitle) {
-      const xTitle = createSvgElement<SVGTextElement>('text');
-      xTitle.setAttribute('class', 'axis-title');
-      xTitle.setAttribute('x', `${innerWidth / 2}`);
-      xTitle.setAttribute('y', `${innerHeight + MARGIN_BOTTOM - 8}`);
-      xTitle.setAttribute('text-anchor', 'middle');
-      xTitle.textContent = this.xAxisTitle;
-      g.appendChild(xTitle);
-    }
-
-    if (this.yAxisTitle) {
-      const yTitle = createSvgElement<SVGTextElement>('text');
-      yTitle.setAttribute('class', 'axis-title');
-      yTitle.setAttribute(
-        'transform',
-        `translate(${isRTL ? innerWidth + 14 : -14}, ${innerHeight / 2}) rotate(${isRTL ? 90 : -90})`,
-      );
-      yTitle.setAttribute('text-anchor', 'middle');
-      yTitle.textContent = this.yAxisTitle;
-      g.appendChild(yTitle);
-    }
+    this._renderAnnotations({
+      svg,
+      margins,
+      innerWidth,
+      innerHeight,
+      mapDataX: value => {
+        const x = xScale(String(value));
+        return x === undefined ? undefined : x + xScale.bandwidth() / 2;
+      },
+      mapDataY: value => {
+        const y = yScale(String(value));
+        return y === undefined ? undefined : y + yScale.bandwidth() / 2;
+      },
+    });
 
     // ── Legends ───────────────────────────────────────────────────────────────
 

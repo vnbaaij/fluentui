@@ -1,5 +1,6 @@
 import {
   controlsRowStyle,
+  createDropdownField,
   createRadioGroupField,
   createSliderField,
   createSwitchField,
@@ -311,7 +312,7 @@ export const SharedFeatures: Story<GroupedVerticalBarChart> = () => {
 SharedFeatures.storyName = 'Shared Features';
 SharedFeatures.parameters = { docs: { story: { height: '540px' } } };
 
-export const Line: Story<GroupedVerticalBarChart> = () => {
+const lineStory: Story<GroupedVerticalBarChart> = () => {
   const container = document.createElement('div');
   const sliderControls = document.createElement('div');
   sliderControls.setAttribute('style', controlsRowStyle);
@@ -413,9 +414,8 @@ export const Line: Story<GroupedVerticalBarChart> = () => {
   container.appendChild(chart);
   return container;
 };
-Line.parameters = { docs: { story: { height: '660px' } } };
 
-export const SecondaryYAxis: Story<GroupedVerticalBarChart> = () => {
+const secondaryYAxisStory: Story<GroupedVerticalBarChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');
   controls.setAttribute('style', controlsRowStyle);
@@ -474,8 +474,6 @@ export const SecondaryYAxis: Story<GroupedVerticalBarChart> = () => {
   container.appendChild(chart);
   return container;
 };
-SecondaryYAxis.storyName = 'Secondary Y Axis';
-SecondaryYAxis.parameters = { docs: { story: { height: '480px' } } };
 
 export const NegativeValues: Story<GroupedVerticalBarChart> = () => {
   const chart = document.createElement('fluent-grouped-vertical-bar-chart') as GroupedVerticalBarChart;
@@ -487,3 +485,166 @@ export const NegativeValues: Story<GroupedVerticalBarChart> = () => {
   return chart;
 };
 NegativeValues.parameters = { docs: { story: { height: '520px' } } };
+
+export const SecondaryYAxis = secondaryYAxisStory;
+SecondaryYAxis.storyName = 'Secondary Y Axis';
+SecondaryYAxis.parameters = { docs: { story: { height: '480px' } } };
+
+export const Line = lineStory;
+Line.parameters = { docs: { story: { height: '660px' } } };
+
+export const TooltipRendererStory: Story<GroupedVerticalBarChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a bar - the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-grouped-vertical-bar-chart') as GroupedVerticalBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Grouped vertical bar chart custom tooltipRenderer';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.tooltipRenderer = (_point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = defaultRender(_point);
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '470px' } } };
+
+export const Culture: Story<GroupedVerticalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
+  let currentCulture: string = 'en-US';
+
+  const chart = document.createElement('fluent-grouped-vertical-bar-chart') as GroupedVerticalBarChart;
+  chart.data = basicData;
+  chart.chartTitle = `Grouped vertical bar chart culture example (${currentCulture})`;
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('culture', currentCulture);
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  const cultureControl = createDropdownField('Culture', 'gvbar-culture', [...cultures], currentCulture, nextCulture => {
+    currentCulture = nextCulture;
+    chart.setAttribute('culture', currentCulture);
+    chart.chartTitle = `Grouped vertical bar chart culture example (${currentCulture})`;
+  });
+  controls.appendChild(cultureControl.element);
+
+  return container;
+};
+Culture.parameters = { docs: { story: { height: '470px' } } };
+
+export const TitleAlign: Story<GroupedVerticalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const aligns = ['start', 'center', 'end'] as const;
+  let currentAlign: (typeof aligns)[number] = 'start';
+
+  const chart = document.createElement('fluent-grouped-vertical-bar-chart') as GroupedVerticalBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Grouped vertical bar chart title align example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  controls.appendChild(
+    createDropdownField('Title align', 'gvbar-title-align', [...aligns], currentAlign, nextAlign => {
+      currentAlign = nextAlign as (typeof aligns)[number];
+      if (currentAlign === 'start') {
+        chart.removeAttribute('title-align');
+      } else {
+        chart.setAttribute('title-align', currentAlign);
+      }
+    }).element,
+  );
+
+  return container;
+};
+TitleAlign.parameters = { docs: { story: { height: '470px' } } };
+
+export const TitleAndLegendPositions: Story<GroupedVerticalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const legendPositions = ['bottom', 'top', 'start', 'end'] as const;
+  const titlePositions = ['top', 'bottom'] as const;
+  let currentLegendPosition: (typeof legendPositions)[number] = 'bottom';
+  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
+
+  const chart = document.createElement('fluent-grouped-vertical-bar-chart') as GroupedVerticalBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Grouped vertical bar chart title and legend positions example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('style', 'margin-top:20px;');
+  container.appendChild(chart);
+
+  controls.appendChild(
+    createDropdownField(
+      'Title position',
+      'gvbar-title-position',
+      [...titlePositions],
+      currentTitlePosition,
+      nextTitlePosition => {
+        currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
+        if (currentTitlePosition === 'top') {
+          chart.removeAttribute('title-position');
+        } else {
+          chart.setAttribute('title-position', currentTitlePosition);
+        }
+      },
+    ).element,
+  );
+  controls.appendChild(
+    createDropdownField(
+      'Legend position',
+      'gvbar-legend-position',
+      [...legendPositions],
+      currentLegendPosition,
+      nextLegendPosition => {
+        currentLegendPosition = nextLegendPosition as (typeof legendPositions)[number];
+        if (currentLegendPosition === 'bottom') {
+          chart.removeAttribute('legend-position');
+        } else {
+          chart.setAttribute('legend-position', currentLegendPosition);
+        }
+      },
+    ).element,
+  );
+
+  return container;
+};
+TitleAndLegendPositions.parameters = { docs: { story: { height: '470px' } } };
+
+export const RTL: Story<GroupedVerticalBarChart> = () => {
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute('dir', 'rtl');
+  const chart = document.createElement('fluent-grouped-vertical-bar-chart') as GroupedVerticalBarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Grouped vertical bar chart RTL example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  wrapper.appendChild(chart);
+  return wrapper;
+};
+RTL.parameters = { docs: { story: { height: '470px' } } };

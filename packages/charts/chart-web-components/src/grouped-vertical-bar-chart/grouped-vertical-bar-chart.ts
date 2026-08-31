@@ -6,11 +6,10 @@ import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear, type ScaleLog
 import { line as createLine } from 'd3-shape';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { appendVerticalGradient, resolveBarWidth, resolveChartColor } from '../utils/bar-chart-helpers.js';
-import { resolveChartMargins } from '../utils/cartesian-axis-helpers.js';
-import { renderChartAnnotations } from '../utils/chart-annotation-helpers.js';
 import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
+  createPreparedNumericContinuousScale,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderAxisGridLinesShared,
   renderBottomAxisShared,
@@ -180,9 +179,12 @@ export class GroupedVerticalBarChart extends VerticalBarChartBase {
       group =>
         group.series.some(point => point.useSecondaryYScale) || group.lineData?.some(entry => entry.useSecondaryYScale),
     );
-    const margins = resolveChartMargins(defaultMargins, this.margins, this._isRTL, hasSecondaryY);
-    const innerWidth = Math.max(width - margins.left - margins.right, 1);
-    const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
+    const { svg, plotGroup, margins, innerWidth, innerHeight } = this._createCartesianRenderContext({
+      width,
+      height,
+      defaultMargins,
+      hasSecondaryYAxis: hasSecondaryY,
+    });
 
     const groupedByCategory = new Map<string, number[]>();
     groups.forEach(group => {
@@ -220,7 +222,7 @@ export class GroupedVerticalBarChart extends VerticalBarChartBase {
     }
     const xScale = scaleBand<string>()
       .domain(groupDomain)
-      .range([xRangeStart, xRangeEnd])
+      .range(this._isRTL ? [xRangeEnd, xRangeStart] : [xRangeStart, xRangeEnd])
       .paddingInner(xAxisInnerPadding)
       .paddingOuter(xAxisOuterPadding);
     const availableBarWidth = xScale.bandwidth() / groupWidthInBarUnits;
@@ -229,7 +231,7 @@ export class GroupedVerticalBarChart extends VerticalBarChartBase {
     const effectiveGroupWidth = actualBarWidth * groupWidthInBarUnits;
     const innerScale = scaleBand<string>()
       .domain(keyDomain)
-      .range([0, effectiveGroupWidth])
+      .range(this._isRTL ? [effectiveGroupWidth, 0] : [0, effectiveGroupWidth])
       .paddingInner(groupInnerPadding);
     const primaryLineValues = groups
       .flatMap(group => group.lineData ?? [])
@@ -265,26 +267,16 @@ export class GroupedVerticalBarChart extends VerticalBarChartBase {
         .filter(entry => entry.useSecondaryYScale && Number.isFinite(entry.y))
         .map(entry => entry.y),
     ];
-    const useLogSecondary =
-      hasSecondaryY && this.secondaryYScaleType === 'log' && secondaryValues.every(value => value > 0);
-    const secondaryMin = useLogSecondary
-      ? Math.min(...secondaryValues)
-      : secondaryValues.length > 0
-      ? Math.min(0, ...secondaryValues)
-      : 0;
-    let secondaryMax = secondaryValues.length > 0 ? Math.max(...secondaryValues) : 1;
-    if (secondaryMin === secondaryMax) secondaryMax += 1;
-    const preparedSecondaryYAxis = computePreparedNumericYAxis({
-      minValue: secondaryMin,
-      maxValue: secondaryMax,
+    const secondaryYAxis = createPreparedNumericContinuousScale({
+      values: secondaryValues,
+      range: [innerHeight, 0],
+      scaleType: hasSecondaryY ? this.secondaryYScaleType : 'default',
       tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
       roundedTicks: this.roundedTicks,
     });
-    const yScaleSecondary: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = useLogSecondary
-      ? scaleLog().domain([secondaryMin, secondaryMax]).range([innerHeight, 0])
-      : scaleLinear()
-          .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
-          .range([innerHeight, 0]);
+    const preparedSecondaryYAxis = secondaryYAxis.preparedAxis;
+    const yScaleSecondary = secondaryYAxis.scale;
+    const useLogSecondary = secondaryYAxis.isLogarithmic;
 
     const firstPoint = groups.flatMap(group => group.series)[0];
     const singleColor = this.useSingleColor ? resolveChartColor(firstPoint?.color, this.colors, 0) : undefined;
@@ -302,18 +294,8 @@ export class GroupedVerticalBarChart extends VerticalBarChartBase {
       lineColorMap.set(legend, resolveChartColor(match?.color, this.colors, index, 10));
     });
 
-    const svg = createSvgElement<SVGSVGElement>('svg');
-    svg.classList.add('chart-svg');
-    svg.setAttribute('width', String(width));
-    svg.setAttribute('height', String(height));
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-
     const defs = createSvgElement<SVGDefsElement>('defs');
     svg.appendChild(defs);
-
-    const plotGroup = createSvgElement<SVGGElement>('g');
-    plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
-    svg.appendChild(plotGroup);
 
     const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
@@ -622,14 +604,10 @@ export class GroupedVerticalBarChart extends VerticalBarChartBase {
       });
     }
 
-    const annotationLayer = createSvgElement<SVGGElement>('g');
-    annotationLayer.classList.add('annotation-layer');
-    annotationLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
-    svg.appendChild(annotationLayer);
-    renderChartAnnotations({
-      layer: annotationLayer,
+    this._renderAnnotations({
+      svg,
       collisionLayer: plotGroup,
-      annotations: this.annotations,
+      margins,
       innerWidth,
       innerHeight,
       mapDataX: value => {

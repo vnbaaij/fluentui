@@ -99,6 +99,53 @@ test.describe('AreaChart', () => {
     await expect(element.locator('.area-path')).toHaveCount(2);
   });
 
+  test('Should render annotations with custom Cartesian margins', async ({ page }) => {
+    const element = page.locator('fluent-area-chart');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & {
+        margins: { top: number; right: number; bottom: number; left: number };
+        annotations: Array<{ text: string; coordinates: { type: 'data'; x: number; y: number } }>;
+      };
+      chart.margins = { top: 30, right: 40, bottom: 50, left: 80 };
+      chart.annotations = [{ text: 'Area target', coordinates: { type: 'data', x: 1, y: 20 } }];
+    });
+
+    await expect(element.locator('.annotation-layer')).toHaveAttribute('transform', 'translate(80, 30)');
+    await expect(element.locator('.chart-annotation-text')).toHaveText('Area target');
+  });
+
+  test('Should honor a logarithmic numeric x scale', async ({ page }) => {
+    const element = page.locator('fluent-area-chart');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & {
+        data: AreaChartSeries[];
+        xScaleType: 'log';
+        annotations: Array<{ text: string; coordinates: { type: 'data'; x: number; y: number } }>;
+      };
+      chart.data = [
+        {
+          legend: 'Log series',
+          data: [
+            { x: 1, y: 10 },
+            { x: 10, y: 20 },
+            { x: 100, y: 15 },
+          ],
+        },
+      ];
+      chart.xScaleType = 'log';
+      chart.annotations = [1, 10, 100].map(x => ({
+        text: String(x),
+        coordinates: { type: 'data', x, y: 20 },
+      }));
+    });
+
+    await expect(element.locator('.chart-annotation-text')).toHaveCount(3);
+    const xPositions = await element
+      .locator('.chart-annotation-text')
+      .evaluateAll(annotations => annotations.map(annotation => Number(annotation.getAttribute('x'))));
+    expect(xPositions[1]).toBeCloseTo((xPositions[0] + xPositions[2]) / 2, 5);
+  });
+
   test('Should render area lines', async ({ page }) => {
     const element = page.locator('fluent-area-chart');
     await expect(element.locator('.area-line')).toHaveCount(2);
@@ -257,6 +304,70 @@ test.describe('AreaChart', () => {
     await expect(element.locator('.y-axis .axis-tick-line').first()).toHaveAttribute('x2', '6');
   });
 
+  test('Should reverse the x-axis and data geometry in RTL', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div dir="rtl">
+        <fluent-area-chart width="600" height="300"></fluent-area-chart>
+      </div>
+    `);
+    const element = page.locator('fluent-area-chart');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & {
+        data: AreaChartSeries[];
+        tickValues: number[];
+      };
+      chart.data = [
+        {
+          legend: 'RTL series',
+          data: [
+            { x: 20, y: 10 },
+            { x: 90, y: 20 },
+          ],
+        },
+      ];
+      chart.tickValues = [20, 90];
+    });
+
+    const points = element.locator('.data-point-focus-target');
+    await expect(points).toHaveCount(2);
+    const minimumPoint = await points.first().evaluate(point => ({
+      x: Number(point.getAttribute('cx')),
+      y: Number(point.getAttribute('cy')),
+    }));
+    const maximumPointX = await points.last().evaluate(point => Number(point.getAttribute('cx')));
+    expect(minimumPoint.x).toBeGreaterThan(maximumPointX);
+
+    const minimumTick = element.locator('.x-axis .tick', { hasText: '20' });
+    const maximumTick = element.locator('.x-axis .tick', { hasText: '90' });
+    await expect(minimumTick.locator('.axis-text')).toBeVisible();
+    await expect(maximumTick.locator('.axis-text')).toBeVisible();
+    const minimumTickX = await minimumTick.evaluate(tick => (tick as SVGGElement).getCTM()?.e ?? 0);
+    const maximumTickX = await maximumTick.evaluate(tick => (tick as SVGGElement).getCTM()?.e ?? 0);
+    expect(minimumTickX).toBeGreaterThan(maximumTickX);
+
+    const overlayBounds = await element.locator('rect[fill-opacity="0"]').boundingBox();
+    expect(overlayBounds).not.toBeNull();
+    await element.locator('rect[fill-opacity="0"]').dispatchEvent('mousemove', {
+      clientX: overlayBounds!.x + minimumPoint.x,
+      clientY: overlayBounds!.y + minimumPoint.y,
+    });
+    await expect(element.locator('.tooltip-header')).toHaveText('20');
+  });
+
+  test('Should format RTL story tooltip dates like the Basic story', async ({ page }) => {
+    await page.goto(fixtureURL('components-areachart--basic'));
+    const basicChart = page.locator('fluent-area-chart');
+    await expect(basicChart.locator('.data-point-focus-target')).toHaveCount(45);
+    await basicChart.locator('.data-point-focus-target').first().focus();
+    const basicTooltipDate = await basicChart.locator('.tooltip-header').textContent();
+
+    await page.goto(fixtureURL('components-areachart--rtl'));
+    const rtlChart = page.locator('fluent-area-chart');
+    await expect(rtlChart.locator('.data-point-focus-target')).toHaveCount(45);
+    await rtlChart.locator('.data-point-focus-target').first().focus();
+    await expect(rtlChart.locator('.tooltip-header')).toHaveText(basicTooltipDate ?? '');
+  });
+
   test('Should render secondary y-axis on left in RTL', async ({ page }) => {
     await page.setContent(/* html */ `
       <div dir="rtl">
@@ -371,6 +482,93 @@ test.describe('AreaChart', () => {
     const tooltipLegendRows = element.locator('.tooltip .tooltip-legend-text');
     await expect(tooltipLegendRows.first()).toHaveText('Series B');
     await expect(tooltipLegendRows.nth(1)).toHaveText('Series A');
+  });
+
+  test('Should position the hover tooltip beside the marker line with a 15px gap', async ({ page }) => {
+    const element = page.locator('fluent-area-chart');
+    const overlay = element.locator('rect[fill-opacity="0"]');
+    const points = element.locator('.data-point-focus-target');
+    const tooltip = element.locator('.tooltip');
+    const markerLine = element.locator('.hover-line');
+
+    const firstPoint = await points.first().boundingBox();
+    expect(firstPoint).not.toBeNull();
+    await overlay.dispatchEvent('mousemove', {
+      clientX: firstPoint!.x + firstPoint!.width / 2,
+      clientY: firstPoint!.y + firstPoint!.height / 2,
+    });
+    await expect(tooltip).toBeVisible();
+    await expect
+      .poll(async () => {
+        const tooltipBounds = await tooltip.boundingBox();
+        const lineBounds = await markerLine.boundingBox();
+        return tooltipBounds && lineBounds ? tooltipBounds.x - (lineBounds.x + lineBounds.width) : 0;
+      })
+      .toBeGreaterThanOrEqual(14);
+
+    const lastPoint = await points.last().boundingBox();
+    expect(lastPoint).not.toBeNull();
+    await overlay.dispatchEvent('mousemove', {
+      clientX: lastPoint!.x + lastPoint!.width / 2,
+      clientY: lastPoint!.y + lastPoint!.height / 2,
+    });
+    await expect
+      .poll(async () => {
+        const tooltipBounds = await tooltip.boundingBox();
+        const lineBounds = await markerLine.boundingBox();
+        return tooltipBounds && lineBounds ? lineBounds.x - (tooltipBounds.x + tooltipBounds.width) : 0;
+      })
+      .toBeGreaterThanOrEqual(14);
+  });
+
+  test('Should reverse hover tooltip side preference in RTL', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div dir="rtl">
+        <fluent-area-chart data='${JSON.stringify(data)}' width='600' height='300'></fluent-area-chart>
+      </div>
+    `);
+    const element = page.locator('fluent-area-chart');
+    const overlay = element.locator('rect[fill-opacity="0"]');
+    const points = element.locator('.data-point-focus-target');
+    const tooltip = element.locator('.tooltip');
+    const markerLine = element.locator('.hover-line');
+
+    await expect(points).toHaveCount(6);
+    const pointCoordinates = await points.evaluateAll(targets =>
+      targets.map(target => ({
+        x: Number(target.getAttribute('cx')),
+        y: Number(target.getAttribute('cy')),
+      })),
+    );
+    const rightPoint = pointCoordinates.reduce((rightmost, point) => (point.x > rightmost.x ? point : rightmost));
+    const leftPoint = pointCoordinates.reduce((leftmost, point) => (point.x < leftmost.x ? point : leftmost));
+    const overlayBounds = await overlay.boundingBox();
+    expect(overlayBounds).not.toBeNull();
+
+    await overlay.dispatchEvent('mousemove', {
+      clientX: overlayBounds!.x + rightPoint.x,
+      clientY: overlayBounds!.y + rightPoint.y,
+    });
+    await expect(tooltip).toBeVisible();
+    await expect
+      .poll(async () => {
+        const tooltipBounds = await tooltip.boundingBox();
+        const lineBounds = await markerLine.boundingBox();
+        return tooltipBounds && lineBounds ? lineBounds.x - (tooltipBounds.x + tooltipBounds.width) : 0;
+      })
+      .toBeGreaterThanOrEqual(14);
+
+    await overlay.dispatchEvent('mousemove', {
+      clientX: overlayBounds!.x + leftPoint.x,
+      clientY: overlayBounds!.y + leftPoint.y,
+    });
+    await expect
+      .poll(async () => {
+        const tooltipBounds = await tooltip.boundingBox();
+        const lineBounds = await markerLine.boundingBox();
+        return tooltipBounds && lineBounds ? tooltipBounds.x - (lineBounds.x + lineBounds.width) : 0;
+      })
+      .toBeGreaterThanOrEqual(14);
   });
 
   test('Should announce focused datapoint details in the live region', async ({ page }) => {

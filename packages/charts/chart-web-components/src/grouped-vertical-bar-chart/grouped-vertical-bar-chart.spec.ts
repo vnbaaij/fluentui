@@ -35,6 +35,24 @@ test.describe('GroupedVerticalBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Should reverse group and series order in RTL', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div dir="rtl">
+        <fluent-grouped-vertical-bar-chart data='${JSON.stringify(
+          data,
+        )}' width='600' height='300'></fluent-grouped-vertical-bar-chart>
+      </div>
+    `);
+    const element = page.locator('fluent-grouped-vertical-bar-chart');
+
+    const bars = element.locator('.bar');
+    const xPositions = await bars.evaluateAll((elements: SVGRectElement[]) =>
+      elements.map(element => Number(element.getAttribute('x'))),
+    );
+    expect(xPositions[0]).toBeGreaterThan(xPositions[1]);
+    expect(xPositions[0]).toBeGreaterThan(xPositions[2]);
+  });
+
   test('Line story should match the React mixed bar and line example', async ({ page }) => {
     await page.goto(fixtureURL('components-groupedverticalbarchart--line'));
     const element = page.locator('fluent-grouped-vertical-bar-chart');
@@ -85,6 +103,17 @@ test.describe('GroupedVerticalBarChart', () => {
     );
     expect(heights[0]).toBeGreaterThan(heights[2]);
     expect(heights[5]).toBeGreaterThan(heights[1]);
+  });
+
+  test('Additional feature stories should reuse the Basic story data', async ({ page }) => {
+    const storyIds = ['tooltip-renderer', 'culture', 'title-align', 'title-and-legend-positions', 'rtl'];
+
+    for (const storyId of storyIds) {
+      await page.goto(fixtureURL(`components-groupedverticalbarchart--${storyId}`));
+      await expect(page.locator('fluent-grouped-vertical-bar-chart .bar')).toHaveCount(16);
+    }
+
+    await expect(page.locator('[dir="rtl"]')).toHaveCount(1);
   });
 
   test('Shared Features should render grouped lines, metadata, layout, annotations, and scales', async ({ page }) => {

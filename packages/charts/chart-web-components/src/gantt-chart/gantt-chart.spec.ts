@@ -48,6 +48,21 @@ test.describe('GanttChart - Basic', () => {
     await expect(bars).toHaveCount(basicData.length);
   });
 
+  test('Should render annotations with custom Cartesian margins', async ({ page }) => {
+    const element = page.locator('fluent-gantt-chart');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & {
+        margins: { top: number; right: number; bottom: number; left: number };
+        annotations: Array<{ text: string; coordinates: { type: 'data'; x: number; y: string } }>;
+      };
+      chart.margins = { top: 30, right: 40, bottom: 50, left: 80 };
+      chart.annotations = [{ text: 'Gantt target', coordinates: { type: 'data', x: 5, y: 'Task A' } }];
+    });
+
+    await expect(element.locator('.annotation-layer')).toHaveAttribute('transform', 'translate(80, 30)');
+    await expect(element.locator('.chart-annotation-text')).toHaveText('Gantt target');
+  });
+
   test('Should render shared vertical grid lines behind bars with separate short ticks', async ({ page }) => {
     const element = page.locator('fluent-gantt-chart');
     const gridLines = element.locator('.axis-grid-line');

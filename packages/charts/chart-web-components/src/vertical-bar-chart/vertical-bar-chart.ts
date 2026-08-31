@@ -16,11 +16,10 @@ import { line as createLine } from 'd3-shape';
 import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { appendVerticalGradient, resolveBarWidth, resolveChartColor } from '../utils/bar-chart-helpers.js';
-import { resolveChartMargins } from '../utils/cartesian-axis-helpers.js';
-import { renderChartAnnotations } from '../utils/chart-annotation-helpers.js';
 import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
+  createPreparedNumericContinuousScale,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderAxisGridLinesShared,
   renderBottomAxisShared,
@@ -234,9 +233,12 @@ export class VerticalBarChart extends VerticalBarChartBase {
     const hasSecondaryY = points.some(point => point.lineData?.useSecondaryYScale);
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
     const height = toNumber(this.height, 300);
-    const margins = resolveChartMargins(defaultMargins, this.margins, this._isRTL, hasSecondaryY);
-    const innerWidth = Math.max(width - margins.left - margins.right, 1);
-    const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
+    const { svg, plotGroup, margins, innerWidth, innerHeight } = this._createCartesianRenderContext({
+      width,
+      height,
+      defaultMargins,
+      hasSecondaryYAxis: hasSecondaryY,
+    });
     const allNumericX = points.every(point => typeof point.x === 'number' && Number.isFinite(point.x));
     const isDateAxis = points.every(point => getNormalizedXValue(point.x) instanceof Date);
 
@@ -245,6 +247,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
     let xScaleTime: ScaleTime<number, number> | undefined;
     let xAxis: Axis<string | number | Date>;
     let barAutoWidth = defaultBarWidth;
+    const xRange: [number, number] = this._isRTL ? [innerWidth, 0] : [0, innerWidth];
 
     const getXCenter = (point: VerticalBarChartDataPoint): number => {
       if (xScaleTime) {
@@ -269,8 +272,8 @@ export class VerticalBarChart extends VerticalBarChartBase {
       xScaleLinear = useLogX
         ? scaleLog()
             .domain([Math.max(minX / 1.05, Number.MIN_VALUE), maxX === minX ? maxX * 1.05 : maxX * 1.05])
-            .range([0, innerWidth])
-        : scaleLinear().domain([domainMin, domainMax]).range([0, innerWidth]);
+            .range(xRange)
+        : scaleLinear().domain([domainMin, domainMax]).range(xRange);
       if (this.roundedTicks) {
         xScaleLinear.nice();
       }
@@ -306,7 +309,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
       const domainMin = xMin instanceof Date ? xMin : new Date(Number(xMin));
       const domainMax = xMax instanceof Date ? xMax : new Date(Number(xMax));
 
-      xScaleTime = scaleTime().domain([domainMin, domainMax]).range([0, innerWidth]);
+      xScaleTime = scaleTime().domain([domainMin, domainMax]).range(xRange);
       if (this.roundedTicks) {
         xScaleTime.nice();
       }
@@ -368,7 +371,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
 
       xScaleBand = scaleBand<string>()
         .domain(xDomain)
-        .range([xRangeStart, xRangeEnd])
+        .range(this._isRTL ? [xRangeEnd, xRangeStart] : [xRangeStart, xRangeEnd])
         .paddingInner(xAxisInnerPadding)
         .paddingOuter(xAxisOuterPadding);
       xAxis = axisBottom(xScaleBand).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<
@@ -408,42 +411,22 @@ export class VerticalBarChart extends VerticalBarChartBase {
       .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
     let preparedSecondaryYAxis = preparedYAxis;
     let yScaleSecondary: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = yScale;
+    let useLogSecondary = false;
     if (hasSecondaryY) {
-      const useLogSecondary = this.secondaryYScaleType === 'log' && secondaryLineValues.every(value => value > 0);
-      const secondaryMin = useLogSecondary
-        ? Math.min(...secondaryLineValues)
-        : secondaryLineValues.length > 0
-        ? Math.min(0, ...secondaryLineValues)
-        : 0;
-      let secondaryMax = secondaryLineValues.length > 0 ? Math.max(...secondaryLineValues) : 1;
-      if (secondaryMin === secondaryMax) {
-        secondaryMax += 1;
-      }
-      preparedSecondaryYAxis = computePreparedNumericYAxis({
-        minValue: secondaryMin,
-        maxValue: secondaryMax,
+      const secondaryYAxis = createPreparedNumericContinuousScale({
+        values: secondaryLineValues,
+        range: [innerHeight, 0],
+        scaleType: this.secondaryYScaleType,
         tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
         roundedTicks: this.roundedTicks,
       });
-      yScaleSecondary = useLogSecondary
-        ? scaleLog().domain([secondaryMin, secondaryMax]).range([innerHeight, 0])
-        : scaleLinear()
-            .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
-            .range([innerHeight, 0]);
+      preparedSecondaryYAxis = secondaryYAxis.preparedAxis;
+      yScaleSecondary = secondaryYAxis.scale;
+      useLogSecondary = secondaryYAxis.isLogarithmic;
     }
-
-    const svg = createSvgElement<SVGSVGElement>('svg');
-    svg.classList.add('chart-svg');
-    svg.setAttribute('width', String(width));
-    svg.setAttribute('height', String(height));
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
     const defs = createSvgElement<SVGDefsElement>('defs');
     svg.appendChild(defs);
-
-    const plotGroup = createSvgElement<SVGGElement>('g');
-    plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
-    svg.appendChild(plotGroup);
 
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
@@ -873,7 +856,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
       applyAxisTickConfig(
         yAxisSecondary,
         this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
-        this.yAxisTickValues ?? (this.secondaryYScaleType === 'log' ? undefined : preparedSecondaryYAxis.tickValues),
+        this.yAxisTickValues ?? (useLogSecondary ? undefined : preparedSecondaryYAxis.tickValues),
       );
       renderSecondaryYAxisShared({
         svg,
@@ -890,14 +873,10 @@ export class VerticalBarChart extends VerticalBarChartBase {
       });
     }
 
-    const annotationLayer = createSvgElement<SVGGElement>('g');
-    annotationLayer.classList.add('annotation-layer');
-    annotationLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
-    svg.appendChild(annotationLayer);
-    renderChartAnnotations({
-      layer: annotationLayer,
+    this._renderAnnotations({
+      svg,
       collisionLayer: plotGroup,
-      annotations: this.annotations,
+      margins,
       innerWidth,
       innerHeight,
       mapDataX: value => {

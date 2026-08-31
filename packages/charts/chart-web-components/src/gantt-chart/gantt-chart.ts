@@ -1,6 +1,7 @@
 import { attr } from '@microsoft/fast-element';
 import { scaleTime } from 'd3-scale';
 import { timeFormat, utcFormat } from 'd3-time-format';
+import { resolveChartMargins } from '../utils/cartesian-axis-helpers.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
 import {
   createNumberFormat,
@@ -362,19 +363,16 @@ export class GanttChart extends CartesianChartBase {
     const yLabelWidth = this._getYAxisLabelWidth(groups, numericYAxis);
     const xAxisTitleOffset = this.xAxisTitle ? 20 : 0;
     const yAxisTitleOffset = this.yAxisTitle ? 16 : 0;
-    const margins = this._isRTL
-      ? {
-          top: 20,
-          right: yLabelWidth + yAxisTitleOffset,
-          bottom: 35 + xAxisTitleOffset,
-          left: 20,
-        }
-      : {
-          top: 20,
-          right: 20,
-          bottom: 35 + xAxisTitleOffset,
-          left: yLabelWidth + yAxisTitleOffset,
-        };
+    const margins = resolveChartMargins(
+      {
+        top: 20,
+        right: 20,
+        bottom: 35 + xAxisTitleOffset,
+        left: yLabelWidth + yAxisTitleOffset,
+      },
+      this.margins,
+      this._isRTL,
+    );
     const innerWidth = width - margins.left - margins.right;
     const plotLayout = this._getPlotLayout(groups.length, numericYAxis, height, margins, yValues);
     const xAxisScale = this._getXScaleInfo();
@@ -386,13 +384,7 @@ export class GanttChart extends CartesianChartBase {
       plotLayout.innerHeight,
       yValues,
     );
-    const svg = createSvgElement<SVGSVGElement>('svg');
-
-    svg.setAttribute('class', 'chart-svg');
-    svg.setAttribute('role', 'none');
-    svg.setAttribute('width', `${width}`);
-    svg.setAttribute('height', `${height}`);
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const svg = this._createChartSvg(width, height, { role: 'none' });
 
     const defs = createSvgElement<SVGDefsElement>('defs');
     svg.appendChild(defs);
@@ -478,11 +470,21 @@ export class GanttChart extends CartesianChartBase {
       });
     });
 
+    this._renderAnnotations({
+      svg,
+      margins: { left: margins.left, top: plotLayout.margins.top },
+      innerWidth,
+      innerHeight: plotLayout.innerHeight,
+      mapDataX: value => scaleX(+parseDateOrNumber(value)) - margins.left,
+      mapDataY: value => {
+        const groupIndex = groups.findIndex(group => String(group.rawY) === String(value));
+        return groupIndex < 0 ? undefined : yPositionForGroup(groups[groupIndex], groupIndex) - plotLayout.margins.top;
+      },
+    });
+
     this.legends = Array.from(legendColorMap.entries()).map(([legend, color]) => ({ legend, color }));
     this.chartContainer.appendChild(svg);
     this._updateLegendInteractionState();
-
-    void innerWidth; // suppress unused variable warning; kept for reference with other charts
   }
 
   private _clearChart() {

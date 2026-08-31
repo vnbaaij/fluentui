@@ -1,7 +1,38 @@
 import { attr } from '@microsoft/fast-element';
+import { renderChartAnnotations } from './chart-annotation-helpers.js';
+import { resolveChartMargins, type CartesianChartMargins } from './cartesian-axis-helpers.js';
 import type { AxisCategoryOrder, AxisScaleType, ChartAnnotation, ChartMargins } from './chart-options.js';
 import { ChartBase } from './chart-base.js';
-import { jsonConverter } from './chart-helpers.js';
+import { jsonConverter, SVG_NAMESPACE_URI } from './chart-helpers.js';
+
+interface CartesianChartAnnotationRenderOptions {
+  svg: SVGSVGElement;
+  collisionLayer?: SVGGElement;
+  margins: Pick<ChartMargins, 'left' | 'top'>;
+  innerWidth: number;
+  innerHeight: number;
+  mapDataX: (value: number | string | Date) => number | undefined;
+  mapDataY: (value: number | string | Date, axis: 'primary' | 'secondary') => number | undefined;
+}
+
+interface CartesianChartSvgOptions {
+  role?: string;
+}
+
+interface CartesianChartRenderContextOptions extends CartesianChartSvgOptions {
+  width: number;
+  height: number;
+  defaultMargins: CartesianChartMargins;
+  hasSecondaryYAxis?: boolean;
+}
+
+interface CartesianChartRenderContext {
+  svg: SVGSVGElement;
+  plotGroup: SVGGElement;
+  margins: CartesianChartMargins;
+  innerWidth: number;
+  innerHeight: number;
+}
 
 /**
  * Abstract base class for chart web components that use Cartesian axes (x/y).
@@ -24,6 +55,10 @@ export abstract class CartesianChartBase extends ChartBase {
   /** Label rendered beside the y-axis. */
   @attr({ attribute: 'y-axis-title' })
   public yAxisTitle?: string;
+
+  /** Label rendered beside the secondary y-axis when one is present. */
+  @attr({ attribute: 'secondary-y-axis-title' })
+  public secondaryYAxisTitle?: string;
 
   /** Plot margins in pixels. Missing sides use the chart defaults. */
   @attr({ converter: jsonConverter })
@@ -231,6 +266,63 @@ export abstract class CartesianChartBase extends ChartBase {
    */
   public customYAxisTickFormatter?: (value: number) => string;
 
+  /** Creates the consistently configured SVG root used by Cartesian charts. */
+  protected _createChartSvg(width: number, height: number, options: CartesianChartSvgOptions = {}): SVGSVGElement {
+    const svg = document.createElementNS(SVG_NAMESPACE_URI, 'svg');
+    svg.classList.add('chart-svg');
+    svg.setAttribute('width', String(width));
+    svg.setAttribute('height', String(height));
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    if (options.role) {
+      svg.setAttribute('role', options.role);
+    }
+    return svg;
+  }
+
+  /** Creates the shared dimensions and plot layers used by standard Cartesian renderers. */
+  protected _createCartesianRenderContext({
+    width,
+    height,
+    defaultMargins,
+    hasSecondaryYAxis = false,
+    role,
+  }: CartesianChartRenderContextOptions): CartesianChartRenderContext {
+    const margins = resolveChartMargins(defaultMargins, this.margins, this._isRTL, hasSecondaryYAxis);
+    const innerWidth = Math.max(width - margins.left - margins.right, 1);
+    const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
+    const svg = this._createChartSvg(width, height, { role });
+    const plotGroup = document.createElementNS(SVG_NAMESPACE_URI, 'g');
+    plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+    svg.appendChild(plotGroup);
+
+    return { svg, plotGroup, margins, innerWidth, innerHeight };
+  }
+
+  /** Renders this chart's annotations in a final SVG layer above the plot and axes. */
+  protected _renderAnnotations({
+    svg,
+    collisionLayer,
+    margins,
+    innerWidth,
+    innerHeight,
+    mapDataX,
+    mapDataY,
+  }: CartesianChartAnnotationRenderOptions): void {
+    const annotationLayer = document.createElementNS(SVG_NAMESPACE_URI, 'g');
+    annotationLayer.classList.add('annotation-layer');
+    annotationLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+    svg.appendChild(annotationLayer);
+    renderChartAnnotations({
+      layer: annotationLayer,
+      collisionLayer,
+      annotations: this.annotations,
+      innerWidth,
+      innerHeight,
+      mapDataX,
+      mapDataY,
+    });
+  }
+
   // ── Lifecycle ────────────────────────────────────────────────────
 
   connectedCallback() {
@@ -240,6 +332,7 @@ export abstract class CartesianChartBase extends ChartBase {
     const attrFields = [
       'xAxisTitle',
       'yAxisTitle',
+      'secondaryYAxisTitle',
       'margins',
       'annotations',
       'xScaleType',
@@ -300,6 +393,10 @@ export abstract class CartesianChartBase extends ChartBase {
   }
 
   protected yAxisTitleChanged() {
+    this._requestRender();
+  }
+
+  protected secondaryYAxisTitleChanged() {
     this._requestRender();
   }
 

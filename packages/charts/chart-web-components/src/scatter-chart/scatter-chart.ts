@@ -2,15 +2,15 @@ import { attr } from '@microsoft/fast-element';
 import { extent } from 'd3-array';
 import { type Axis, axisBottom, type AxisDomain, axisLeft } from 'd3-axis';
 import { format } from 'd3-format';
-import { scaleLinear, type ScaleLinear } from 'd3-scale';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
-import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
 import {
   applyAxisTickConfig,
   type AxisScaleLike,
   computePreparedNumericYAxis,
+  createNumericContinuousScale,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  renderAxisGridLinesShared,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   toAxisNumber as toNumber,
@@ -124,9 +124,11 @@ export class ScatterChart extends CartesianChartBase {
 
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
     const height = toNumber(this.height, 300);
-    const margins = getDirectionalMargins(defaultMargins, this._isRTL);
-    const innerWidth = Math.max(width - margins.left - margins.right, 1);
-    const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
+    const { svg, plotGroup, margins, innerWidth, innerHeight } = this._createCartesianRenderContext({
+      width,
+      height,
+      defaultMargins,
+    });
 
     const xExtent = extent(normalizedSeries.flatMap(series => series.data.map(point => point.x)));
     const yExtent = extent(normalizedSeries.flatMap(series => series.data.map(point => point.y)));
@@ -143,29 +145,25 @@ export class ScatterChart extends CartesianChartBase {
       yMax += 1;
     }
 
-    const xScale: ScaleLinear<number, number> = scaleLinear().domain([xMin, xMax]).range([0, innerWidth]);
+    const { scale: xScale } = createNumericContinuousScale({
+      domainMin: xMin,
+      domainMax: xMax,
+      range: this._isRTL ? [innerWidth, 0] : [0, innerWidth],
+      scaleType: this.xScaleType,
+      roundedTicks: this.roundedTicks,
+    });
     const preparedYAxis = computePreparedNumericYAxis({
       minValue: yMin,
       maxValue: yMax,
       tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
       roundedTicks: this.roundedTicks,
     });
-    const yScale: ScaleLinear<number, number> = scaleLinear()
-      .domain([preparedYAxis.domainMin, preparedYAxis.domainMax])
-      .range([innerHeight, 0]);
-    if (this.roundedTicks) {
-      xScale.nice();
-    }
-
-    const svg = createSvgElement<SVGSVGElement>('svg');
-    svg.classList.add('chart-svg');
-    svg.setAttribute('width', String(width));
-    svg.setAttribute('height', String(height));
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-
-    const plotGroup = createSvgElement<SVGGElement>('g');
-    plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
-    svg.appendChild(plotGroup);
+    const { scale: yScale, isLogarithmic: isLogarithmicY } = createNumericContinuousScale({
+      domainMin: preparedYAxis.domainMin,
+      domainMax: preparedYAxis.domainMax,
+      range: [innerHeight, 0],
+      scaleType: this.yScaleType,
+    });
 
     const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6)).ticks(6);
     if (this.tickValues?.length) {
@@ -176,8 +174,17 @@ export class ScatterChart extends CartesianChartBase {
     applyAxisTickConfig(
       yAxis,
       this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
-      this.yAxisTickValues ?? preparedYAxis.tickValues,
+      this.yAxisTickValues ?? (isLogarithmicY ? undefined : preparedYAxis.tickValues),
     );
+
+    renderAxisGridLinesShared({
+      layer: plotGroup,
+      orientation: 'horizontal',
+      scale: yScale,
+      axis: yAxis as unknown as Axis<number>,
+      spanStart: 0,
+      spanEnd: innerWidth,
+    });
 
     normalizedSeries.forEach(series => {
       series.data.forEach(point => {
@@ -247,6 +254,16 @@ export class ScatterChart extends CartesianChartBase {
       tickPadding: toNumber(this.tickPadding, 6),
       isRTL: this._isRTL,
       yAxisTitle: this.yAxisTitle,
+    });
+
+    this._renderAnnotations({
+      svg,
+      collisionLayer: plotGroup,
+      margins,
+      innerWidth,
+      innerHeight,
+      mapDataX: value => xScale(Number(value)),
+      mapDataY: value => yScale(Number(value)),
     });
 
     this.chartContainer.appendChild(svg);

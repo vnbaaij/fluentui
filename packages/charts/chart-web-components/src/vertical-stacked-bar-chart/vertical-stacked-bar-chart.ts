@@ -16,11 +16,10 @@ import { line as createLine } from 'd3-shape';
 import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { appendVerticalGradient, resolveBarWidth, resolveChartColor } from '../utils/bar-chart-helpers.js';
-import { resolveChartMargins } from '../utils/cartesian-axis-helpers.js';
-import { renderChartAnnotations } from '../utils/chart-annotation-helpers.js';
 import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
+  createPreparedNumericContinuousScale,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
   renderAxisGridLinesShared,
   renderBottomAxisShared,
@@ -293,21 +292,25 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
     const width = requestedChartWidth ?? (measuredWidth || toNumber(this.width, 600));
     const height = toNumber(this.height, 350);
     const hasSecondaryY = stacks.some(stack => stack.lineData?.some(entry => entry.useSecondaryYScale));
-    const margins = resolveChartMargins(defaultMargins, this.margins, this._isRTL, hasSecondaryY);
-    const innerWidth = Math.max(width - margins.left - margins.right, 1);
-    const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
+    const { svg, plotGroup, margins, innerWidth, innerHeight } = this._createCartesianRenderContext({
+      width,
+      height,
+      defaultMargins,
+      hasSecondaryYAxis: hasSecondaryY,
+    });
     const isDateAxis = stacks.every(
       stack => stack.xAxisPoint instanceof Date && !Number.isNaN(stack.xAxisPoint.getTime()),
     );
     let xScaleBand: ScaleBand<string> | undefined;
     let xScaleTime: ScaleTime<number, number> | undefined;
     let xAxis: Axis<string | Date>;
+    const xRange: [number, number] = this._isRTL ? [innerWidth, 0] : [0, innerWidth];
     if (isDateAxis) {
       const dateValues = stacks.map(stack => stack.xAxisPoint as Date);
       const dateExtent = extent(dateValues, value => value.getTime());
       xScaleTime = scaleTime()
         .domain([new Date(dateExtent[0] ?? 0), new Date(dateExtent[1] ?? 0)])
-        .range([0, innerWidth]);
+        .range(xRange);
       xAxis = axisBottom(xScaleTime).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<string | Date>;
       const dateTickValues = (this.tickValues ?? [])
         .map(value => (value instanceof Date ? value : undefined))
@@ -331,7 +334,7 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
       const xAxisOuterPadding = toOptionalNumber(this.xAxisOuterPadding) ?? 0;
       xScaleBand = scaleBand<string>()
         .domain(domain)
-        .range([0, innerWidth])
+        .range(xRange)
         .paddingInner(xAxisInnerPadding)
         .paddingOuter(xAxisOuterPadding);
       xAxis = axisBottom(xScaleBand).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<string | Date>;
@@ -368,28 +371,18 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
       .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
     let preparedSecondaryYAxis = preparedYAxis;
     let yScaleSecondary: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = yScale;
+    let useLogSecondary = false;
     if (hasSecondaryY) {
-      const useLogSecondary = this.secondaryYScaleType === 'log' && secondaryLineValues.every(value => value > 0);
-      const secondaryMin = useLogSecondary
-        ? Math.min(...secondaryLineValues)
-        : secondaryLineValues.length > 0
-        ? Math.min(0, ...secondaryLineValues)
-        : 0;
-      let secondaryMax = secondaryLineValues.length > 0 ? Math.max(...secondaryLineValues) : 1;
-      if (secondaryMin === secondaryMax) {
-        secondaryMax += 1;
-      }
-      preparedSecondaryYAxis = computePreparedNumericYAxis({
-        minValue: secondaryMin,
-        maxValue: secondaryMax,
+      const secondaryYAxis = createPreparedNumericContinuousScale({
+        values: secondaryLineValues,
+        range: [innerHeight, 0],
+        scaleType: this.secondaryYScaleType,
         tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
         roundedTicks: this.roundedTicks,
       });
-      yScaleSecondary = useLogSecondary
-        ? scaleLog().domain([secondaryMin, secondaryMax]).range([innerHeight, 0])
-        : scaleLinear()
-            .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
-            .range([innerHeight, 0]);
+      preparedSecondaryYAxis = secondaryYAxis.preparedAxis;
+      yScaleSecondary = secondaryYAxis.scale;
+      useLogSecondary = secondaryYAxis.isLogarithmic;
     }
 
     const getLineScale = (
@@ -450,11 +443,6 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
       }, []);
     };
 
-    const svg = createSvgElement<SVGSVGElement>('svg');
-    svg.classList.add('chart-svg');
-    svg.setAttribute('width', String(width));
-    svg.setAttribute('height', String(height));
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     // Only hide the tooltip when the pointer leaves the whole chart, not individual
     // segments/points — moving over blank space between them just leaves it in place.
     svg.addEventListener('mouseleave', () => {
@@ -465,10 +453,6 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
 
     const defs = createSvgElement<SVGDefsElement>('defs');
     svg.appendChild(defs);
-
-    const plotGroup = createSvgElement<SVGGElement>('g');
-    plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
-    svg.appendChild(plotGroup);
 
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
@@ -870,7 +854,7 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
       applyAxisTickConfig(
         yAxisSecondary,
         this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
-        this.yAxisTickValues ?? (this.secondaryYScaleType === 'log' ? undefined : preparedSecondaryYAxis.tickValues),
+        this.yAxisTickValues ?? (useLogSecondary ? undefined : preparedSecondaryYAxis.tickValues),
       );
       renderSecondaryYAxisShared({
         svg,
@@ -887,14 +871,10 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
       });
     }
 
-    const annotationLayer = createSvgElement<SVGGElement>('g');
-    annotationLayer.classList.add('annotation-layer');
-    annotationLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
-    svg.appendChild(annotationLayer);
-    renderChartAnnotations({
-      layer: annotationLayer,
+    this._renderAnnotations({
+      svg,
       collisionLayer: plotGroup,
-      annotations: this.annotations,
+      margins,
       innerWidth,
       innerHeight,
       mapDataX: value => {

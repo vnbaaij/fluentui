@@ -28,20 +28,9 @@ export abstract class VerticalBarChartBase extends CartesianChartBase {
   @attr({ converter: jsonConverter })
   public colors?: string[];
 
-  /** Title rendered beside the secondary y-axis when secondary line data is present. */
-  @attr({ attribute: 'secondary-y-axis-title' })
-  public secondaryYAxisTitle?: string;
-
   public connectedCallback(): void {
     const self = this as Record<string, unknown>;
-    const attrFields = [
-      'barWidth',
-      'maxBarWidth',
-      'useSingleColor',
-      'enableGradient',
-      'colors',
-      'secondaryYAxisTitle',
-    ] as const;
+    const attrFields = ['barWidth', 'maxBarWidth', 'useSingleColor', 'enableGradient', 'colors'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -75,10 +64,6 @@ export abstract class VerticalBarChartBase extends CartesianChartBase {
   }
 
   protected colorsChanged(): void {
-    this._requestRender();
-  }
-
-  protected secondaryYAxisTitleChanged(): void {
     this._requestRender();
   }
 }

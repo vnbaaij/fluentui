@@ -1,6 +1,7 @@
 import type { Axis, AxisDomain } from 'd3-axis';
 import { nice as d3Nice, ticks as d3Ticks } from 'd3-array';
-import type { AxisCategoryOrder } from './chart-options.js';
+import { scaleLinear, scaleLog, type ScaleLinear, type ScaleLogarithmic } from 'd3-scale';
+import type { AxisCategoryOrder, AxisScaleType } from './chart-options.js';
 import { SVG_NAMESPACE_URI, wrapText } from './chart-helpers.js';
 
 export const DEFAULT_REACT_NUMERIC_Y_TICK_COUNT = 4;
@@ -83,6 +84,35 @@ export const toOptionalAxisNumber = (value: number | string | undefined): number
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+export type NumericContinuousScale = ScaleLinear<number, number> | ScaleLogarithmic<number, number>;
+
+export type NumericContinuousScaleOptions = {
+  domainMin: number;
+  domainMax: number;
+  range: [number, number];
+  scaleType?: AxisScaleType;
+  roundedTicks?: boolean;
+};
+
+export const createNumericContinuousScale = ({
+  domainMin,
+  domainMax,
+  range,
+  scaleType = 'default',
+  roundedTicks = false,
+}: NumericContinuousScaleOptions): { scale: NumericContinuousScale; isLogarithmic: boolean } => {
+  const isLogarithmic = scaleType === 'log' && domainMin > 0 && domainMax > 0;
+  const scale = isLogarithmic
+    ? scaleLog().domain([domainMin, domainMax]).range(range)
+    : scaleLinear().domain([domainMin, domainMax]).range(range);
+
+  if (roundedTicks) {
+    scale.nice();
+  }
+
+  return { scale, isLogarithmic };
 };
 
 const handleFloatingPointPrecisionError = (value: number): number => {
@@ -184,6 +214,60 @@ export const computePreparedNumericYAxis = ({
     domainMax: tickValues[tickValues.length - 1] ?? high,
     tickValues,
   };
+};
+
+export type PreparedNumericContinuousScaleOptions = {
+  values: readonly number[];
+  range: [number, number];
+  scaleType?: AxisScaleType;
+  tickCount?: number;
+  roundedTicks?: boolean;
+  includeZero?: boolean;
+  minValue?: number;
+  maxValue?: number;
+};
+
+export const createPreparedNumericContinuousScale = ({
+  values,
+  range,
+  scaleType = 'default',
+  tickCount,
+  roundedTicks = false,
+  includeZero = true,
+  minValue,
+  maxValue,
+}: PreparedNumericContinuousScaleOptions): {
+  scale: NumericContinuousScale;
+  preparedAxis: PreparedNumericYAxis;
+  isLogarithmic: boolean;
+} => {
+  const finiteValues = values.filter(Number.isFinite);
+  const canUseLogarithmicScale =
+    scaleType === 'log' && finiteValues.length > 0 && finiteValues.every(value => value > 0);
+  const dataMin = finiteValues.length > 0 ? Math.min(...finiteValues) : 0;
+  const dataMax = finiteValues.length > 0 ? Math.max(...finiteValues) : 1;
+  const domainMin = minValue ?? (includeZero && !canUseLogarithmicScale ? Math.min(0, dataMin) : dataMin);
+  let domainMax = maxValue ?? (includeZero && !canUseLogarithmicScale ? Math.max(0, dataMax) : dataMax);
+  if (domainMin === domainMax) {
+    domainMax += 1;
+  }
+
+  const preparedAxis = computePreparedNumericYAxis({
+    minValue: domainMin,
+    maxValue: domainMax,
+    tickCount,
+    roundedTicks,
+  });
+  const scaleDomain = canUseLogarithmicScale
+    ? { domainMin, domainMax }
+    : { domainMin: preparedAxis.domainMin, domainMax: preparedAxis.domainMax };
+  const { scale, isLogarithmic } = createNumericContinuousScale({
+    ...scaleDomain,
+    range,
+    scaleType: canUseLogarithmicScale ? 'log' : 'default',
+  });
+
+  return { scale, preparedAxis, isLogarithmic };
 };
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
@@ -449,21 +533,22 @@ const truncateTextToWidth = (text: SVGTextElement, sourceText: string, maxWidth:
 
 const hideOverlappingBottomAxisLabels = (labels: SVGTextElement[]) => {
   let previousRight = Number.NEGATIVE_INFINITY;
-  labels.forEach(label => {
-    const box = label.getBBox?.();
-    if (!box || box.width <= 0) {
-      return;
-    }
-
-    const matrix = label.getCTM?.();
-    const left = (matrix?.e ?? 0) + box.x;
-    const right = left + box.width;
-    if (left < previousRight + 4) {
-      label.style.display = 'none';
-    } else {
-      previousRight = right;
-    }
-  });
+  labels
+    .map(label => {
+      const box = label.getBBox?.();
+      const matrix = label.getCTM?.();
+      return box && box.width > 0 ? { label, left: (matrix?.e ?? 0) + box.x, width: box.width } : undefined;
+    })
+    .filter((entry): entry is { label: SVGTextElement; left: number; width: number } => entry !== undefined)
+    .sort((left, right) => left.left - right.left)
+    .forEach(({ label, left, width }) => {
+      const right = left + width;
+      if (left < previousRight + 4) {
+        label.style.display = 'none';
+      } else {
+        previousRight = right;
+      }
+    });
 };
 
 export const renderPrimaryYAxisShared = ({
@@ -665,6 +750,8 @@ export type BandYAxisRenderOptions<Domain extends AxisDomain> = {
   rtlLabelX?: number;
   axisClassName?: string;
   labelClassName?: string;
+  yAxisTitle?: string;
+  titleClassName?: string;
   tickLabelMaxWidth?: number;
 };
 
@@ -684,6 +771,8 @@ export const renderBandYAxisShared = <Domain extends AxisDomain>({
   rtlLabelX,
   axisClassName = 'y-axis',
   labelClassName = 'y-axis-text',
+  yAxisTitle,
+  titleClassName = 'y-axis-title',
   tickLabelMaxWidth,
 }: BandYAxisRenderOptions<Domain>): void => {
   const group = createSvgElement<SVGGElement>('g');
@@ -730,6 +819,17 @@ export const renderBandYAxisShared = <Domain extends AxisDomain>({
 
     group.appendChild(tick);
   });
+
+  if (yAxisTitle) {
+    const title = createSvgElement<SVGTextElement>('text');
+    title.classList.add(titleClassName);
+    title.setAttribute('x', String(innerHeight / 2));
+    title.setAttribute('y', String(isRTL ? -14 : 14));
+    title.setAttribute('text-anchor', 'middle');
+    title.setAttribute('transform', `rotate(${isRTL ? 90 : -90})`);
+    title.textContent = yAxisTitle;
+    group.appendChild(title);
+  }
 
   svg.appendChild(group);
 };

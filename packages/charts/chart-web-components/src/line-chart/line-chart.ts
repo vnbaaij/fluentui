@@ -2,17 +2,19 @@ import { attr } from '@microsoft/fast-element';
 import { extent } from 'd3-array';
 import { type Axis, axisBottom, type AxisDomain, axisLeft } from 'd3-axis';
 import { format } from 'd3-format';
-import { type ScaleLinear, scaleLinear, type ScaleTime, scaleTime } from 'd3-scale';
+import { type ScaleTime, scaleTime } from 'd3-scale';
 import { line as createLine } from 'd3-shape';
 import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
-import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
 import {
   applyAxisTickConfig,
   type AxisScaleLike,
   computePreparedNumericYAxis,
+  createNumericContinuousScale,
   DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  type NumericContinuousScale,
+  renderAxisGridLinesShared,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   toAxisNumber as toNumber,
@@ -33,7 +35,7 @@ const createSvgElement = <T extends SVGElement>(tag: string): T =>
 
 type TooltipState = TooltipProps & { xValue: string };
 type XValue = number | Date;
-type ContinuousScale = ScaleLinear<number, number> | ScaleTime<number, number>;
+type ContinuousScale = NumericContinuousScale | ScaleTime<number, number>;
 type NormalizedPoint = LineChartDataPoint & { x: XValue; xLabel: string; cx: number; cy: number };
 type NormalizedSeries = { legend: string; color: string; data: NormalizedPoint[] };
 
@@ -177,9 +179,11 @@ export class LineChart extends CartesianChartBase {
 
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
     const height = toNumber(this.height, 300);
-    const margins = getDirectionalMargins(defaultMargins, this._isRTL);
-    const innerWidth = Math.max(width - margins.left - margins.right, 1);
-    const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
+    const { svg, plotGroup, margins, innerWidth, innerHeight } = this._createCartesianRenderContext({
+      width,
+      height,
+      defaultMargins,
+    });
 
     const yValues = normalizedSeries.flatMap(series => series.data.map(point => point.y));
     const rawYExtent = extent(yValues);
@@ -192,6 +196,7 @@ export class LineChart extends CartesianChartBase {
 
     let xScale: ContinuousScale;
     let xFormatter: (value: AxisDomain) => string;
+    const xRange: [number, number] = this._isRTL ? [innerWidth, 0] : [0, innerWidth];
     if (isDateAxis) {
       const dateValues = normalizedSeries
         .flatMap(series => series.data.map(point => point.x))
@@ -207,7 +212,7 @@ export class LineChart extends CartesianChartBase {
           : new Date(rawExtent[1] ?? 0);
       const domainMin = xMin instanceof Date ? xMin : new Date(Number(xMin));
       const domainMax = xMax instanceof Date ? xMax : new Date(Number(xMax));
-      xScale = scaleTime().domain([domainMin, domainMax]).range([0, innerWidth]);
+      xScale = scaleTime().domain([domainMin, domainMax]).range(xRange);
       if (this.roundedTicks) {
         xScale.nice();
       }
@@ -223,10 +228,13 @@ export class LineChart extends CartesianChartBase {
         xMin -= 1;
         xMax += 1;
       }
-      xScale = scaleLinear().domain([xMin, xMax]).range([0, innerWidth]);
-      if (this.roundedTicks) {
-        xScale.nice();
-      }
+      xScale = createNumericContinuousScale({
+        domainMin: xMin,
+        domainMax: xMax,
+        range: xRange,
+        scaleType: this.xScaleType,
+        roundedTicks: this.roundedTicks,
+      }).scale;
       xFormatter = value => formatNumberValue(Number(value), this.xAxisTickFormat, this.culture);
     }
 
@@ -237,7 +245,12 @@ export class LineChart extends CartesianChartBase {
       roundedTicks: this.roundedTicks,
     });
 
-    const yScale = scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
+    const { scale: yScale, isLogarithmic: isLogarithmicY } = createNumericContinuousScale({
+      domainMin: preparedYAxis.domainMin,
+      domainMax: preparedYAxis.domainMax,
+      range: [innerHeight, 0],
+      scaleType: this.yScaleType,
+    });
 
     normalizedSeries.forEach(series => {
       series.data.forEach(point => {
@@ -245,16 +258,6 @@ export class LineChart extends CartesianChartBase {
         point.cy = yScale(point.y);
       });
     });
-
-    const svg = createSvgElement<SVGSVGElement>('svg');
-    svg.classList.add('chart-svg');
-    svg.setAttribute('width', String(width));
-    svg.setAttribute('height', String(height));
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-
-    const plotGroup = createSvgElement<SVGGElement>('g');
-    plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
-    svg.appendChild(plotGroup);
 
     const xAxis = axisBottom(xScale).tickPadding(toNumber(this.tickPadding, 6));
     if (!isDateAxis) {
@@ -272,8 +275,17 @@ export class LineChart extends CartesianChartBase {
     applyAxisTickConfig(
       yAxis,
       this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
-      this.yAxisTickValues ?? preparedYAxis.tickValues,
+      this.yAxisTickValues ?? (isLogarithmicY ? undefined : preparedYAxis.tickValues),
     );
+
+    renderAxisGridLinesShared({
+      layer: plotGroup,
+      orientation: 'horizontal',
+      scale: yScale,
+      axis: yAxis as unknown as Axis<number>,
+      spanStart: 0,
+      spanEnd: innerWidth,
+    });
 
     const showTooltipForPoint = (legend: string, color: string, point: NormalizedPoint) => {
       if (!this._shouldShowTooltip(legend) || this.hideTooltip) {
@@ -372,6 +384,16 @@ export class LineChart extends CartesianChartBase {
       isRTL: this._isRTL,
       yAxisTitle: this.yAxisTitle,
       tickLabelMaxWidth: toOptionalNumber(this.yAxisTickLabelMaxWidth),
+    });
+
+    this._renderAnnotations({
+      svg,
+      collisionLayer: plotGroup,
+      margins,
+      innerWidth,
+      innerHeight,
+      mapDataX: value => xScale((isDateAxis ? new Date(value) : Number(value)) as never),
+      mapDataY: value => yScale(Number(value)),
     });
 
     this.chartContainer.appendChild(svg);

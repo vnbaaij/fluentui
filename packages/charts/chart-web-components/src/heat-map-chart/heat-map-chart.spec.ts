@@ -66,6 +66,27 @@ test.describe('HeatMapChart - Basic', () => {
     await expect(cells).toHaveCount(TOTAL_CELLS);
   });
 
+  test('Should render annotations with custom Cartesian margins', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & {
+        margins: { top: number; right: number; bottom: number; left: number };
+        annotations: Array<{ text: string; coordinates: { type: 'data'; x: string; y: string } }>;
+        xAxisTitle: string;
+        yAxisTitle: string;
+      };
+      chart.margins = { top: 30, right: 40, bottom: 50, left: 80 };
+      chart.annotations = [{ text: 'Heat target', coordinates: { type: 'data', x: 'Mon', y: 'Team A' } }];
+      chart.xAxisTitle = 'Day';
+      chart.yAxisTitle = 'Team';
+    });
+
+    await expect(element.locator('.annotation-layer')).toHaveAttribute('transform', 'translate(80, 30)');
+    await expect(element.locator('.chart-annotation-text')).toHaveText('Heat target');
+    await expect(element.locator('.x-axis > .axis-title')).toHaveText('Day');
+    await expect(element.locator('.y-axis > .axis-title')).toHaveText('Team');
+  });
+
   test('Should render cells with role img', async ({ page }) => {
     const element = page.locator('fluent-heat-map-chart');
     const cells = element.locator('.heat-cell');

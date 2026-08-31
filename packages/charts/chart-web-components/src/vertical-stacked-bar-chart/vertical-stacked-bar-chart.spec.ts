@@ -35,6 +35,32 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Should reverse x-axis data order in RTL', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div dir="rtl">
+        <fluent-vertical-stacked-bar-chart data='${JSON.stringify(
+          data,
+        )}' width='600' height='350'></fluent-vertical-stacked-bar-chart>
+      </div>
+    `);
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+
+    const bars = element.locator('.bar');
+    expect(Number(await bars.first().getAttribute('x'))).toBeGreaterThan(Number(await bars.nth(2).getAttribute('x')));
+  });
+
+  test('RTL story should format tooltip dates like Basic', async ({ page }) => {
+    const readFirstTooltipHeader = async (storyId: string): Promise<string> => {
+      await page.goto(fixtureURL(`components-verticalstackedbarchart--${storyId}`));
+      const element = page.locator('fluent-vertical-stacked-bar-chart');
+      await element.locator('.bar').first().dispatchEvent('mouseenter');
+      return (await element.locator('.tooltip-header').textContent()) ?? '';
+    };
+
+    const basicHeader = await readFirstTooltipHeader('basic');
+    expect(await readFirstTooltipHeader('rtl')).toBe(basicHeader);
+  });
+
   test('Shared Features should render shared layout, palette, metadata, annotations, and scales', async ({ page }) => {
     await page.goto(fixtureURL('components-verticalstackedbarchart--shared-features'));
     const element = page.locator('fluent-vertical-stacked-bar-chart');
