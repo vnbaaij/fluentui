@@ -1247,6 +1247,10 @@ export class VerticalBarChart extends CartesianChartBase {
     // (undocumented)
     protected lineLegendTextChanged(): void;
     // (undocumented)
+    maxBarWidth?: number | string;
+    // (undocumented)
+    protected maxBarWidthChanged(): void;
+    // (undocumented)
     protected _performRender(): void;
     // (undocumented)
     secondaryYAxisTitle?: string;

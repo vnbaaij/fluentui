@@ -564,4 +564,75 @@ test.describe('VerticalBarChart', () => {
     const gapTwo = xPositions[2] - xPositions[1];
     expect(gapTwo).toBeGreaterThan(gapOne * 2);
   });
+
+  test('Dynamic story should update data, axis type, colors, and bar width mode', async ({ page }) => {
+    await page.goto(fixtureURL('components-verticalbarchart--dynamic'));
+    await page.waitForFunction(() => customElements.whenDefined('fluent-vertical-bar-chart'));
+
+    const element = page.locator('fluent-vertical-bar-chart');
+    await expect(element.locator('.bar')).toHaveCount(5);
+    await expect(element).toHaveAttribute('width', '650');
+    await expect(element).toHaveAttribute('max-bar-width', '24');
+    expect(
+      await page
+        .locator('[data-controls-row]')
+        .evaluateAll(rows => rows.map(row => row.getAttribute('data-controls-row'))),
+    ).toEqual(['width', 'bar-width', 'x-axis-padding', 'data-size', 'axis-type']);
+    await expect(page.locator('#vbar-dynamic-enable-inner-padding')).toHaveAttribute('disabled', '');
+    await expect(page.locator('#vbar-dynamic-enable-outer-padding')).toHaveAttribute('disabled', '');
+    await expect(page.locator('#vbar-dynamic-inner-padding')).toHaveAttribute('disabled', '');
+    await expect(page.locator('#vbar-dynamic-outer-padding')).toHaveAttribute('disabled', '');
+
+    await page.locator('#vbar-dynamic-data-size').evaluate(slider => {
+      (slider as HTMLInputElement).value = '3';
+      slider.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await expect(element.locator('.bar')).toHaveCount(3);
+
+    await page.locator('fluent-radio[value="date"]').click();
+    await expect
+      .poll(() => element.evaluate(chart => (chart as HTMLElement & { data: VerticalBarChartDataPoint[] }).data[0].x))
+      .toBeInstanceOf(Date);
+
+    await page.locator('fluent-radio[value="string"]').click();
+    await expect(element.locator('.x-axis .axis-text').first()).toHaveText('Label 1');
+    await expect(page.locator('#vbar-dynamic-enable-inner-padding')).not.toHaveAttribute('disabled', '');
+    await expect(page.locator('#vbar-dynamic-enable-outer-padding')).not.toHaveAttribute('disabled', '');
+    await page.locator('#vbar-dynamic-enable-inner-padding').click();
+    await expect(page.locator('#vbar-dynamic-inner-padding')).not.toHaveAttribute('disabled', '');
+
+    const firstFill = await element.locator('.bar').first().getAttribute('fill');
+    await page.getByText('Change Color', { exact: true }).click();
+    await expect(element.locator('.bar').first()).not.toHaveAttribute('fill', firstFill ?? '');
+    await expect(page.getByText('Vertical bar chart colors changed')).toHaveCount(1);
+
+    const previousData = await element.evaluate(chart =>
+      (chart as HTMLElement & { data: VerticalBarChartDataPoint[] }).data.map(point => point.y),
+    );
+    await page.getByText('Change Data', { exact: true }).click();
+    await expect
+      .poll(() =>
+        element.evaluate(chart =>
+          (chart as HTMLElement & { data: VerticalBarChartDataPoint[] }).data.map(point => point.y),
+        ),
+      )
+      .not.toEqual(previousData);
+
+    const barWidthMode = page.locator('[data-mode]');
+    const barWidthInput = page.locator('fluent-field').filter({ has: page.locator('#vbar-dynamic-bar-width') });
+    const barWidthLabel = page.locator('[data-bar-width-value]');
+    await expect(barWidthMode).toHaveAttribute('data-mode', 'default');
+    await expect(barWidthInput).toBeHidden();
+    await expect(barWidthLabel).toHaveText('undifined');
+    await page.locator('#vbar-dynamic-bar-width-mode').click();
+    await expect(barWidthMode).toHaveAttribute('data-mode', 'auto');
+    await expect(barWidthInput).toBeHidden();
+    await expect(barWidthLabel).toHaveText('auto');
+    await expect(element).toHaveAttribute('bar-width', 'auto');
+    await expect(element.locator('.bar').first()).toHaveAttribute('width', '24');
+    await page.locator('#vbar-dynamic-bar-width-mode').click();
+    await expect(barWidthMode).toHaveAttribute('data-mode', 'custom');
+    await expect(barWidthInput).toBeVisible();
+    await expect(barWidthLabel).toBeHidden();
+  });
 });

@@ -1,11 +1,17 @@
 import {
   controlsRowStyle,
+  createCheckboxField,
   createDropdownField,
+  createFluentButton,
+  createRadioGroupField,
   createSliderField,
   createSwitchField,
+  createTextInputField,
   type Meta,
   type Story,
+  visuallyHiddenStyle,
 } from '../helpers.stories.js';
+import { DataVizPalette } from '../utils/chart-helpers.js';
 import { definition } from './vertical-bar-chart.definition.js';
 import type { VerticalBarChartDataPoint } from './vertical-bar-chart.options.js';
 import type { VerticalBarChart } from './vertical-bar-chart.js';
@@ -550,6 +556,9 @@ export const RotateLabels: Story<VerticalBarChart> = () => {
 };
 RotateLabels.parameters = { docs: { story: { height: '520px' } } };
 
+export const Dynamic: Story<VerticalBarChart> = createDynamicStory;
+Dynamic.parameters = { docs: { story: { height: '720px' } } };
+
 export const NegativeValues: Story<VerticalBarChart> = () => {
   const chart = document.createElement('fluent-vertical-bar-chart') as VerticalBarChart;
   chart.data = negativeData;
@@ -806,6 +815,273 @@ export const TitleAndLegendPositions: Story<VerticalBarChart> = () => {
   return container;
 };
 TitleAndLegendPositions.parameters = { docs: { story: { height: '470px' } } };
+
+function createDynamicStory() {
+  const colorPalettes = [
+    [DataVizPalette.color1, DataVizPalette.color2, DataVizPalette.color3],
+    [DataVizPalette.color4, DataVizPalette.color5, DataVizPalette.color6],
+    [DataVizPalette.color7, DataVizPalette.color8, DataVizPalette.color9],
+    [DataVizPalette.color10, DataVizPalette.color11, DataVizPalette.color12],
+  ];
+  type XAxisType = 'number' | 'date' | 'string';
+  type BarWidthMode = 'default' | 'auto' | 'custom';
+
+  let width = 650;
+  let dataSize = 5;
+  let xAxisType: XAxisType = 'number';
+  let barWidthMode: BarWidthMode = 'default';
+  let barWidth = 16;
+  let maxBarWidth = 24;
+  let xAxisInnerPaddingEnabled = false;
+  let xAxisOuterPaddingEnabled = false;
+  let xAxisInnerPadding = 0.67;
+  let xAxisOuterPadding = 0;
+  let colorIndex = 0;
+
+  const randomY = () => Math.floor(Math.random() * 90) + 1;
+  const getData = (size: number, axisType: XAxisType): VerticalBarChartDataPoint[] => {
+    if (axisType === 'string') {
+      return Array.from({ length: size }, (_, index) => ({ x: `Label ${index + 1}`, y: randomY() }));
+    }
+
+    const offsets = new Set<number>();
+    while (offsets.size < size) {
+      offsets.add(Math.floor(Math.random() * 75) + 1);
+    }
+    const date = new Date('2020-01-01');
+    return Array.from(offsets, offset => ({
+      x: axisType === 'date' ? new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset) : offset,
+      y: randomY(),
+    }));
+  };
+
+  let dynamicData = getData(dataSize, xAxisType);
+  const container = document.createElement('div');
+  const createControlsRow = (row: string) => {
+    const controlsRow = document.createElement('div');
+    controlsRow.setAttribute('data-controls-row', row);
+    controlsRow.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+    container.appendChild(controlsRow);
+    return controlsRow;
+  };
+  const widthControls = createControlsRow('width');
+  const barWidthControls = createControlsRow('bar-width');
+  const paddingControls = createControlsRow('x-axis-padding');
+  const dataSizeControls = createControlsRow('data-size');
+  const axisTypeControls = createControlsRow('axis-type');
+
+  const chart = document.createElement('fluent-vertical-bar-chart') as VerticalBarChart;
+  chart.chartTitle = 'Vertical bar chart dynamic example';
+  chart.setAttribute('height', '350');
+  chart.setAttribute('hide-legends', '');
+  chart.setAttribute('hide-tick-overlap', '');
+  chart.setAttribute('y-max-value', '100');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const status = document.createElement('p');
+  status.setAttribute('style', visuallyHiddenStyle);
+  status.setAttribute('aria-live', 'polite');
+  status.setAttribute('aria-atomic', 'true');
+
+  const applyChartSettings = () => {
+    chart.setAttribute('width', `${width}`);
+    chart.setAttribute('max-bar-width', `${maxBarWidth}`);
+    if (barWidthMode === 'default') {
+      chart.removeAttribute('bar-width');
+    } else {
+      chart.setAttribute('bar-width', barWidthMode === 'auto' ? 'auto' : `${barWidth}`);
+    }
+    if (xAxisInnerPaddingEnabled && xAxisType === 'string') {
+      chart.setAttribute('x-axis-inner-padding', `${xAxisInnerPadding}`);
+    } else {
+      chart.removeAttribute('x-axis-inner-padding');
+    }
+    if (xAxisOuterPaddingEnabled && xAxisType === 'string') {
+      chart.setAttribute('x-axis-outer-padding', `${xAxisOuterPadding}`);
+    } else {
+      chart.removeAttribute('x-axis-outer-padding');
+    }
+    chart.data = dynamicData.map((point, index) => ({
+      ...point,
+      color: colorPalettes[colorIndex][index % colorPalettes[colorIndex].length],
+    }));
+  };
+
+  widthControls.appendChild(
+    createSliderField('Width', 'vbar-dynamic-width', width, 200, 1000, nextValue => {
+      width = nextValue;
+      applyChartSettings();
+    }).element,
+  );
+
+  const barWidthControl = createCheckboxField('Bar Width', 'vbar-dynamic-bar-width-mode', false, () => {
+    barWidthMode = barWidthMode === 'default' ? 'auto' : barWidthMode === 'auto' ? 'custom' : 'default';
+    syncBarWidthControl();
+    applyChartSettings();
+  });
+  const barWidthCheckbox = barWidthControl.element.querySelector('fluent-checkbox') as HTMLInputElement;
+  const barWidthValue = createTextInputField('Bar Width Value', 'vbar-dynamic-bar-width', `${barWidth}`, nextValue => {
+    const parsedValue = Number(nextValue);
+    if (Number.isFinite(parsedValue) && parsedValue >= 1) {
+      barWidth = parsedValue;
+      applyChartSettings();
+    }
+  });
+  const barWidthInput = barWidthValue.element.querySelector('fluent-text-input')!;
+  barWidthInput.setAttribute('type', 'number');
+  barWidthInput.setAttribute('min', '1');
+  barWidthInput.setAttribute('max', '300');
+  const barWidthModeLabel = document.createElement('span');
+  barWidthModeLabel.setAttribute('data-bar-width-value', '');
+  const syncBarWidthControl = () => {
+    barWidthCheckbox.checked = barWidthMode === 'custom';
+    barWidthCheckbox.indeterminate = barWidthMode === 'auto';
+    barWidthCheckbox.toggleAttribute('checked', barWidthCheckbox.checked);
+    barWidthValue.element.toggleAttribute('hidden', barWidthMode !== 'custom');
+    barWidthModeLabel.toggleAttribute('hidden', barWidthMode === 'custom');
+    barWidthModeLabel.textContent = barWidthMode === 'auto' ? 'auto' : 'undifined';
+    barWidthControl.element.setAttribute('data-mode', barWidthMode);
+  };
+  barWidthControls.appendChild(barWidthControl.element);
+  barWidthControls.appendChild(barWidthValue.element);
+  barWidthControls.appendChild(barWidthModeLabel);
+
+  const maxBarWidthControl = createTextInputField(
+    'Max Bar Width',
+    'vbar-dynamic-max-bar-width',
+    `${maxBarWidth}`,
+    nextValue => {
+      const parsedValue = Number(nextValue);
+      if (Number.isFinite(parsedValue) && parsedValue >= 1) {
+        maxBarWidth = parsedValue;
+        applyChartSettings();
+      }
+    },
+  );
+  const maxBarWidthInput = maxBarWidthControl.element.querySelector('fluent-text-input')!;
+  maxBarWidthInput.setAttribute('type', 'number');
+  maxBarWidthInput.setAttribute('min', '1');
+  maxBarWidthInput.setAttribute('max', '300');
+  barWidthControls.appendChild(maxBarWidthControl.element);
+
+  const innerPaddingToggle = createCheckboxField(
+    'Enable X Axis Inner Padding',
+    'vbar-dynamic-enable-inner-padding',
+    xAxisInnerPaddingEnabled,
+    checked => {
+      xAxisInnerPaddingEnabled = checked;
+      syncPaddingControls();
+      applyChartSettings();
+    },
+  );
+  paddingControls.appendChild(innerPaddingToggle.element);
+  const innerPaddingSlider = createSliderField(
+    'X Axis Inner Padding (x100)',
+    'vbar-dynamic-inner-padding',
+    Math.round(xAxisInnerPadding * 100),
+    0,
+    100,
+    nextValue => {
+      xAxisInnerPadding = nextValue / 100;
+      applyChartSettings();
+    },
+  );
+  paddingControls.appendChild(innerPaddingSlider.element);
+
+  const outerPaddingToggle = createCheckboxField(
+    'Enable X Axis Outer Padding',
+    'vbar-dynamic-enable-outer-padding',
+    xAxisOuterPaddingEnabled,
+    checked => {
+      xAxisOuterPaddingEnabled = checked;
+      syncPaddingControls();
+      applyChartSettings();
+    },
+  );
+  paddingControls.appendChild(outerPaddingToggle.element);
+  const outerPaddingSlider = createSliderField(
+    'X Axis Outer Padding (x100)',
+    'vbar-dynamic-outer-padding',
+    Math.round(xAxisOuterPadding * 100),
+    0,
+    100,
+    nextValue => {
+      xAxisOuterPadding = nextValue / 100;
+      applyChartSettings();
+    },
+  );
+  paddingControls.appendChild(outerPaddingSlider.element);
+
+  const syncPaddingControls = () => {
+    const categorical = xAxisType === 'string';
+    const innerPaddingCheckbox = innerPaddingToggle.element.querySelector('fluent-checkbox') as HTMLInputElement;
+    const outerPaddingCheckbox = outerPaddingToggle.element.querySelector('fluent-checkbox') as HTMLInputElement;
+    const innerPaddingInput = innerPaddingSlider.element.querySelector('fluent-slider') as HTMLInputElement;
+    const outerPaddingInput = outerPaddingSlider.element.querySelector('fluent-slider') as HTMLInputElement;
+    const innerPaddingDisabled = !categorical || !xAxisInnerPaddingEnabled;
+    const outerPaddingDisabled = !categorical || !xAxisOuterPaddingEnabled;
+
+    innerPaddingCheckbox.disabled = !categorical;
+    innerPaddingCheckbox.toggleAttribute('disabled', !categorical);
+    outerPaddingCheckbox.disabled = !categorical;
+    outerPaddingCheckbox.toggleAttribute('disabled', !categorical);
+    innerPaddingInput.disabled = innerPaddingDisabled;
+    innerPaddingInput.toggleAttribute('disabled', innerPaddingDisabled);
+    outerPaddingInput.disabled = outerPaddingDisabled;
+    outerPaddingInput.toggleAttribute('disabled', outerPaddingDisabled);
+  };
+
+  dataSizeControls.appendChild(
+    createSliderField('Data Size', 'vbar-dynamic-data-size', dataSize, 0, 50, nextValue => {
+      dataSize = nextValue;
+      dynamicData = getData(dataSize, xAxisType);
+      applyChartSettings();
+    }).element,
+  );
+  axisTypeControls.appendChild(
+    createRadioGroupField(
+      'X-Axis type',
+      'vbar-dynamic-axis-type',
+      [
+        { label: 'Number', value: 'number' },
+        { label: 'Date', value: 'date' },
+        { label: 'String', value: 'string' },
+      ],
+      xAxisType,
+      nextValue => {
+        xAxisType = nextValue as XAxisType;
+        dynamicData = getData(dataSize, xAxisType);
+        syncPaddingControls();
+        applyChartSettings();
+      },
+    ).element,
+  );
+
+  container.appendChild(chart);
+  const buttons = document.createElement('div');
+  buttons.setAttribute('style', 'display:flex;gap:8px;margin-top:12px;');
+  buttons.appendChild(
+    createFluentButton('Change Data', () => {
+      dynamicData = getData(dataSize, xAxisType);
+      applyChartSettings();
+      status.textContent = 'Vertical bar chart data changed';
+    }),
+  );
+  buttons.appendChild(
+    createFluentButton('Change Color', () => {
+      colorIndex = (colorIndex + 1) % colorPalettes.length;
+      applyChartSettings();
+      status.textContent = 'Vertical bar chart colors changed';
+    }),
+  );
+  container.appendChild(buttons);
+  container.appendChild(status);
+
+  syncPaddingControls();
+  syncBarWidthControl();
+  applyChartSettings();
+  return container;
+}
 
 export const RTL: Story<VerticalBarChart> = () => {
   const wrapper = document.createElement('div');

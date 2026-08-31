@@ -59,9 +59,17 @@ const calcRequiredCategoricalWidth = (bandwidth: number, numBands: number, inner
   return bandwidth * calcTotalBandUnits(numBands, innerPadding);
 };
 
-const resolveBarWidth = (barWidth: number | string | undefined, adjustedValue: number): number => {
+const resolveBarWidth = (
+  barWidth: number | string | undefined,
+  maxBarWidth: number | string | undefined,
+  adjustedValue: number,
+): number => {
   const requestedWidth = toOptionalNumber(barWidth);
-  let resolvedWidth = requestedWidth ?? Math.min(adjustedValue, defaultBarWidth);
+  let resolvedWidth = barWidth === 'auto' ? adjustedValue : requestedWidth ?? Math.min(adjustedValue, defaultBarWidth);
+  const maximumWidth = toOptionalNumber(maxBarWidth);
+  if (maximumWidth !== undefined) {
+    resolvedWidth = Math.min(resolvedWidth, maximumWidth);
+  }
   resolvedWidth = Math.max(resolvedWidth, minBarWidth);
   return resolvedWidth;
 };
@@ -121,7 +129,7 @@ const getNormalizedXValue = (value: VerticalBarChartDataPoint['x']): number | Da
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
   }
-  if (typeof value === 'string') {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value)) {
     const parsedDate = new Date(value);
     return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
   }
@@ -140,6 +148,9 @@ export class VerticalBarChart extends CartesianChartBase {
 
   @attr({ attribute: 'bar-width' })
   public barWidth?: number | string;
+
+  @attr({ attribute: 'max-bar-width' })
+  public maxBarWidth?: number | string;
 
   @attr({ attribute: 'use-single-color', mode: 'boolean' })
   public useSingleColor: boolean = false;
@@ -163,6 +174,7 @@ export class VerticalBarChart extends CartesianChartBase {
     const attrFields = [
       'data',
       'barWidth',
+      'maxBarWidth',
       'useSingleColor',
       'enableGradient',
       'lineLegendText',
@@ -193,6 +205,10 @@ export class VerticalBarChart extends CartesianChartBase {
   }
 
   protected barWidthChanged(): void {
+    this._requestRender();
+  }
+
+  protected maxBarWidthChanged(): void {
     this._requestRender();
   }
 
@@ -559,7 +575,11 @@ export class VerticalBarChart extends CartesianChartBase {
       const legend = point.legend ?? key;
       const tooltipLegend = point.legend ?? '';
       const xValueLabel = isDateAxis ? formatDateValue(this, point.x as Date) : key;
-      const actualWidth = resolveBarWidth(this.barWidth, xScaleBand ? xScaleBand.bandwidth() : barAutoWidth);
+      const actualWidth = resolveBarWidth(
+        this.barWidth,
+        this.maxBarWidth,
+        xScaleBand ? xScaleBand.bandwidth() : barAutoWidth,
+      );
       const xCenter = getXCenter(point);
       const x = xCenter - actualWidth / 2;
       const color = singleColor ?? (point.color ? getColorFromToken(point.color) : getNextColor(index, 0));
