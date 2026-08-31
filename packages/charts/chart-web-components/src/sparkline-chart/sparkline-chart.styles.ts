@@ -6,15 +6,18 @@ export const styles = css`
 
   :host {
     display: block;
+  }
+
+  .chart-container {
+    display: flex;
+    align-items: center;
     width: 100%;
     height: 100%;
   }
 
-  .chart-container,
   .chart {
     display: block;
-    width: 100%;
-    height: 100%;
+    flex: none;
   }
 
   .sparkline-line {
@@ -26,5 +29,19 @@ export const styles = css`
 
   .sparkline-area {
     opacity: 0.18;
+  }
+
+  .sparkline-legend {
+    flex: none;
+    overflow: visible;
+  }
+
+  .sparkline-legend-text {
+    direction: ltr;
+    fill: var(--colorNeutralForeground1);
+    font-family: var(--fontFamilyBase);
+    font-size: var(--fontSizeBase200);
+    font-weight: var(--fontWeightRegular);
+    forced-color-adjust: auto;
   }
 `;

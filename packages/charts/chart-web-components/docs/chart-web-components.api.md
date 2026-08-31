@@ -47,9 +47,6 @@ export class AreaChart extends CartesianChartBase {
     secondaryYAxisTickLabelMaxWidth?: number | string;
     // (undocumented)
     protected secondaryYAxisTickLabelMaxWidthChanged(): void;
-    secondaryYAxisTitle: string;
-    // (undocumented)
-    protected secondaryYAxisTitleChanged(): void;
     // Warning: (ae-forgotten-export) The symbol "TooltipState" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -98,6 +95,58 @@ export const AreaChartStyles: ElementStyles;
 // @public (undocumented)
 export const AreaChartTemplate: ElementViewTemplate<AreaChart>;
 
+// @public (undocumented)
+export type AxisScaleType = 'default' | 'log';
+
+// @public (undocumented)
+export interface ChartAnnotation {
+    // (undocumented)
+    accessibility?: AccessibilityData & {
+        role?: string;
+    };
+    // (undocumented)
+    connector?: {
+        strokeColor?: string;
+        strokeWidth?: number;
+        dashArray?: string;
+    };
+    // (undocumented)
+    coordinates: ChartAnnotationCoordinate;
+    // (undocumented)
+    data?: Record<string, unknown>;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    layout?: {
+        align?: 'start' | 'center' | 'end';
+        verticalAlign?: 'top' | 'middle' | 'bottom';
+        offsetX?: number;
+        offsetY?: number;
+        rotation?: number;
+    };
+    // (undocumented)
+    style?: {
+        textColor?: string;
+        fontSize?: string;
+        fontWeight?: string | number;
+        opacity?: number;
+    };
+    // (undocumented)
+    text: string;
+}
+
+// @public (undocumented)
+export interface ChartAnnotationCoordinate {
+    // (undocumented)
+    type: 'data' | 'relative' | 'pixel';
+    // (undocumented)
+    x: number | string | Date;
+    // (undocumented)
+    y: number | string | Date;
+    // (undocumented)
+    yAxis?: 'primary' | 'secondary';
+}
+
 // @public
 export class ChartLegend extends FASTElement {
     center: boolean;
@@ -131,6 +180,18 @@ export const ChartLegendStyles: ElementStyles;
 //
 // @internal (undocumented)
 export const ChartLegendTemplate: ElementViewTemplate<ChartLegend>;
+
+// @public (undocumented)
+export interface ChartMargins {
+    // (undocumented)
+    bottom: number;
+    // (undocumented)
+    left: number;
+    // (undocumented)
+    right: number;
+    // (undocumented)
+    top: number;
+}
 
 // Warning: (ae-forgotten-export) The symbol "ChartBase" needs to be exported by the entry point index.d.ts
 // Warning: (ae-missing-release-tag) "DonutChart" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -459,14 +520,12 @@ export type GaugeChartVariant = 'single-segment' | 'multiple-segments';
 // @public
 export type GaugeValueFormat = 'percentage' | 'fraction';
 
+// Warning: (ae-forgotten-export) The symbol "VerticalBarChartBase" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-export class GroupedVerticalBarChart extends CartesianChartBase {
+export class GroupedVerticalBarChart extends VerticalBarChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;
-    // (undocumented)
-    barWidth?: number | string;
-    // (undocumented)
-    protected barWidthChanged(): void;
     // (undocumented)
     protected _buildDefaultTooltipHTML(): string;
     // (undocumented)
@@ -478,13 +537,13 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
-    enableGradient: boolean;
-    // (undocumented)
-    protected enableGradientChanged(): void;
-    // (undocumented)
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
+    // (undocumented)
+    isCalloutForStack: boolean;
+    // (undocumented)
+    protected isCalloutForStackChanged(): void;
     // (undocumented)
     protected _performRender(): void;
     // Warning: (ae-forgotten-export) The symbol "TooltipState_2" needs to be exported by the entry point index.d.ts
@@ -492,31 +551,53 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     // (undocumented)
     tooltipProps: TooltipState_2;
     // (undocumented)
-    useSingleColor: boolean;
-    // (undocumented)
-    protected useSingleColorChanged(): void;
+    protected tooltipPropsChanged(oldValue: TooltipProps, newValue: TooltipProps): void;
 }
 
 // @public (undocumented)
 export interface GroupedVerticalBarChartData {
     // (undocumented)
+    lineData?: GroupedVerticalBarChartLineDataPoint[];
+    // (undocumented)
     series: GroupedVerticalBarChartDataPoint[];
+    // (undocumented)
+    stackCallOutAccessibilityData?: AccessibilityData;
     // (undocumented)
     xAxisPoint: string;
 }
 
 // @public (undocumented)
-export interface GroupedVerticalBarChartDataPoint {
-    // (undocumented)
-    color?: string;
+export interface GroupedVerticalBarChartDataPoint extends VerticalBarDataPointMetadata {
     // (undocumented)
     data: number;
     // (undocumented)
     key: string;
+    // (undocumented)
+    legend?: string;
+    // (undocumented)
+    useSecondaryYScale?: boolean;
 }
 
 // @public (undocumented)
 export const GroupedVerticalBarChartDefinition: PartialFASTElementDefinition;
+
+// @public (undocumented)
+export interface GroupedVerticalBarChartLineDataPoint {
+    // (undocumented)
+    callOutAccessibilityData?: AccessibilityData;
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    legend: string;
+    // (undocumented)
+    onClick?: VoidFunction;
+    // (undocumented)
+    useSecondaryYScale?: boolean;
+    // (undocumented)
+    y: number;
+    // (undocumented)
+    yAxisCalloutData?: string;
+}
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -1063,7 +1144,7 @@ export class SparklineChart extends ChartBase {
     // (undocumented)
     connectedCallback(): void;
     // (undocumented)
-    data: SparklineDataPoint[];
+    data: SparklineChartData;
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
@@ -1073,13 +1154,39 @@ export class SparklineChart extends ChartBase {
     // (undocumented)
     protected _performRender(): void;
     // (undocumented)
+    showLegend: boolean;
+    // (undocumented)
+    protected showLegendChanged(): void;
+    // (undocumented)
+    valueTextWidth?: number;
+    // (undocumented)
+    protected valueTextWidthChanged(): void;
+    // (undocumented)
     variant: SparklineVariant;
     // (undocumented)
     protected variantChanged(): void;
 }
 
 // @public (undocumented)
+export interface SparklineChartData {
+    // (undocumented)
+    chartTitle?: string;
+    // (undocumented)
+    lineChartData: SparklineChartSeries[];
+}
+
+// @public (undocumented)
 export const SparklineChartDefinition: PartialFASTElementDefinition;
+
+// @public (undocumented)
+export interface SparklineChartSeries {
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    data: SparklineDataPoint[];
+    // (undocumented)
+    legend?: string;
+}
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -1221,13 +1328,9 @@ export const TreeChartStyles: ElementStyles;
 export const TreeChartTemplate: ElementViewTemplate<TreeChart>;
 
 // @public (undocumented)
-export class VerticalBarChart extends CartesianChartBase {
+export class VerticalBarChart extends VerticalBarChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;
-    // (undocumented)
-    barWidth?: number | string;
-    // (undocumented)
-    protected barWidthChanged(): void;
     // (undocumented)
     protected _buildDefaultTooltipHTML(): string;
     // (undocumented)
@@ -1238,10 +1341,6 @@ export class VerticalBarChart extends CartesianChartBase {
     data: VerticalBarChartDataPoint[];
     // (undocumented)
     protected dataChanged(): void;
-    // (undocumented)
-    enableGradient: boolean;
-    // (undocumented)
-    protected enableGradientChanged(): void;
     // (undocumented)
     protected _enableResizeObserver: boolean;
     // (undocumented)
@@ -1255,33 +1354,15 @@ export class VerticalBarChart extends CartesianChartBase {
     // (undocumented)
     protected lineLegendTextChanged(): void;
     // (undocumented)
-    maxBarWidth?: number | string;
-    // (undocumented)
-    protected maxBarWidthChanged(): void;
-    // (undocumented)
     protected _performRender(): void;
-    // (undocumented)
-    secondaryYAxisTitle?: string;
-    // (undocumented)
-    protected secondaryYAxisTitleChanged(): void;
     // Warning: (ae-forgotten-export) The symbol "TooltipState_5" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
     tooltipProps: TooltipState_5;
-    // (undocumented)
-    useSingleColor: boolean;
-    // (undocumented)
-    protected useSingleColorChanged(): void;
 }
 
 // @public (undocumented)
-export interface VerticalBarChartDataPoint {
-    // (undocumented)
-    callOutAccessibilityData?: AccessibilityData;
-    // (undocumented)
-    color?: string;
-    // (undocumented)
-    gradient?: [string, string];
+export interface VerticalBarChartDataPoint extends VerticalBarDataPointMetadata {
     // (undocumented)
     legend?: string;
     // Warning: (ae-forgotten-export) The symbol "VerticalBarChartLineDataPoint" needs to be exported by the entry point index.d.ts
@@ -1289,15 +1370,9 @@ export interface VerticalBarChartDataPoint {
     // (undocumented)
     lineData?: VerticalBarChartLineDataPoint;
     // (undocumented)
-    onClick?: VoidFunction;
-    // (undocumented)
     x: string | number | Date;
     // (undocumented)
-    xAxisCalloutData?: string | Date;
-    // (undocumented)
     y: number;
-    // (undocumented)
-    yAxisCalloutData?: string;
 }
 
 // @public (undocumented)
@@ -1313,18 +1388,25 @@ export const VerticalBarChartStyles: ElementStyles;
 // @public (undocumented)
 export const VerticalBarChartTemplate: ElementViewTemplate<VerticalBarChart>;
 
+// @public
+export interface VerticalBarDataPointMetadata {
+    barLabel?: string;
+    callOutAccessibilityData?: AccessibilityData;
+    color?: string;
+    gradient?: [string, string];
+    onClick?: VoidFunction;
+    xAxisCalloutData?: string | Date;
+    yAxisCalloutData?: string;
+}
+
 // @public (undocumented)
-export class VerticalStackedBarChart extends CartesianChartBase {
+export class VerticalStackedBarChart extends VerticalBarChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;
     // (undocumented)
     barGapMax?: number | string;
     // (undocumented)
     protected barGapMaxChanged(): void;
-    // (undocumented)
-    barWidth?: number | string;
-    // (undocumented)
-    protected barWidthChanged(): void;
     // (undocumented)
     protected _buildDefaultTooltipHTML(): string;
     // (undocumented)
@@ -1336,20 +1418,12 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
-    enableGradient: boolean;
-    // (undocumented)
-    protected enableGradientChanged(): void;
-    // (undocumented)
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
     isCalloutForStack: boolean;
     // (undocumented)
     protected _performRender(): void;
-    // (undocumented)
-    secondaryYAxisTitle?: string;
-    // (undocumented)
-    protected secondaryYAxisTitleChanged(): void;
     // Warning: (ae-forgotten-export) The symbol "TooltipState_6" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -1359,19 +1433,11 @@ export class VerticalStackedBarChart extends CartesianChartBase {
 }
 
 // @public (undocumented)
-export interface VerticalStackedBarChartDataPoint {
-    // (undocumented)
-    color?: string;
+export interface VerticalStackedBarChartDataPoint extends VerticalBarDataPointMetadata {
     // (undocumented)
     data: number;
     // (undocumented)
-    gradient?: [string, string];
-    // (undocumented)
     legend: string;
-    // (undocumented)
-    xAxisCalloutData?: string | Date;
-    // (undocumented)
-    yAxisCalloutData?: string;
 }
 
 // @public (undocumented)
@@ -1385,6 +1451,8 @@ export interface VerticalStackedBarChartProps {
     //
     // (undocumented)
     lineData?: VerticalStackedBarChartLineDataPoint[];
+    // (undocumented)
+    stackCallOutAccessibilityData?: AccessibilityData;
     // (undocumented)
     xAxisPoint: string | number | Date;
 }

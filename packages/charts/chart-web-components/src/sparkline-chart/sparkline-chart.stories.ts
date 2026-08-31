@@ -1,69 +1,171 @@
 import {
   controlsRowStyle,
   createDropdownField,
-  createSliderField,
   createTextInputField,
   type Meta,
   type Story,
 } from '../helpers.stories.js';
-import { definition } from './sparkline-chart.definition.js';
-import type { SparklineDataPoint } from './sparkline-chart.options.js';
+import { DataVizPalette } from '../utils/chart-helpers.js';
+import type { SparklineChartData, SparklineDataPoint } from './sparkline-chart.options.js';
 import type { SparklineChart } from './sparkline-chart.js';
 
-const sampleData: SparklineDataPoint[] = [
-  { x: 0, y: 10 },
-  { x: 1, y: 18 },
-  { x: 2, y: 12 },
-  { x: 3, y: 20 },
-  { x: 4, y: 14 },
+const sharedData: SparklineDataPoint[] = [
+  { x: 1, y: 29.13 },
+  { x: 2, y: 70.98 },
+  { x: 3, y: 60 },
+  { x: 4, y: 89.7 },
+  { x: 5, y: 19 },
+  { x: 6, y: 49.44 },
 ];
+
+const createExample = (
+  chartTitle: string,
+  legend: string,
+  color: string,
+  data: SparklineDataPoint[],
+): SparklineChartData => ({ chartTitle, lineChartData: [{ legend, color, data }] });
+
+const sparklineExamples: SparklineChartData[] = [
+  createExample('10.21', '19.64', DataVizPalette.color1, [
+    { x: 1, y: 58.13 },
+    { x: 2, y: 140.98 },
+    { x: 3, y: 20 },
+    { x: 4, y: 89.7 },
+    { x: 5, y: 99 },
+    { x: 6, y: 13.28 },
+    { x: 7, y: 31.32 },
+    { x: 8, y: 10.21 },
+  ]),
+  createExample('49.44', '19.64', DataVizPalette.color2, sharedData),
+  createExample('49.44', '19.64', DataVizPalette.color3, sharedData),
+  createExample('49.44', '464.64', DataVizPalette.color4, sharedData),
+  createExample('49.44', '46.49', DataVizPalette.color5, sharedData),
+  createExample('49.44', '49.44', DataVizPalette.color6, [
+    { x: new Date('2020-03-03T00:00:00.000Z'), y: 29.13 },
+    { x: new Date('2020-03-04T00:00:00.000Z'), y: 70.98 },
+    { x: new Date('2020-03-05T00:00:00.000Z'), y: 60 },
+    { x: new Date('2020-03-07T00:00:00.000Z'), y: 89.7 },
+    { x: new Date('2020-03-12T00:00:00.000Z'), y: 19 },
+    { x: new Date('2020-03-15T00:00:00.000Z'), y: 49.44 },
+  ]),
+  createExample('49.44', '49.44', DataVizPalette.color7, sharedData),
+  createExample('541.44', '541.44', DataVizPalette.color8, [
+    { x: 1, y: 291.13 },
+    { x: 2, y: 170.98 },
+    { x: 3, y: 260 },
+    { x: 4, y: 89.7 },
+    { x: 5, y: 664 },
+    { x: 6, y: 66.44 },
+    { x: 7, y: 541.44 },
+    { x: 8, y: 32.44 },
+    { x: 9, y: 499.14 },
+    { x: 10, y: 350.48 },
+    { x: 11, y: 32.44 },
+    { x: 12, y: 400.44 },
+  ]),
+];
+
+const dimensionsExample = createExample('89.7', '89.7', DataVizPalette.color1, [
+  { x: 1, y: 58.13 },
+  { x: 2, y: 140.98 },
+  { x: 3, y: 20 },
+  { x: 4, y: 89.7 },
+  { x: 5, y: 99 },
+  { x: 6, y: 13.28 },
+  { x: 7, y: 31.32 },
+  { x: 8, y: 89.7 },
+]);
+
+const createSparkline = (
+  example: SparklineChartData,
+  { width = 80, height = 20 }: { width?: number; height?: number } = {},
+): SparklineChart => {
+  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
+  chart.data = example;
+  chart.setAttribute('width', String(width));
+  chart.setAttribute('height', String(height));
+  chart.setAttribute('style', 'display:inline-block;flex:none;');
+  return chart;
+};
+
+const createSparklineWithLegend = (
+  example: SparklineChartData,
+  showLegend: boolean,
+  dimensions?: { width?: number; height?: number },
+): SparklineChart => {
+  const chart = createSparkline(example, dimensions);
+  chart.showLegend = showLegend;
+  return chart;
+};
+
+const createBasicDemo = (direction: 'ltr' | 'rtl' = 'ltr'): HTMLDivElement => {
+  const container = document.createElement('div');
+  container.dir = direction;
+  const introduction = document.createElement('div');
+  introduction.append(
+    'A sparkline ',
+    createSparklineWithLegend(sparklineExamples[0], true),
+    ' - is a very small line chart, drawn without axes or coordinates. It presents the general shape of the variation (like over time) in some measurement, ',
+    createSparklineWithLegend(sparklineExamples[1], false),
+    ' - such as temperature or stock market price, in a simple and highly condensed way.',
+    document.createElement('br'),
+    document.createElement('br'),
+    'Below table shows sparklines in one of its columns.',
+    document.createElement('br'),
+    document.createElement('br'),
+  );
+  container.appendChild(introduction);
+
+  const table = document.createElement('table');
+  table.setAttribute('role', 'grid');
+  const body = document.createElement('tbody');
+  sparklineExamples.forEach((example, index) => {
+    const row = document.createElement('tr');
+    const labelCell = document.createElement('td');
+    labelCell.textContent = `Row ${index + 1}`;
+    labelCell.setAttribute('style', 'padding-block:5px;padding-inline-end:15px;');
+    const chartCell = document.createElement('td');
+    chartCell.appendChild(createSparklineWithLegend(example, index < 2 || index > 4));
+    row.append(labelCell, chartCell);
+    body.appendChild(row);
+  });
+  table.appendChild(body);
+  container.appendChild(table);
+  return container;
+};
 
 export default { title: 'Components/SparklineChart' } as Meta<SparklineChart>;
 
-export const Basic: Story<SparklineChart> = () => {
-  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
-  chart.data = sampleData;
-  chart.variant = 'line';
-  chart.setAttribute('width', '220');
-  chart.setAttribute('height', '60');
-  return chart;
-};
-Basic.parameters = { docs: { story: { height: '160px' } } };
+export const Basic: Story<SparklineChart> = () => createBasicDemo();
+Basic.parameters = { docs: { story: { height: '500px' } } };
 
-export const StandardAttributes: Story<SparklineChart> = () => {
+export const Dimensions: Story<SparklineChart> = () => {
   const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  let width = 220;
-  let height = 60;
-
-  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
-  chart.data = sampleData;
-  chart.setAttribute('width', `${width}`);
-  chart.setAttribute('height', `${height}`);
-  chart.setAttribute('style', 'margin-top:20px;');
-
-  controls.appendChild(
-    createSliderField('Width', 'sparkline-width', width, 120, 600, nextValue => {
-      width = nextValue;
-      chart.setAttribute('width', `${nextValue}`);
-    }).element,
-  );
-
-  controls.appendChild(
-    createSliderField('Height', 'sparkline-height', height, 30, 220, nextValue => {
-      height = nextValue;
-      chart.setAttribute('height', `${nextValue}`);
-    }).element,
-  );
-
-  container.appendChild(chart);
+  container.setAttribute('style', 'display:flex;flex-direction:column;gap:20px;');
+  const dimensions = [
+    { label: 'Default (80x20):', width: 80, height: 20 },
+    { label: 'Custom width=150:', width: 150, height: 20 },
+    { label: 'Custom height=40:', width: 80, height: 40 },
+    { label: 'Both (200x60):', width: 200, height: 60 },
+  ];
+  dimensions.forEach(({ label, width, height }) => {
+    const row = document.createElement('div');
+    row.setAttribute('style', 'display:flex;align-items:center;gap:15px;');
+    const rowLabel = document.createElement('span');
+    rowLabel.textContent = label;
+    rowLabel.setAttribute('style', 'min-width:140px;');
+    row.append(rowLabel, createSparklineWithLegend(dimensionsExample, true, { width, height }));
+    container.appendChild(row);
+  });
   return container;
 };
-StandardAttributes.storyName = 'Standard Attributes';
-StandardAttributes.parameters = { docs: { story: { height: '260px' } } };
+Dimensions.storyName = 'Dimensions';
+Dimensions.parameters = {
+  docs: {
+    story: { height: '260px' },
+    description: { story: 'Customize Sparkline dimensions using width and height. Default: width=80px, height=20px.' },
+  },
+};
 
 export const ChartAttributes: Story<SparklineChart> = () => {
   const container = document.createElement('div');
@@ -73,12 +175,10 @@ export const ChartAttributes: Story<SparklineChart> = () => {
   container.appendChild(controls);
 
   const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
-  chart.data = sampleData;
-  chart.setAttribute('width', '220');
-  chart.setAttribute('height', '60');
+  chart.data = dimensionsExample;
   chart.setAttribute('style', 'margin-top:20px;');
 
-  const variantControl = createDropdownField('Variant', 'sparkline-ca-variant', ['line', 'area'], 'line', nextValue => {
+  const variantControl = createDropdownField('Variant', 'sparkline-ca-variant', ['area', 'line'], 'area', nextValue => {
     chart.variant = nextValue as SparklineChart['variant'];
   });
   controls.appendChild(variantControl.element);
@@ -100,169 +200,5 @@ export const ChartAttributes: Story<SparklineChart> = () => {
 ChartAttributes.storyName = 'Chart Attributes';
 ChartAttributes.parameters = { docs: { story: { height: '260px' } } };
 
-export const TooltipRendererStory: Story<SparklineChart> = () => {
-  const container = document.createElement('div');
-
-  const info = document.createElement('p');
-  info.textContent =
-    'Hover over the sparkline — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
-  container.appendChild(info);
-
-  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
-  chart.data = sampleData;
-  chart.chartTitle = 'Sparkline chart custom tooltipRenderer';
-  chart.variant = 'line';
-  chart.setAttribute('width', '220');
-  chart.setAttribute('height', '60');
-  chart.tooltipRenderer = (_point, defaultRender) => {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
-    wrapper.innerHTML = defaultRender(_point);
-    return wrapper;
-  };
-
-  container.appendChild(chart);
-  return container;
-};
-TooltipRendererStory.storyName = 'Tooltip Renderer';
-TooltipRendererStory.parameters = { docs: { story: { height: '160px' } } };
-
-export const Culture: Story<SparklineChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  const cultures = ['en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'] as const;
-  let currentCulture: string = 'en-US';
-
-  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
-  chart.data = sampleData;
-  chart.variant = 'line';
-  chart.chartTitle = `Sparkline chart culture example (${currentCulture})`;
-  chart.setAttribute('width', '220');
-  chart.setAttribute('height', '60');
-  chart.setAttribute('culture', currentCulture);
-  chart.setAttribute('style', 'margin-top:20px;');
-  container.appendChild(chart);
-
-  const cultureControl = createDropdownField(
-    'Culture',
-    'sparkline-culture',
-    [...cultures],
-    currentCulture,
-    nextCulture => {
-      currentCulture = nextCulture;
-      chart.setAttribute('culture', currentCulture);
-      chart.chartTitle = `Sparkline chart culture example (${currentCulture})`;
-    },
-  );
-  controls.appendChild(cultureControl.element);
-
-  return container;
-};
-Culture.parameters = { docs: { story: { height: '160px' } } };
-
-export const TitleAlign: Story<SparklineChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  const aligns = ['start', 'center', 'end'] as const;
-  let currentAlign: (typeof aligns)[number] = 'start';
-
-  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
-  chart.data = sampleData;
-  chart.chartTitle = 'Sparkline title align example';
-  chart.variant = 'line';
-  chart.setAttribute('width', '400');
-  chart.setAttribute('height', '80');
-  chart.setAttribute('style', 'margin-top:20px;');
-  container.appendChild(chart);
-
-  controls.appendChild(
-    createDropdownField('Title align', 'sparkline-title-align', [...aligns], currentAlign, nextAlign => {
-      currentAlign = nextAlign as (typeof aligns)[number];
-      if (currentAlign === 'start') {
-        chart.removeAttribute('title-align');
-      } else {
-        chart.setAttribute('title-align', currentAlign);
-      }
-    }).element,
-  );
-
-  return container;
-};
-TitleAlign.parameters = { docs: { story: { height: '260px' } } };
-
-export const TitleAndLegendPositions: Story<SparklineChart> = () => {
-  const container = document.createElement('div');
-  const controls = document.createElement('div');
-  controls.setAttribute('style', controlsRowStyle);
-  container.appendChild(controls);
-
-  const legendPositions = ['bottom', 'top', 'start', 'end'] as const;
-  const titlePositions = ['top', 'bottom'] as const;
-  let currentLegendPosition: (typeof legendPositions)[number] = 'bottom';
-  let currentTitlePosition: (typeof titlePositions)[number] = 'top';
-
-  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
-  chart.data = sampleData;
-  chart.chartTitle = 'Sparkline title and legend positions example';
-  chart.variant = 'line';
-  chart.setAttribute('width', '400');
-  chart.setAttribute('height', '80');
-  chart.setAttribute('style', 'margin-top:20px;');
-  container.appendChild(chart);
-
-  controls.appendChild(
-    createDropdownField(
-      'Title position',
-      'sparkline-title-position',
-      [...titlePositions],
-      currentTitlePosition,
-      nextTitlePosition => {
-        currentTitlePosition = nextTitlePosition as (typeof titlePositions)[number];
-        if (currentTitlePosition === 'top') {
-          chart.removeAttribute('title-position');
-        } else {
-          chart.setAttribute('title-position', currentTitlePosition);
-        }
-      },
-    ).element,
-  );
-  controls.appendChild(
-    createDropdownField(
-      'Legend position',
-      'sparkline-legend-position',
-      [...legendPositions],
-      currentLegendPosition,
-      nextLegendPosition => {
-        currentLegendPosition = nextLegendPosition as (typeof legendPositions)[number];
-        if (currentLegendPosition === 'bottom') {
-          chart.removeAttribute('legend-position');
-        } else {
-          chart.setAttribute('legend-position', currentLegendPosition);
-        }
-      },
-    ).element,
-  );
-
-  return container;
-};
-TitleAndLegendPositions.parameters = { docs: { story: { height: '260px' } } };
-
-export const RTL: Story<SparklineChart> = () => {
-  const wrapper = document.createElement('div');
-  wrapper.setAttribute('dir', 'rtl');
-  const chart = document.createElement('fluent-sparkline-chart') as SparklineChart;
-  chart.data = sampleData;
-  chart.chartTitle = 'Sparkline RTL example';
-  chart.variant = 'line';
-  chart.setAttribute('width', '400');
-  chart.setAttribute('height', '80');
-  wrapper.appendChild(chart);
-  return wrapper;
-};
-RTL.parameters = { docs: { story: { height: '200px' } } };
+export const RTL: Story<SparklineChart> = () => createBasicDemo('rtl');
+RTL.parameters = { docs: { story: { height: '500px' } } };

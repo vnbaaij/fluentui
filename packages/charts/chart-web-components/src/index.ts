@@ -99,7 +99,12 @@ export {
   SparklineChartTemplate,
 } from './sparkline-chart/index.js';
 
-export type { SparklineDataPoint, SparklineVariant } from './sparkline-chart/index.js';
+export type {
+  SparklineChartData,
+  SparklineChartSeries,
+  SparklineDataPoint,
+  SparklineVariant,
+} from './sparkline-chart/index.js';
 
 export {
   StackedBarChart,

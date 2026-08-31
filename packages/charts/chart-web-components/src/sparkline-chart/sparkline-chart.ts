@@ -1,9 +1,9 @@
-import { attr } from '@microsoft/fast-element';
+import { attr, nullableNumberConverter } from '@microsoft/fast-element';
 import { scaleLinear, scaleTime } from 'd3-scale';
 import { area, line } from 'd3-shape';
 import { ChartBase } from '../utils/chart-base.js';
 import { getColorFromToken, jsonConverter, SVG_NAMESPACE_URI } from '../utils/chart-helpers.js';
-import type { SparklineDataPoint, SparklineVariant } from './sparkline-chart.options.js';
+import type { SparklineChartData, SparklineDataPoint, SparklineVariant } from './sparkline-chart.options.js';
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
@@ -25,19 +25,31 @@ interface NormalizedPoint {
 /** @public */
 export class SparklineChart extends ChartBase {
   @attr({ converter: jsonConverter })
-  public data!: SparklineDataPoint[];
+  public data!: SparklineChartData;
 
   @attr
-  public variant: SparklineVariant = 'line';
+  public variant: SparklineVariant = 'area';
 
   @attr
   public color?: string;
 
+  @attr({ attribute: 'show-legend', mode: 'boolean' })
+  public showLegend: boolean = false;
+
+  @attr({ attribute: 'value-text-width', converter: nullableNumberConverter })
+  public valueTextWidth?: number;
+
   protected override _enableResizeObserver = true;
+
+  constructor() {
+    super();
+    this.width = 80;
+    this.height = 20;
+  }
 
   public connectedCallback() {
     const self = this as Record<string, unknown>;
-    const attrFields = ['data', 'variant', 'color'] as const;
+    const attrFields = ['data', 'variant', 'color', 'showLegend', 'valueTextWidth'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -68,33 +80,48 @@ export class SparklineChart extends ChartBase {
     this._requestRender();
   }
 
+  protected showLegendChanged() {
+    this._requestRender();
+  }
+
+  protected valueTextWidthChanged() {
+    this._requestRender();
+  }
+
   protected override _performRender(): void {
     if (!this.$fastController.isConnected || !this.chartContainer) {
       return;
     }
 
-    this._applyHostDimensions(this.width, this.height);
+    const series = this.data?.lineChartData[0];
+    const points = series?.data ?? [];
+    const legend = series?.legend;
+    const chartWidth = toNumber(this.width, 80);
+    const chartHeight = toNumber(this.height, 20);
+    const legendWidth = this.showLegend && legend ? this.valueTextWidth ?? 80 : 0;
+    this._applyHostDimensions(chartWidth + legendWidth, chartHeight);
     this._clearChart();
     this.legends = [];
 
-    const points = this.data ?? [];
     if (points.length === 0) {
       this.elementInternals.ariaLabel = this._getHostAriaLabel();
       return;
     }
 
-    const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 160);
-    const height = this.chartContainer.getBoundingClientRect().height || toNumber(this.height, 48);
+    const width = chartWidth;
+    const height = chartHeight;
     const margins = { top: 4, right: 4, bottom: 4, left: 4 };
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
-    const stroke = this.color ? getColorFromToken(this.color) : '#637cef';
+    const stroke = getColorFromToken(this.color ?? series?.color ?? '#637cef');
 
     const normalized = this._normalizePoints(points);
     const yMin = Math.min(...normalized.map(point => point.y));
     const yMax = Math.max(...normalized.map(point => point.y));
     const safeYMax = yMin === yMax ? yMax + 1 : yMax;
-    const yScale = scaleLinear().domain([Math.min(0, yMin), safeYMax]).range([innerHeight, 0]);
+    const yScale = scaleLinear()
+      .domain([Math.min(0, yMin), safeYMax])
+      .range([innerHeight, 0]);
 
     const svg = createSvgElement<SVGSVGElement>('svg');
     svg.classList.add('chart');
@@ -110,15 +137,22 @@ export class SparklineChart extends ChartBase {
     const xDomainStart = normalized[0]?.x ?? 0;
     const xDomainEnd = normalized[normalized.length - 1]?.x ?? 0;
     const safeEnd =
-      isTimeSeries && xDomainStart instanceof Date && xDomainEnd instanceof Date && xDomainStart.getTime() === xDomainEnd.getTime()
+      isTimeSeries &&
+      xDomainStart instanceof Date &&
+      xDomainEnd instanceof Date &&
+      xDomainStart.getTime() === xDomainEnd.getTime()
         ? new Date(xDomainEnd.getTime() + 1)
         : !isTimeSeries && xDomainStart === xDomainEnd
-          ? Number(xDomainEnd) + 1
-          : xDomainEnd;
+        ? Number(xDomainEnd) + 1
+        : xDomainEnd;
 
     const xScale = isTimeSeries
-      ? scaleTime().domain([xDomainStart as Date, safeEnd as Date]).range([0, innerWidth])
-      : scaleLinear().domain([Number(xDomainStart), Number(safeEnd)]).range([0, innerWidth]);
+      ? scaleTime()
+          .domain([xDomainStart as Date, safeEnd as Date])
+          .range([0, innerWidth])
+      : scaleLinear()
+          .domain([Number(xDomainStart), Number(safeEnd)])
+          .range([0, innerWidth]);
 
     const lineGenerator = line<NormalizedPoint>()
       .x(point => (point.x instanceof Date ? xScale(point.x) : xScale(Number(point.x))))
@@ -144,14 +178,23 @@ export class SparklineChart extends ChartBase {
     group.appendChild(linePath);
 
     this.chartContainer.appendChild(svg);
+    if (this.showLegend && legend) {
+      this.chartContainer.appendChild(this._createLegendSvg(legend, legendWidth, height));
+    }
     this.elementInternals.ariaLabel = this._getHostAriaLabel();
   }
 
   protected override _applyActiveLegendState(): void {}
 
   protected override _getHostAriaLabel(): string {
-    const count = this.data?.length ?? 0;
-    return count > 0 ? `Sparkline chart with ${count} points.` : 'Sparkline chart with no data.';
+    const series = this.data?.lineChartData[0];
+    const count = series?.data.length ?? 0;
+    if (count === 0) {
+      return 'Sparkline chart with no data.';
+    }
+
+    const label = series?.legend ?? this.chartTitle ?? this.data?.chartTitle;
+    return label ? `Sparkline with label ${label}.` : `Sparkline chart with ${count} points.`;
   }
 
   private _clearChart(): void {
@@ -160,9 +203,29 @@ export class SparklineChart extends ChartBase {
     }
   }
 
+  private _createLegendSvg(legend: string, width: number, height: number): SVGSVGElement {
+    const svg = createSvgElement<SVGSVGElement>('svg');
+    svg.classList.add('sparkline-legend');
+    svg.setAttribute('width', String(width));
+    svg.setAttribute('height', String(height));
+
+    const text = createSvgElement<SVGTextElement>('text');
+    text.classList.add('sparkline-legend-text');
+    text.setAttribute('x', this._isRTL ? '100%' : '0%');
+    text.setAttribute('text-anchor', this._isRTL ? 'end' : 'start');
+    text.setAttribute('dx', this._isRTL ? '-8' : '8');
+    text.setAttribute('y', '100%');
+    text.setAttribute('dy', '-5');
+    text.textContent = legend;
+    svg.appendChild(text);
+    return svg;
+  }
+
   private _normalizePoints(points: SparklineDataPoint[]): NormalizedPoint[] {
     const isTimeSeries = points.some(
-      point => point.x instanceof Date || (typeof point.x === 'string' && Number.isNaN(Number(point.x)) && !Number.isNaN(Date.parse(point.x))),
+      point =>
+        point.x instanceof Date ||
+        (typeof point.x === 'string' && Number.isNaN(Number(point.x)) && !Number.isNaN(Date.parse(point.x))),
     );
 
     return points.map((point, index) => {
@@ -172,9 +235,8 @@ export class SparklineChart extends ChartBase {
           y: point.y,
         };
       }
-
       return {
-        x: typeof point.x === 'number' ? point.x : Number.isFinite(Number(point.x)) ? Number(point.x) : index,
+        x: Number(point.x ?? index),
         y: point.y,
       };
     });
