@@ -2,12 +2,22 @@ import { attr } from '@microsoft/fast-element';
 import { extent, max } from 'd3-array';
 import { type Axis, axisBottom, axisLeft, axisRight } from 'd3-axis';
 import { format } from 'd3-format';
-import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear, scaleTime, type ScaleTime } from 'd3-scale';
+import {
+  type ScaleBand,
+  scaleBand,
+  type ScaleLinear,
+  scaleLinear,
+  type ScaleLogarithmic,
+  scaleLog,
+  scaleTime,
+  type ScaleTime,
+} from 'd3-scale';
 import { line as createLine } from 'd3-shape';
 import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
-import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
-import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
+import { appendVerticalGradient, resolveBarWidth, resolveChartColor } from '../utils/bar-chart-helpers.js';
+import { resolveChartMargins } from '../utils/cartesian-axis-helpers.js';
+import { renderChartAnnotations } from '../utils/chart-annotation-helpers.js';
 import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
@@ -26,11 +36,11 @@ import {
   getColorFromToken,
   getNextColor,
   jsonConverter,
-  lightenColor,
   parseDateOrNumber,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
 import type { VerticalBarChartDataPoint } from './vertical-bar-chart.options.js';
+import { VerticalBarChartBase } from '../utils/vertical-bar-chart-base.js';
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
@@ -40,7 +50,6 @@ type TooltipState = TooltipProps & { xValue: string; yValue: string; entries: To
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
 const defaultBarWidth = 16;
-const minBarWidth = 1;
 const defaultCategoricalInnerPadding = 2 / 3;
 
 const clampScalePadding = (value: number): number => {
@@ -57,21 +66,6 @@ const calcTotalBandUnits = (numBands: number, innerPadding: number): number => {
 
 const calcRequiredCategoricalWidth = (bandwidth: number, numBands: number, innerPadding: number): number => {
   return bandwidth * calcTotalBandUnits(numBands, innerPadding);
-};
-
-const resolveBarWidth = (
-  barWidth: number | string | undefined,
-  maxBarWidth: number | string | undefined,
-  adjustedValue: number,
-): number => {
-  const requestedWidth = toOptionalNumber(barWidth);
-  let resolvedWidth = barWidth === 'auto' ? adjustedValue : requestedWidth ?? Math.min(adjustedValue, defaultBarWidth);
-  const maximumWidth = toOptionalNumber(maxBarWidth);
-  if (maximumWidth !== undefined) {
-    resolvedWidth = Math.min(resolvedWidth, maximumWidth);
-  }
-  resolvedWidth = Math.max(resolvedWidth, minBarWidth);
-  return resolvedWidth;
 };
 
 const formatCompactNumber = (value: number, culture: string | undefined): string => {
@@ -137,7 +131,7 @@ const getNormalizedXValue = (value: VerticalBarChartDataPoint['x']): number | Da
 };
 
 /** @public */
-export class VerticalBarChart extends CartesianChartBase {
+export class VerticalBarChart extends VerticalBarChartBase {
   public declare tooltipProps: TooltipState;
 
   private _activeLineMarkerXValue: string | null = null;
@@ -146,41 +140,17 @@ export class VerticalBarChart extends CartesianChartBase {
   @attr({ converter: jsonConverter })
   public data!: VerticalBarChartDataPoint[];
 
-  @attr({ attribute: 'bar-width' })
-  public barWidth?: number | string;
-
-  @attr({ attribute: 'max-bar-width' })
-  public maxBarWidth?: number | string;
-
-  @attr({ attribute: 'use-single-color', mode: 'boolean' })
-  public useSingleColor: boolean = false;
-
-  @attr({ attribute: 'enable-gradient', mode: 'boolean' })
-  public enableGradient: boolean = false;
-
   @attr({ attribute: 'line-legend-text' })
   public lineLegendText?: string;
 
   @attr({ attribute: 'line-legend-color' })
   public lineLegendColor?: string;
 
-  @attr({ attribute: 'secondary-y-axis-title' })
-  public secondaryYAxisTitle?: string;
-
   protected override _enableResizeObserver = true;
 
   public connectedCallback() {
     const self = this as Record<string, unknown>;
-    const attrFields = [
-      'data',
-      'barWidth',
-      'maxBarWidth',
-      'useSingleColor',
-      'enableGradient',
-      'lineLegendText',
-      'lineLegendColor',
-      'secondaryYAxisTitle',
-    ] as const;
+    const attrFields = ['data', 'lineLegendText', 'lineLegendColor'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -204,31 +174,11 @@ export class VerticalBarChart extends CartesianChartBase {
     this._requestRender();
   }
 
-  protected barWidthChanged(): void {
-    this._requestRender();
-  }
-
-  protected maxBarWidthChanged(): void {
-    this._requestRender();
-  }
-
-  protected useSingleColorChanged(): void {
-    this._requestRender();
-  }
-
-  protected enableGradientChanged(): void {
-    this._requestRender();
-  }
-
   protected lineLegendTextChanged(): void {
     this._requestRender();
   }
 
   protected lineLegendColorChanged(): void {
-    this._requestRender();
-  }
-
-  protected secondaryYAxisTitleChanged(): void {
     this._requestRender();
   }
 
@@ -284,21 +234,14 @@ export class VerticalBarChart extends CartesianChartBase {
     const hasSecondaryY = points.some(point => point.lineData?.useSecondaryYScale);
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
     const height = toNumber(this.height, 300);
-    const primaryAxisSpace = defaultMargins.left;
-    const secondaryAxisSpace = 70;
-    const margins = {
-      top: defaultMargins.top,
-      bottom: defaultMargins.bottom,
-      left: this._isRTL ? (hasSecondaryY ? secondaryAxisSpace : defaultMargins.right) : primaryAxisSpace,
-      right: this._isRTL ? primaryAxisSpace : hasSecondaryY ? secondaryAxisSpace : defaultMargins.right,
-    };
+    const margins = resolveChartMargins(defaultMargins, this.margins, this._isRTL, hasSecondaryY);
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
     const allNumericX = points.every(point => typeof point.x === 'number' && Number.isFinite(point.x));
     const isDateAxis = points.every(point => getNormalizedXValue(point.x) instanceof Date);
 
     let xScaleBand: ScaleBand<string> | undefined;
-    let xScaleLinear: ScaleLinear<number, number> | undefined;
+    let xScaleLinear: ScaleLinear<number, number> | ScaleLogarithmic<number, number> | undefined;
     let xScaleTime: ScaleTime<number, number> | undefined;
     let xAxis: Axis<string | number | Date>;
     let barAutoWidth = defaultBarWidth;
@@ -322,7 +265,12 @@ export class VerticalBarChart extends CartesianChartBase {
       const domainMin = minX === maxX ? minX - 0.5 : minX - domainPadding;
       const domainMax = minX === maxX ? maxX + 0.5 : maxX + domainPadding;
 
-      xScaleLinear = scaleLinear().domain([domainMin, domainMax]).range([0, innerWidth]);
+      const useLogX = this.xScaleType === 'log' && numericXValues.every(value => value > 0);
+      xScaleLinear = useLogX
+        ? scaleLog()
+            .domain([Math.max(minX / 1.05, Number.MIN_VALUE), maxX === minX ? maxX * 1.05 : maxX * 1.05])
+            .range([0, innerWidth])
+        : scaleLinear().domain([domainMin, domainMax]).range([0, innerWidth]);
       if (this.roundedTicks) {
         xScaleLinear.nice();
       }
@@ -392,12 +340,8 @@ export class VerticalBarChart extends CartesianChartBase {
         group => group.points.map(point => point.y),
       ).map(group => group.key);
 
-      const baseWithPadding = this as CartesianChartBase & {
-        xAxisInnerPadding?: number | string;
-        xAxisOuterPadding?: number | string;
-      };
-      const explicitInnerPadding = toOptionalNumber(baseWithPadding.xAxisInnerPadding);
-      const explicitOuterPadding = toOptionalNumber(baseWithPadding.xAxisOuterPadding);
+      const explicitInnerPadding = toOptionalNumber(this.xAxisInnerPadding);
+      const explicitOuterPadding = toOptionalNumber(this.xAxisOuterPadding);
       const xAxisInnerPadding = clampScalePadding(explicitInnerPadding ?? defaultCategoricalInnerPadding);
       const xAxisOuterPadding = clampScalePadding(explicitOuterPadding ?? 0);
 
@@ -437,8 +381,13 @@ export class VerticalBarChart extends CartesianChartBase {
       );
     }
 
-    const maxY = max(points, point => point.y) ?? 0;
-    const minY = Math.min(...points.map(point => point.y));
+    const primaryValues = [
+      ...points.map(point => point.y),
+      ...points.flatMap(point => (point.lineData && !point.lineData.useSecondaryYScale ? [point.lineData.y] : [])),
+    ];
+    const maxY = max(primaryValues) ?? 0;
+    const minY = Math.min(...primaryValues);
+    const useLogPrimary = this.yScaleType === 'log' && primaryValues.every(value => value > 0);
     const resolvedMinValue = toOptionalNumber(this.yMinValue) ?? (this.supportNegativeData ? Math.min(minY, 0) : 0);
     const resolvedMaxValue =
       toOptionalNumber(this.yMaxValue) ?? (this.supportNegativeData && maxY <= 0 ? minY : Math.max(maxY, 1));
@@ -448,16 +397,25 @@ export class VerticalBarChart extends CartesianChartBase {
       tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
       roundedTicks: this.roundedTicks,
     });
-    const yScale = scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
+    const yScale: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = useLogPrimary
+      ? scaleLog()
+          .domain([Math.max(minY / 10, Number.MIN_VALUE), maxY])
+          .range([innerHeight, 0])
+      : scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
 
     const secondaryLineValues = points
       .flatMap(point => (point.lineData?.useSecondaryYScale ? [point.lineData.y] : []))
       .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
     let preparedSecondaryYAxis = preparedYAxis;
-    let yScaleSecondary = yScale;
+    let yScaleSecondary: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = yScale;
     if (hasSecondaryY) {
-      const secondaryMin = secondaryLineValues.length > 0 ? Math.min(0, ...secondaryLineValues) : 0;
-      let secondaryMax = secondaryLineValues.length > 0 ? Math.max(0, ...secondaryLineValues) : 1;
+      const useLogSecondary = this.secondaryYScaleType === 'log' && secondaryLineValues.every(value => value > 0);
+      const secondaryMin = useLogSecondary
+        ? Math.min(...secondaryLineValues)
+        : secondaryLineValues.length > 0
+        ? Math.min(0, ...secondaryLineValues)
+        : 0;
+      let secondaryMax = secondaryLineValues.length > 0 ? Math.max(...secondaryLineValues) : 1;
       if (secondaryMin === secondaryMax) {
         secondaryMax += 1;
       }
@@ -467,9 +425,11 @@ export class VerticalBarChart extends CartesianChartBase {
         tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
         roundedTicks: this.roundedTicks,
       });
-      yScaleSecondary = scaleLinear()
-        .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
-        .range([innerHeight, 0]);
+      yScaleSecondary = useLogSecondary
+        ? scaleLog().domain([secondaryMin, secondaryMax]).range([innerHeight, 0])
+        : scaleLinear()
+            .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
+            .range([innerHeight, 0]);
     }
 
     const svg = createSvgElement<SVGSVGElement>('svg');
@@ -489,7 +449,7 @@ export class VerticalBarChart extends CartesianChartBase {
     applyAxisTickConfig(
       yAxis,
       this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
-      this.yAxisTickValues ?? preparedYAxis.tickValues,
+      this.yAxisTickValues ?? (useLogPrimary ? undefined : preparedYAxis.tickValues),
     );
     renderAxisGridLinesShared({
       layer: plotGroup,
@@ -500,17 +460,15 @@ export class VerticalBarChart extends CartesianChartBase {
       spanEnd: innerWidth,
     });
 
-    const singleColor = this.useSingleColor
-      ? points[0].color
-        ? getColorFromToken(points[0].color)
-        : getNextColor(0, 0)
-      : undefined;
+    const singleColor = this.useSingleColor ? resolveChartColor(points[0].color, this.colors, 0) : undefined;
     const cornerRadius = this.roundCorners ? 3 : 0;
 
     const barLegendMap = new Map<string, string>();
     this._renderedBars = [];
 
-    const getLineScale = (point: VerticalBarChartDataPoint): ScaleLinear<number, number> => {
+    const getLineScale = (
+      point: VerticalBarChartDataPoint,
+    ): ScaleLinear<number, number> | ScaleLogarithmic<number, number> => {
       return point.lineData?.useSecondaryYScale ? yScaleSecondary : yScale;
     };
 
@@ -540,7 +498,9 @@ export class VerticalBarChart extends CartesianChartBase {
       const isFreshShow = !this.tooltipProps.isVisible;
       this._currentTooltipDataPoint = point;
       const lineLegend = this.lineLegendText || 'Line';
-      const lineColor = this.lineLegendColor ? getColorFromToken(this.lineLegendColor) : 'brown';
+      const lineColor = this.lineLegendColor
+        ? getColorFromToken(this.lineLegendColor)
+        : resolveChartColor(undefined, this.colors, 0, 10);
       const barCalloutValue = point.yAxisCalloutData || formatAxisNumber(point.y, this.yAxisTickFormat, this.culture);
       const entries: TooltipEntry[] = [
         {
@@ -582,12 +542,12 @@ export class VerticalBarChart extends CartesianChartBase {
       );
       const xCenter = getXCenter(point);
       const x = xCenter - actualWidth / 2;
-      const color = singleColor ?? (point.color ? getColorFromToken(point.color) : getNextColor(index, 0));
+      const color = singleColor ?? resolveChartColor(point.color, this.colors, index);
       barLegendMap.set(legend, color);
 
       const isNegativeBar = point.y < 0;
       const yValue = yScale(point.y);
-      const baselineY = yScale(0);
+      const baselineY = useLogPrimary ? innerHeight : yScale(0);
       const barHeight = Math.max(Math.abs(yValue - baselineY), 0);
       const barTop = Math.min(yValue, baselineY);
       const barBottom = Math.max(yValue, baselineY);
@@ -603,13 +563,22 @@ export class VerticalBarChart extends CartesianChartBase {
       rect.setAttribute('y', String(isNegativeBar ? baselineY : yValue));
       rect.setAttribute('width', String(actualWidth));
       rect.setAttribute('height', String(barHeight));
-      const gradientId = this._appendGradient(defs, index, point, color);
+      const gradientId = appendVerticalGradient(
+        defs,
+        `vbc-gradient-${index}`,
+        color,
+        this.enableGradient,
+        point.gradient,
+      );
       rect.setAttribute('fill', gradientId ? `url(#${gradientId})` : color);
       rect.setAttribute('rx', String(cornerRadius));
       rect.setAttribute('ry', String(cornerRadius));
       rect.setAttribute('role', 'img');
       rect.setAttribute('tabindex', this._renderedBars.length === 0 ? '0' : '-1');
-      rect.setAttribute('aria-label', `${xValueLabel}. ${legend ? `${legend}, ` : ''}${point.y}.`);
+      rect.setAttribute(
+        'aria-label',
+        point.callOutAccessibilityData?.ariaLabel ?? `${xValueLabel}. ${legend ? `${legend}, ` : ''}${point.y}.`,
+      );
       if (this.strokeWidth !== undefined) {
         rect.setAttribute('stroke-width', String(this.strokeWidth));
         rect.setAttribute('stroke', color);
@@ -652,7 +621,7 @@ export class VerticalBarChart extends CartesianChartBase {
         label.setAttribute('x', String(xCenter));
         label.setAttribute('y', String(isNegativeBar ? yValue + 12 : yValue - 6));
         label.setAttribute('text-anchor', 'middle');
-        label.textContent = formatAxisNumber(point.y, this.yAxisTickFormat, this.culture);
+        label.textContent = point.barLabel ?? formatAxisNumber(point.y, this.yAxisTickFormat, this.culture);
         plotGroup.appendChild(label);
       }
     });
@@ -660,7 +629,9 @@ export class VerticalBarChart extends CartesianChartBase {
     const linePoints = points.filter(point => point.lineData && typeof point.lineData.y === 'number');
     if (linePoints.length > 0) {
       const lineLegend = this.lineLegendText || 'Line';
-      const lineColor = this.lineLegendColor ? getColorFromToken(this.lineLegendColor) : 'brown';
+      const lineColor = this.lineLegendColor
+        ? getColorFromToken(this.lineLegendColor)
+        : resolveChartColor(undefined, this.colors, 0, 10);
       // Keep line legend first to match React VerticalBarChart legend ordering.
       this.legends = [
         { legend: lineLegend, color: lineColor, isLineLegendInBarChart: true },
@@ -902,7 +873,7 @@ export class VerticalBarChart extends CartesianChartBase {
       applyAxisTickConfig(
         yAxisSecondary,
         this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
-        this.yAxisTickValues ?? preparedSecondaryYAxis.tickValues,
+        this.yAxisTickValues ?? (this.secondaryYScaleType === 'log' ? undefined : preparedSecondaryYAxis.tickValues),
       );
       renderSecondaryYAxisShared({
         svg,
@@ -918,6 +889,25 @@ export class VerticalBarChart extends CartesianChartBase {
         yAxisTitle: this.secondaryYAxisTitle,
       });
     }
+
+    const annotationLayer = createSvgElement<SVGGElement>('g');
+    annotationLayer.classList.add('annotation-layer');
+    annotationLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+    svg.appendChild(annotationLayer);
+    renderChartAnnotations({
+      layer: annotationLayer,
+      collisionLayer: plotGroup,
+      annotations: this.annotations,
+      innerWidth,
+      innerHeight,
+      mapDataX: value => {
+        if (xScaleTime) return xScaleTime(new Date(value));
+        if (xScaleLinear) return xScaleLinear(Number(value));
+        const bandX = xScaleBand?.(String(value));
+        return bandX === undefined || !xScaleBand ? undefined : bandX + xScaleBand.bandwidth() / 2;
+      },
+      mapDataY: (value, axis) => (axis === 'secondary' ? yScaleSecondary : yScale)(Number(value)),
+    });
 
     this.chartContainer.appendChild(svg);
     if (linePoints.length === 0) {
@@ -990,35 +980,5 @@ export class VerticalBarChart extends CartesianChartBase {
       marker.setAttribute('visibility', shouldShow ? 'visible' : 'hidden');
       marker.setAttribute('r', shouldShow ? '8' : '0');
     });
-  }
-
-  private _appendGradient(defs: SVGDefsElement, pointIndex: number, point: VerticalBarChartDataPoint, color: string) {
-    if (!this.enableGradient && !point.gradient) {
-      return undefined;
-    }
-
-    const gradientId = `vbc-gradient-${pointIndex}`;
-    const gradient = createSvgElement<SVGLinearGradientElement>('linearGradient');
-    gradient.setAttribute('id', gradientId);
-    // VBC gradients should run in the y-axis direction (vertical), unlike HBCWA's horizontal direction.
-    gradient.setAttribute('x1', '0%');
-    gradient.setAttribute('x2', '0%');
-    gradient.setAttribute('y1', '100%');
-    gradient.setAttribute('y2', '0%');
-
-    const [from, to] = point.gradient ?? [lightenColor(color, 0.35), color];
-
-    const start = createSvgElement<SVGStopElement>('stop');
-    start.setAttribute('offset', '0%');
-    start.setAttribute('stop-color', from);
-    gradient.appendChild(start);
-
-    const end = createSvgElement<SVGStopElement>('stop');
-    end.setAttribute('offset', '100%');
-    end.setAttribute('stop-color', to);
-    gradient.appendChild(end);
-
-    defs.appendChild(gradient);
-    return gradientId;
   }
 }

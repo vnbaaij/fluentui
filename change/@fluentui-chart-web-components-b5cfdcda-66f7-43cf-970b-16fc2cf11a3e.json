@@ -1,0 +1,7 @@
+{
+  "type": "minor",
+  "comment": "feat: add shared vertical bar chart configuration and grouped chart line support",
+  "packageName": "@fluentui/chart-web-components",
+  "email": "copilot@example.com",
+  "dependentChangeType": "patch"
+}

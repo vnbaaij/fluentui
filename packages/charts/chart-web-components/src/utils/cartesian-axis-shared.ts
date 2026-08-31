@@ -8,6 +8,7 @@ export const DEFAULT_REACT_NUMERIC_Y_TICK_COUNT = 4;
 export type AxisScaleLike<Domain extends AxisDomain> = {
   domain(): Domain[];
   ticks?: (count?: number) => Domain[];
+  tickFormat?: (count?: number) => (value: Domain) => string;
   bandwidth?: () => number;
   step?: () => number;
   (value: Domain): number | undefined;
@@ -31,6 +32,22 @@ export const getAxisTickValues = <Domain extends AxisDomain>(
     return scale.ticks(count);
   }
   return scale.domain();
+};
+
+const getAxisTickLabelFormatter = <Domain extends AxisDomain>(
+  axis: Axis<Domain>,
+  scale: AxisScaleLike<Domain>,
+): ((value: Domain, index: number) => string) | undefined => {
+  const axisFormatter = axis.tickFormat();
+  if (axisFormatter) {
+    return axisFormatter;
+  }
+  if (axis.tickValues() || typeof scale.tickFormat !== 'function') {
+    return undefined;
+  }
+  const [count] = axis.tickArguments() as [number?];
+  const scaleFormatter = scale.tickFormat(count);
+  return value => scaleFormatter(value);
 };
 
 export const getAxisPosition = <Domain extends AxisDomain>(scale: AxisScaleLike<Domain>, value: Domain): number => {
@@ -480,7 +497,8 @@ export const renderPrimaryYAxisShared = ({
   domain.setAttribute('y2', String(innerHeight));
   group.appendChild(domain);
 
-  getAxisTickValues(axis, scale).forEach(value => {
+  const tickLabelFormatter = getAxisTickLabelFormatter(axis, scale);
+  getAxisTickValues(axis, scale).forEach((value, index) => {
     const tick = createSvgElement<SVGGElement>('g');
     tick.classList.add('tick');
     tick.setAttribute('transform', `translate(0, ${getAxisPosition(scale, value)})`);
@@ -490,25 +508,27 @@ export const renderPrimaryYAxisShared = ({
     line.setAttribute('x2', isRTL ? '6' : '-6');
     tick.appendChild(line);
 
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add(labelClassName);
-    text.setAttribute('x', String(isRTL ? 6 + tickPadding : -(6 + tickPadding)));
-    text.setAttribute('text-anchor', 'end');
-    text.setAttribute('dominant-baseline', 'middle');
-    const fullLabel = formatter(value);
-    hasNegativeTickLabel ||= fullLabel.startsWith('-') || fullLabel.startsWith('−');
-    const renderedLabel =
-      tickLabelMaxWidth && Number.isFinite(tickLabelMaxWidth)
-        ? truncateTextToWidth(text, fullLabel, tickLabelMaxWidth)
-        : fullLabel;
-    text.textContent = renderedLabel;
-    if (renderedLabel !== fullLabel) {
-      const title = createSvgElement<SVGTitleElement>('title');
-      title.textContent = fullLabel;
-      text.appendChild(title);
+    if (tickLabelFormatter?.(value, index) !== '') {
+      const text = createSvgElement<SVGTextElement>('text');
+      text.classList.add(labelClassName);
+      text.setAttribute('x', String(isRTL ? 6 + tickPadding : -(6 + tickPadding)));
+      text.setAttribute('text-anchor', 'end');
+      text.setAttribute('dominant-baseline', 'middle');
+      const fullLabel = formatter(value);
+      hasNegativeTickLabel ||= fullLabel.startsWith('-') || fullLabel.startsWith('−');
+      const renderedLabel =
+        tickLabelMaxWidth && Number.isFinite(tickLabelMaxWidth)
+          ? truncateTextToWidth(text, fullLabel, tickLabelMaxWidth)
+          : fullLabel;
+      text.textContent = renderedLabel;
+      if (renderedLabel !== fullLabel) {
+        const title = createSvgElement<SVGTitleElement>('title');
+        title.textContent = fullLabel;
+        text.appendChild(title);
+      }
+      maxTickLabelWidth = Math.max(maxTickLabelWidth, measureSvgTextWidth(text, renderedLabel));
+      tick.appendChild(text);
     }
-    maxTickLabelWidth = Math.max(maxTickLabelWidth, measureSvgTextWidth(text, renderedLabel));
-    tick.appendChild(text);
 
     group.appendChild(tick);
   });
@@ -576,7 +596,8 @@ export const renderSecondaryYAxisShared = ({
   domain.setAttribute('y2', String(innerHeight));
   group.appendChild(domain);
 
-  getAxisTickValues(axis, scale).forEach(value => {
+  const tickLabelFormatter = getAxisTickLabelFormatter(axis, scale);
+  getAxisTickValues(axis, scale).forEach((value, index) => {
     const tick = createSvgElement<SVGGElement>('g');
     tick.classList.add('tick');
     tick.setAttribute('transform', `translate(0, ${getAxisPosition(scale, value)})`);
@@ -586,25 +607,27 @@ export const renderSecondaryYAxisShared = ({
     line.setAttribute('x2', isRTL ? '-6' : '6');
     tick.appendChild(line);
 
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add(labelClassName);
-    text.setAttribute('x', String(isRTL ? -(6 + tickPadding) : 6 + tickPadding));
-    text.setAttribute('text-anchor', 'start');
-    text.setAttribute('dominant-baseline', 'middle');
-    const fullLabel = formatter(value);
-    hasNegativeTickLabel ||= fullLabel.startsWith('-') || fullLabel.startsWith('−');
-    const renderedLabel =
-      tickLabelMaxWidth && Number.isFinite(tickLabelMaxWidth)
-        ? truncateTextToWidth(text, fullLabel, tickLabelMaxWidth)
-        : fullLabel;
-    text.textContent = renderedLabel;
-    if (renderedLabel !== fullLabel) {
-      const title = createSvgElement<SVGTitleElement>('title');
-      title.textContent = fullLabel;
-      text.appendChild(title);
+    if (tickLabelFormatter?.(value, index) !== '') {
+      const text = createSvgElement<SVGTextElement>('text');
+      text.classList.add(labelClassName);
+      text.setAttribute('x', String(isRTL ? -(6 + tickPadding) : 6 + tickPadding));
+      text.setAttribute('text-anchor', 'start');
+      text.setAttribute('dominant-baseline', 'middle');
+      const fullLabel = formatter(value);
+      hasNegativeTickLabel ||= fullLabel.startsWith('-') || fullLabel.startsWith('−');
+      const renderedLabel =
+        tickLabelMaxWidth && Number.isFinite(tickLabelMaxWidth)
+          ? truncateTextToWidth(text, fullLabel, tickLabelMaxWidth)
+          : fullLabel;
+      text.textContent = renderedLabel;
+      if (renderedLabel !== fullLabel) {
+        const title = createSvgElement<SVGTitleElement>('title');
+        title.textContent = fullLabel;
+        text.appendChild(title);
+      }
+      maxTickLabelWidth = Math.max(maxTickLabelWidth, measureSvgTextWidth(text, renderedLabel));
+      tick.appendChild(text);
     }
-    maxTickLabelWidth = Math.max(maxTickLabelWidth, measureSvgTextWidth(text, renderedLabel));
-    tick.appendChild(text);
 
     group.appendChild(tick);
   });

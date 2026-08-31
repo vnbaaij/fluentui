@@ -1,5 +1,5 @@
 import { attr } from '@microsoft/fast-element';
-import type { AxisCategoryOrder } from './chart-options.js';
+import type { AxisCategoryOrder, AxisScaleType, ChartAnnotation, ChartMargins } from './chart-options.js';
 import { ChartBase } from './chart-base.js';
 import { jsonConverter } from './chart-helpers.js';
 
@@ -24,6 +24,26 @@ export abstract class CartesianChartBase extends ChartBase {
   /** Label rendered beside the y-axis. */
   @attr({ attribute: 'y-axis-title' })
   public yAxisTitle?: string;
+
+  /** Plot margins in pixels. Missing sides use the chart defaults. */
+  @attr({ converter: jsonConverter })
+  public margins?: Partial<ChartMargins>;
+
+  /** Text annotations rendered over the plot area. */
+  @attr({ converter: jsonConverter })
+  public annotations?: ChartAnnotation[];
+
+  /** Scale type for a continuous numeric x-axis. */
+  @attr({ attribute: 'x-scale-type' })
+  public xScaleType: AxisScaleType = 'default';
+
+  /** Scale type for the primary numeric y-axis. Vertical bars retain a linear zero baseline. */
+  @attr({ attribute: 'y-scale-type' })
+  public yScaleType: AxisScaleType = 'default';
+
+  /** Scale type for a secondary numeric y-axis. */
+  @attr({ attribute: 'secondary-y-scale-type' })
+  public secondaryYScaleType: AxisScaleType = 'default';
 
   /**
    * A d3 format string (e.g. `'.2f'`, `'+,.0f'`) used to format x-axis
@@ -220,6 +240,11 @@ export abstract class CartesianChartBase extends ChartBase {
     const attrFields = [
       'xAxisTitle',
       'yAxisTitle',
+      'margins',
+      'annotations',
+      'xScaleType',
+      'yScaleType',
+      'secondaryYScaleType',
       'xAxisTickFormat',
       'yAxisTickFormat',
       'tickPadding',
@@ -275,6 +300,26 @@ export abstract class CartesianChartBase extends ChartBase {
   }
 
   protected yAxisTitleChanged() {
+    this._requestRender();
+  }
+
+  protected marginsChanged() {
+    this._requestRender();
+  }
+
+  protected annotationsChanged() {
+    this._requestRender();
+  }
+
+  protected xScaleTypeChanged() {
+    this._requestRender();
+  }
+
+  protected yScaleTypeChanged() {
+    this._requestRender();
+  }
+
+  protected secondaryYScaleTypeChanged() {
     this._requestRender();
   }
 

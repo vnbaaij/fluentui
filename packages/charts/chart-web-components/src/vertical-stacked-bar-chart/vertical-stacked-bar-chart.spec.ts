@@ -35,6 +35,42 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Shared Features should render shared layout, palette, metadata, annotations, and scales', async ({ page }) => {
+    await page.goto(fixtureURL('components-verticalstackedbarchart--shared-features'));
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    const bars = element.locator('.bar');
+
+    await expect(bars).toHaveCount(6);
+    await expect(bars.first()).toHaveAttribute('width', '28');
+    await expect(bars.first()).toHaveAttribute('fill', '#0f6cbd');
+    await expect(bars.first()).toHaveAttribute('aria-label', 'North Q1, 35 percent');
+    await expect(element.locator('.bar-label').first()).toHaveText('Q1 total');
+    await expect(element.locator('.chart-annotation-text')).toHaveText('Combined target');
+    const annotation = element.locator('.chart-annotation-text');
+    const targetLabel = element.locator('.bar-label', { hasText: '65' }).first();
+    await expect
+      .poll(async () => (await annotation.boundingBox())!.y + (await annotation.boundingBox())!.height)
+      .toBeLessThan((await targetLabel.boundingBox())!.y);
+    expect(await annotation.getAttribute('x')).toBe(
+      await element.locator('.chart-annotation-connector').getAttribute('x1'),
+    );
+    await expect(element.locator('.y-axis-secondary')).toHaveCount(1);
+    await expect(element.locator('.x-axis-title')).toHaveText('Quarter');
+    await expect(element.locator('.y-axis > .y-axis-title')).toHaveText('Performance');
+    await expect(element.locator('.y-axis-secondary > .y-axis-title')).toHaveText('Growth index');
+
+    const axisTitlesSwitch = page.locator('#vsbar-shared-axis-titles');
+    await axisTitlesSwitch.click();
+    await expect(element.locator('.x-axis-title, .y-axis-title')).toHaveCount(0);
+    await axisTitlesSwitch.click();
+    await expect(element.locator('.x-axis-title')).toHaveText('Quarter');
+    await expect(element.locator('.y-axis > .y-axis-title')).toHaveText('Performance');
+    await expect(element.locator('.y-axis-secondary > .y-axis-title')).toHaveText('Growth index');
+
+    await bars.first().click();
+    await expect(element.locator('.chart-title')).toHaveText('North selected');
+  });
+
   test('Should use axis callout data to override segment tooltip values', async ({ page }) => {
     await page.setContent(/* html */ `
       <fluent-vertical-stacked-bar-chart
@@ -57,6 +93,7 @@ test.describe('VerticalStackedBarChart', () => {
     `);
 
     const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await expect(element.locator('.bar')).toHaveCount(1);
     await element.locator('.bar').dispatchEvent('mouseenter');
 
     await expect(element.locator('.tooltip-header')).toHaveText('2026/04/30');
@@ -99,6 +136,23 @@ test.describe('VerticalStackedBarChart', () => {
       'line2',
     ]);
     await expect(element.locator('.tooltip-primary-value')).toHaveText(['40', '5%', '15', '42', '10']);
+  });
+
+  test('Should announce custom stack accessibility text for aggregate callouts', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.evaluate(node => {
+      const chart = node as HTMLElement & { data: VerticalStackedBarChartProps[]; isCalloutForStack: boolean };
+      chart.data = [
+        {
+          xAxisPoint: 'Q1',
+          chartData: [{ legend: 'A', data: 30 }],
+          stackCallOutAccessibilityData: { ariaLabel: 'Q1 custom stack summary' },
+        },
+      ];
+      chart.isCalloutForStack = true;
+    });
+    await element.locator('.bar').dispatchEvent('mouseenter');
+    await expect(element.locator('.live-region')).toHaveText('Q1 custom stack summary');
   });
 
   test('Should keep per-segment callouts as the default', async ({ page }) => {

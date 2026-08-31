@@ -2,11 +2,22 @@ import { attr } from '@microsoft/fast-element';
 import { extent, max } from 'd3-array';
 import { type Axis, axisBottom, axisLeft, axisRight } from 'd3-axis';
 import { format } from 'd3-format';
-import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear, type ScaleTime, scaleTime } from 'd3-scale';
+import {
+  type ScaleBand,
+  scaleBand,
+  type ScaleLinear,
+  scaleLinear,
+  type ScaleLogarithmic,
+  scaleLog,
+  type ScaleTime,
+  scaleTime,
+} from 'd3-scale';
 import { line as createLine } from 'd3-shape';
 import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
-import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
+import { appendVerticalGradient, resolveBarWidth, resolveChartColor } from '../utils/bar-chart-helpers.js';
+import { resolveChartMargins } from '../utils/cartesian-axis-helpers.js';
+import { renderChartAnnotations } from '../utils/chart-annotation-helpers.js';
 import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
@@ -25,7 +36,6 @@ import {
   getColorFromToken,
   getNextColor,
   jsonConverter,
-  lightenColor,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
 import type {
@@ -33,6 +43,7 @@ import type {
   VerticalStackedBarChartLineDataPoint,
   VerticalStackedBarChartProps,
 } from './vertical-stacked-bar-chart.options.js';
+import { VerticalBarChartBase } from '../utils/vertical-bar-chart-base.js';
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
@@ -96,7 +107,7 @@ const formatXAxisCalloutValue = (
 };
 
 /** @public */
-export class VerticalStackedBarChart extends CartesianChartBase {
+export class VerticalStackedBarChart extends VerticalBarChartBase {
   public declare tooltipProps: TooltipState;
 
   private _activeLineMarkerXValue: string | null = null;
@@ -107,31 +118,15 @@ export class VerticalStackedBarChart extends CartesianChartBase {
   @attr({ attribute: 'bar-gap-max' })
   public barGapMax?: number | string;
 
-  @attr({ attribute: 'bar-width' })
-  public barWidth?: number | string;
-
-  @attr({ attribute: 'enable-gradient', mode: 'boolean' })
-  public enableGradient: boolean = false;
-
   /** Shows all bar and line values for the hovered x-axis category in one tooltip. */
   @attr({ attribute: 'is-callout-for-stack', mode: 'boolean' })
   public isCalloutForStack: boolean = false;
-
-  @attr({ attribute: 'secondary-y-axis-title' })
-  public secondaryYAxisTitle?: string;
 
   protected override _enableResizeObserver = true;
 
   public connectedCallback() {
     const self = this as Record<string, unknown>;
-    const attrFields = [
-      'data',
-      'barGapMax',
-      'barWidth',
-      'enableGradient',
-      'isCalloutForStack',
-      'secondaryYAxisTitle',
-    ] as const;
+    const attrFields = ['data', 'barGapMax', 'isCalloutForStack'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -234,18 +229,6 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     this._requestRender();
   }
 
-  protected barWidthChanged(): void {
-    this._requestRender();
-  }
-
-  protected enableGradientChanged(): void {
-    this._requestRender();
-  }
-
-  protected secondaryYAxisTitleChanged(): void {
-    this._requestRender();
-  }
-
   protected override _clearTooltip(): void {
     this.tooltipProps = {
       isVisible: false,
@@ -263,9 +246,13 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     super.tooltipPropsChanged(old, newValue);
     if (newValue.isVisible && !this.hideTooltip) {
       const state = newValue as TooltipState;
-      this.liveRegionText = [state.xValue, ...state.entries.map(entry => `${entry.legend}: ${entry.value}`)]
-        .filter(Boolean)
-        .join('. ');
+      const stackAccessibilityLabel = this.isCalloutForStack
+        ? (this._currentTooltipDataPoint as VerticalStackedBarChartProps | null)?.stackCallOutAccessibilityData
+            ?.ariaLabel
+        : undefined;
+      this.liveRegionText =
+        stackAccessibilityLabel ??
+        [state.xValue, ...state.entries.map(entry => `${entry.legend}: ${entry.value}`)].filter(Boolean).join('. ');
     }
   }
 
@@ -306,14 +293,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     const width = requestedChartWidth ?? (measuredWidth || toNumber(this.width, 600));
     const height = toNumber(this.height, 350);
     const hasSecondaryY = stacks.some(stack => stack.lineData?.some(entry => entry.useSecondaryYScale));
-    const primaryAxisSpace = defaultMargins.left;
-    const secondaryAxisSpace = 70;
-    const margins = {
-      top: defaultMargins.top,
-      bottom: defaultMargins.bottom,
-      left: this._isRTL ? (hasSecondaryY ? secondaryAxisSpace : defaultMargins.right) : primaryAxisSpace,
-      right: this._isRTL ? primaryAxisSpace : hasSecondaryY ? secondaryAxisSpace : defaultMargins.right,
-    };
+    const margins = resolveChartMargins(defaultMargins, this.margins, this._isRTL, hasSecondaryY);
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
     const isDateAxis = stacks.every(
@@ -387,10 +367,15 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       .map(entry => entry.y)
       .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
     let preparedSecondaryYAxis = preparedYAxis;
-    let yScaleSecondary = yScale;
+    let yScaleSecondary: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = yScale;
     if (hasSecondaryY) {
-      const secondaryMin = secondaryLineValues.length > 0 ? Math.min(0, ...secondaryLineValues) : 0;
-      let secondaryMax = secondaryLineValues.length > 0 ? Math.max(0, ...secondaryLineValues) : 1;
+      const useLogSecondary = this.secondaryYScaleType === 'log' && secondaryLineValues.every(value => value > 0);
+      const secondaryMin = useLogSecondary
+        ? Math.min(...secondaryLineValues)
+        : secondaryLineValues.length > 0
+        ? Math.min(0, ...secondaryLineValues)
+        : 0;
+      let secondaryMax = secondaryLineValues.length > 0 ? Math.max(...secondaryLineValues) : 1;
       if (secondaryMin === secondaryMax) {
         secondaryMax += 1;
       }
@@ -400,20 +385,26 @@ export class VerticalStackedBarChart extends CartesianChartBase {
         tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
         roundedTicks: this.roundedTicks,
       });
-      yScaleSecondary = scaleLinear()
-        .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
-        .range([innerHeight, 0]);
+      yScaleSecondary = useLogSecondary
+        ? scaleLog().domain([secondaryMin, secondaryMax]).range([innerHeight, 0])
+        : scaleLinear()
+            .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
+            .range([innerHeight, 0]);
     }
 
-    const getLineScale = (entry: VerticalStackedBarChartLineDataPoint): ScaleLinear<number, number> => {
+    const getLineScale = (
+      entry: VerticalStackedBarChartLineDataPoint,
+    ): ScaleLinear<number, number> | ScaleLogarithmic<number, number> => {
       return entry.useSecondaryYScale ? yScaleSecondary : yScale;
     };
 
     const legendNames = Array.from(new Set(stacks.flatMap(stack => stack.chartData.map(point => point.legend))));
     const colorMap = new Map<string, string>();
+    const firstSegment = stacks.flatMap(stack => stack.chartData)[0];
+    const singleColor = this.useSingleColor ? resolveChartColor(firstSegment?.color, this.colors, 0) : undefined;
     legendNames.forEach((legend, index) => {
       const match = stacks.flatMap(stack => stack.chartData).find(point => point.legend === legend);
-      colorMap.set(legend, match?.color ? getColorFromToken(match.color) : getNextColor(index, 0));
+      colorMap.set(legend, singleColor ?? resolveChartColor(match?.color, this.colors, index));
     });
 
     const lineLegendOrder: string[] = [];
@@ -421,10 +412,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
     stacks.forEach(stack => {
       stack.lineData?.forEach(entry => {
         if (!lineColorMap.has(entry.legend)) {
-          lineColorMap.set(
-            entry.legend,
-            entry.color ? getColorFromToken(entry.color) : getNextColor(lineLegendOrder.length, 10),
-          );
+          lineColorMap.set(entry.legend, resolveChartColor(entry.color, this.colors, lineLegendOrder.length, 10));
           lineLegendOrder.push(entry.legend);
         }
       });
@@ -503,9 +491,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       const xCenter = getXCenter(stack);
       const step = xScaleBand?.step() ?? innerWidth;
       // Match React's default categorical bar width cap; explicit bar-width can grow it.
-      let actualWidth = Math.min(xScaleBand?.bandwidth() ?? defaultCategoricalBarWidth, defaultCategoricalBarWidth);
-      const requestedWidth = toOptionalNumber(this.barWidth);
-      actualWidth = Math.min(Math.max(requestedWidth ?? actualWidth, 1), step);
+      const actualWidth = resolveBarWidth(this.barWidth, this.maxBarWidth, step, defaultCategoricalBarWidth);
       const x = xCenter - actualWidth / 2;
 
       const positiveTotal = stack.chartData.reduce((sum, segment) => sum + Math.max(segment.data, 0), 0);
@@ -575,10 +561,22 @@ export class VerticalStackedBarChart extends CartesianChartBase {
         rect.setAttribute('y', String(top));
         rect.setAttribute('width', String(actualWidth));
         rect.setAttribute('height', String(Math.max(bottom - top, 0)));
-        const gradientId = this._appendGradient(defs, stackIndex, segmentIndex, segment, color);
+        const gradientId = appendVerticalGradient(
+          defs,
+          `vsbc-gradient-${stackIndex}-${segmentIndex}`,
+          color,
+          this.enableGradient,
+          segment.gradient,
+        );
         rect.setAttribute('fill', gradientId ? `url(#${gradientId})` : color);
         rect.setAttribute('rx', String(cornerRadius));
         rect.setAttribute('ry', String(cornerRadius));
+        rect.setAttribute('role', 'img');
+        rect.setAttribute(
+          'aria-label',
+          segment.callOutAccessibilityData?.ariaLabel ??
+            `${formatXAxisValue(this, stack.xAxisPoint)}. ${segment.legend}, ${segment.data}.`,
+        );
         if (this.strokeWidth !== undefined) {
           rect.setAttribute('stroke-width', String(this.strokeWidth));
           rect.setAttribute('stroke', color);
@@ -617,6 +615,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
                 ),
           });
         });
+        rect.addEventListener('click', () => segment.onClick?.());
         plotGroup.appendChild(rect);
       });
 
@@ -628,7 +627,8 @@ export class VerticalStackedBarChart extends CartesianChartBase {
         label.setAttribute('x', String(x + actualWidth / 2));
         label.setAttribute('y', String(stackTotal >= 0 ? positiveBottom - 6 : negativeTop + 12));
         label.setAttribute('text-anchor', 'middle');
-        label.textContent = formatYAxisTickValue(this, stackTotal);
+        label.textContent =
+          stack.chartData.find(segment => segment.barLabel)?.barLabel ?? formatYAxisTickValue(this, stackTotal);
         plotGroup.appendChild(label);
       }
     });
@@ -870,7 +870,7 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       applyAxisTickConfig(
         yAxisSecondary,
         this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
-        this.yAxisTickValues ?? preparedSecondaryYAxis.tickValues,
+        this.yAxisTickValues ?? (this.secondaryYScaleType === 'log' ? undefined : preparedSecondaryYAxis.tickValues),
       );
       renderSecondaryYAxisShared({
         svg,
@@ -886,6 +886,24 @@ export class VerticalStackedBarChart extends CartesianChartBase {
         yAxisTitle: this.secondaryYAxisTitle,
       });
     }
+
+    const annotationLayer = createSvgElement<SVGGElement>('g');
+    annotationLayer.classList.add('annotation-layer');
+    annotationLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+    svg.appendChild(annotationLayer);
+    renderChartAnnotations({
+      layer: annotationLayer,
+      collisionLayer: plotGroup,
+      annotations: this.annotations,
+      innerWidth,
+      innerHeight,
+      mapDataX: value => {
+        if (xScaleTime) return xScaleTime(new Date(value));
+        const bandX = xScaleBand?.(String(value));
+        return bandX === undefined || !xScaleBand ? undefined : bandX + xScaleBand.bandwidth() / 2;
+      },
+      mapDataY: (value, axis) => (axis === 'secondary' ? yScaleSecondary : yScale)(Number(value)),
+    });
 
     this.chartContainer.appendChild(svg);
     this.legends = [
@@ -923,40 +941,6 @@ export class VerticalStackedBarChart extends CartesianChartBase {
       return this.chartTitle ? `${this.chartTitle}. No data.` : 'Vertical stacked bar chart with no data.';
     }
     return `${this.chartTitle || 'Vertical stacked bar chart'}. ${count} stacks.`;
-  }
-
-  private _appendGradient(
-    defs: SVGDefsElement,
-    stackIndex: number,
-    segmentIndex: number,
-    segment: VerticalStackedBarChartProps['chartData'][number],
-    color: string,
-  ): string | undefined {
-    if (!this.enableGradient && !segment.gradient) {
-      return undefined;
-    }
-
-    const gradientId = `vsbc-gradient-${stackIndex}-${segmentIndex}`;
-    const gradient = createSvgElement<SVGLinearGradientElement>('linearGradient');
-    gradient.setAttribute('id', gradientId);
-    gradient.setAttribute('x1', '0%');
-    gradient.setAttribute('x2', '0%');
-    gradient.setAttribute('y1', '100%');
-    gradient.setAttribute('y2', '0%');
-
-    const [from, to] = segment.gradient ?? [lightenColor(color, 0.35), color];
-    for (const [offset, stopColor] of [
-      ['0%', from],
-      ['100%', to],
-    ]) {
-      const stop = createSvgElement<SVGStopElement>('stop');
-      stop.setAttribute('offset', offset);
-      stop.setAttribute('stop-color', stopColor);
-      gradient.appendChild(stop);
-    }
-
-    defs.appendChild(gradient);
-    return gradientId;
   }
 
   private _clearChart(): void {

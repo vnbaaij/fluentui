@@ -1,49 +1,27 @@
-export type { AccessibilityData } from './utils/chart-options.js';
-
-export {
-  ChartLegend,
-  ChartLegendDefinition,
-  ChartLegendStyles,
-  ChartLegendTemplate,
-} from './chart-legend/index.js';
-
-export {
-  DonutChart,
-  DonutChartDefinition,
-  DonutChartStyles,
-  DonutChartTemplate
-} from './donut-chart/index.js';
-
-export type {  DonutChartDataPoint } from './donut-chart/index.js';
-
-export {
-  FunnelChart,
-  FunnelChartDefinition,
-  FunnelChartStyles,
-  FunnelChartTemplate
-} from './funnel-chart/index.js';
-
 export type {
-  FunnelChartDataPoint,
-  FunnelChartSubValue,
-  FunnelChartOrientation
-} from './funnel-chart/index.js';
+  AccessibilityData,
+  AxisScaleType,
+  ChartAnnotation,
+  ChartAnnotationCoordinate,
+  ChartMargins,
+  VerticalBarDataPointMetadata,
+} from './utils/chart-options.js';
 
-export {
-  GanttChart,
-  GanttChartDefinition,
-  GanttChartStyles,
-  GanttChartTemplate
-} from './gantt-chart/index.js';
+export { ChartLegend, ChartLegendDefinition, ChartLegendStyles, ChartLegendTemplate } from './chart-legend/index.js';
+
+export { DonutChart, DonutChartDefinition, DonutChartStyles, DonutChartTemplate } from './donut-chart/index.js';
+
+export type { DonutChartDataPoint } from './donut-chart/index.js';
+
+export { FunnelChart, FunnelChartDefinition, FunnelChartStyles, FunnelChartTemplate } from './funnel-chart/index.js';
+
+export type { FunnelChartDataPoint, FunnelChartSubValue, FunnelChartOrientation } from './funnel-chart/index.js';
+
+export { GanttChart, GanttChartDefinition, GanttChartStyles, GanttChartTemplate } from './gantt-chart/index.js';
 
 export type { GanttChartDataPoint } from './gantt-chart/index.js';
 
-export {
-  GaugeChart,
-  GaugeChartDefinition,
-  GaugeChartStyles,
-  GaugeChartTemplate
-} from './gauge-chart/index.js';
+export { GaugeChart, GaugeChartDefinition, GaugeChartStyles, GaugeChartTemplate } from './gauge-chart/index.js';
 export type { GaugeChartSegment, GaugeChartVariant, GaugeValueFormat } from './gauge-chart/index.js';
 export {
   HeatMapChart,
@@ -52,11 +30,7 @@ export {
   HeatMapChartTemplate,
 } from './heat-map-chart/index.js';
 
-export type {
-  HeatMapChartData,
-  HeatMapChartDataPoint,
-  HeatMapSortOrder
-} from './heat-map-chart/index.js';
+export type { HeatMapChartData, HeatMapChartDataPoint, HeatMapSortOrder } from './heat-map-chart/index.js';
 
 export {
   HorizontalBarChart,
@@ -80,17 +54,9 @@ export {
 
 export type { HorizontalBarChartWithAxisDataPoint } from './horizontal-bar-chart-with-axis/index.js';
 
-export {
-  AreaChart,
-  AreaChartDefinition,
-  AreaChartStyles,
-  AreaChartTemplate
-} from './area-chart/index.js';
+export { AreaChart, AreaChartDefinition, AreaChartStyles, AreaChartTemplate } from './area-chart/index.js';
 
-export type {
-  AreaChartDataPoint,
-  AreaChartSeries
-} from './area-chart/index.js';
+export type { AreaChartDataPoint, AreaChartSeries } from './area-chart/index.js';
 
 export {
   GroupedVerticalBarChart,
@@ -102,44 +68,20 @@ export {
 export type {
   GroupedVerticalBarChartData,
   GroupedVerticalBarChartDataPoint,
+  GroupedVerticalBarChartLineDataPoint,
 } from './grouped-vertical-bar-chart/index.js';
 
-export {
-  LineChart,
-  LineChartDefinition,
-  LineChartStyles,
-  LineChartTemplate
-} from './line-chart/index.js';
+export { LineChart, LineChartDefinition, LineChartStyles, LineChartTemplate } from './line-chart/index.js';
 
-export type {
-  LineChartDataPoint,
-  LineChartSeries
-} from './line-chart/index.js';
+export type { LineChartDataPoint, LineChartSeries } from './line-chart/index.js';
 
-export {
-  PolarChart,
-  PolarChartDefinition,
-  PolarChartStyles,
-  PolarChartTemplate
-} from './polar-chart/index.js';
+export { PolarChart, PolarChartDefinition, PolarChartStyles, PolarChartTemplate } from './polar-chart/index.js';
 
-export type {
-  PolarChartDataPoint,
-  PolarChartSeries
-} from './polar-chart/index.js';
+export type { PolarChartDataPoint, PolarChartSeries } from './polar-chart/index.js';
 
-export {
-  SankeyChart,
-  SankeyChartDefinition,
-  SankeyChartStyles,
-  SankeyChartTemplate
-} from './sankey-chart/index.js';
+export { SankeyChart, SankeyChartDefinition, SankeyChartStyles, SankeyChartTemplate } from './sankey-chart/index.js';
 
-export type {
-  SankeyChartData,
-  SankeyChartLink,
-  SankeyChartNode
-} from './sankey-chart/index.js';
+export type { SankeyChartData, SankeyChartLink, SankeyChartNode } from './sankey-chart/index.js';
 
 export {
   ScatterChart,
@@ -148,10 +90,7 @@ export {
   ScatterChartTemplate,
 } from './scatter-chart/index.js';
 
-export type {
-  ScatterChartDataPoint,
-  ScatterChartSeries
-} from './scatter-chart/index.js';
+export type { ScatterChartDataPoint, ScatterChartSeries } from './scatter-chart/index.js';
 
 export {
   SparklineChart,
@@ -160,10 +99,7 @@ export {
   SparklineChartTemplate,
 } from './sparkline-chart/index.js';
 
-export type {
-  SparklineDataPoint,
-  SparklineVariant
-} from './sparkline-chart/index.js';
+export type { SparklineDataPoint, SparklineVariant } from './sparkline-chart/index.js';
 
 export {
   StackedBarChart,
@@ -172,15 +108,9 @@ export {
   StackedBarChartTemplate,
 } from './stacked-bar-chart/index.js';
 
-export type {
-  StackedBarChartData,
-  StackedBarChartDataPoint } from './stacked-bar-chart/index.js';
+export type { StackedBarChartData, StackedBarChartDataPoint } from './stacked-bar-chart/index.js';
 
-export { TreeChart,
-  TreeChartDefinition,
-  TreeChartStyles,
-  TreeChartTemplate
-} from './tree-chart/index.js';
+export { TreeChart, TreeChartDefinition, TreeChartStyles, TreeChartTemplate } from './tree-chart/index.js';
 
 export type { TreeChartDataPoint } from './tree-chart/index.js';
 

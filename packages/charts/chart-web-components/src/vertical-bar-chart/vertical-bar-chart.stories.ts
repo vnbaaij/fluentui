@@ -389,6 +389,67 @@ export const ChartAttributes: Story<VerticalBarChart> = () => {
 };
 ChartAttributes.parameters = { docs: { story: { height: '520px' } } };
 
+export const SharedFeatures: Story<VerticalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-vertical-bar-chart') as VerticalBarChart;
+  chart.chartTitle = 'Vertical bar chart shared features';
+  chart.width = 760;
+  chart.height = 400;
+  chart.barWidth = 'auto';
+  chart.maxBarWidth = 24;
+  chart.colors = ['#0f6cbd', '#d13438', '#107c10'];
+  chart.margins = { top: 56, right: 84, bottom: 60, left: 72 };
+  chart.xAxisTitle = 'Category index';
+  chart.yAxisTitle = 'Performance';
+  chart.secondaryYAxisTitle = 'Growth index';
+  chart.yScaleType = 'log';
+  chart.secondaryYScaleType = 'log';
+  chart.annotations = [
+    {
+      id: 'target',
+      text: 'Target',
+      coordinates: { type: 'data', x: 10, y: 70 },
+      layout: { offsetY: -14 },
+      connector: { strokeColor: 'colorNeutralStroke1', dashArray: '3 2' },
+      accessibility: { ariaLabel: 'Target annotation at 70' },
+    },
+  ];
+  chart.data = [
+    {
+      x: 1,
+      y: 42,
+      legend: 'North',
+      barLabel: '42%',
+      xAxisCalloutData: 'First quarter',
+      yAxisCalloutData: '42 percent',
+      lineData: { y: 10, useSecondaryYScale: true },
+      callOutAccessibilityData: { ariaLabel: 'North, first quarter, 42 percent' },
+      onClick: () => (chart.chartTitle = 'North selected'),
+    },
+    { x: 10, y: 70, legend: 'Central', lineData: { y: 100, useSecondaryYScale: true } },
+    { x: 100, y: 58, legend: 'South', lineData: { y: 1000, useSecondaryYScale: true } },
+  ];
+  chart.xScaleType = 'log';
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  controls.appendChild(
+    createSwitchField('Show axis titles', 'vbar-shared-axis-titles', true, checked => {
+      chart.xAxisTitle = checked ? 'Category index' : '';
+      chart.yAxisTitle = checked ? 'Performance' : '';
+      chart.secondaryYAxisTitle = checked ? 'Growth index' : '';
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+SharedFeatures.storyName = 'Shared Features';
+SharedFeatures.parameters = { docs: { story: { height: '520px' } } };
+
 export const CustomAccessibility: Story<VerticalBarChart> = () => {
   const container = document.createElement('div');
   const controls = document.createElement('div');

@@ -1,11 +1,13 @@
 import { attr } from '@microsoft/fast-element';
 import { max } from 'd3-array';
-import { type Axis, axisBottom, axisLeft } from 'd3-axis';
+import { type Axis, axisBottom, axisLeft, axisRight } from 'd3-axis';
 import { format } from 'd3-format';
-import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear } from 'd3-scale';
+import { type ScaleBand, scaleBand, type ScaleLinear, scaleLinear, type ScaleLogarithmic, scaleLog } from 'd3-scale';
+import { line as createLine } from 'd3-shape';
 import type { TooltipProps } from '../utils/chart-options.js';
-import { CartesianChartBase } from '../utils/cartesian-chart-base.js';
-import { getDirectionalMargins } from '../utils/cartesian-axis-helpers.js';
+import { appendVerticalGradient, resolveBarWidth, resolveChartColor } from '../utils/bar-chart-helpers.js';
+import { resolveChartMargins } from '../utils/cartesian-axis-helpers.js';
+import { renderChartAnnotations } from '../utils/chart-annotation-helpers.js';
 import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
@@ -13,25 +15,46 @@ import {
   renderAxisGridLinesShared,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
+  renderSecondaryYAxisShared,
   sortCategoryGroups,
   toAxisNumber as toNumber,
   toOptionalAxisNumber as toOptionalNumber,
 } from '../utils/cartesian-axis-shared.js';
 import {
-  formatLocaleNumber,
+  createNumberFormat,
+  escapeHtml,
   getColorFromToken,
   getNextColor,
   jsonConverter,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
-import type { GroupedVerticalBarChartData } from './grouped-vertical-bar-chart.options.js';
+import type {
+  GroupedVerticalBarChartData,
+  GroupedVerticalBarChartLineDataPoint,
+} from './grouped-vertical-bar-chart.options.js';
+import { VerticalBarChartBase } from '../utils/vertical-bar-chart-base.js';
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
 
-type TooltipState = TooltipProps & { xValue: string };
+export type TooltipEntry = { legend: string; color: string; value: string };
+type TooltipState = TooltipProps & { xValue: string; entries: TooltipEntry[] };
+type LinePlotPoint = {
+  group: GroupedVerticalBarChartData;
+  entry: GroupedVerticalBarChartLineDataPoint;
+  xCenter: number;
+};
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
+const defaultBarWidth = 16;
+const groupInnerPadding = 0.1;
+
+const calcTotalBandUnits = (numBands: number, innerPadding: number): number => {
+  return numBands + Math.max(numBands - 1, 0) * (innerPadding / (1 - innerPadding));
+};
+
+const calcRequiredWidth = (bandwidth: number, numBands: number, innerPadding: number): number =>
+  bandwidth * calcTotalBandUnits(numBands, innerPadding);
 
 const formatNumberValue = (value: number, specifier: string | undefined, culture: string | undefined): string => {
   if (specifier) {
@@ -41,24 +64,29 @@ const formatNumberValue = (value: number, specifier: string | undefined, culture
       // Fall back to locale formatting below.
     }
   }
-  return formatLocaleNumber(value, culture);
+  return createNumberFormat(culture || undefined, {
+    maximumFractionDigits: Math.abs(value) >= 1000 ? 1 : 2,
+    notation: Math.abs(value) >= 1000 ? 'compact' : 'standard',
+  }).format(value);
 };
 
 /** @public */
-export class GroupedVerticalBarChart extends CartesianChartBase {
+export class GroupedVerticalBarChart extends VerticalBarChartBase {
   public declare tooltipProps: TooltipState;
+
+  private _renderedBars: Array<{ legend: string; element: SVGRectElement }> = [];
 
   @attr({ converter: jsonConverter })
   public data!: GroupedVerticalBarChartData[];
 
-  @attr({ attribute: 'bar-width' })
-  public barWidth?: number | string;
+  @attr({ attribute: 'is-callout-for-stack', mode: 'boolean' })
+  public isCalloutForStack: boolean = false;
 
   protected override _enableResizeObserver = true;
 
   public connectedCallback() {
     const self = this as Record<string, unknown>;
-    const attrFields = ['data', 'barWidth'] as const;
+    const attrFields = ['data', 'isCalloutForStack'] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
 
     for (const field of attrFields) {
@@ -74,7 +102,7 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
       }
     }
 
-    this.tooltipProps = { ...this.tooltipProps, xValue: '' } as TooltipState;
+    this.tooltipProps = { ...this.tooltipProps, xValue: '', entries: [] } as TooltipState;
     this._requestRender();
   }
 
@@ -82,22 +110,51 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     this._requestRender();
   }
 
-  protected barWidthChanged(): void {
-    this._requestRender();
+  protected isCalloutForStackChanged(): void {
+    this._clearTooltip();
+  }
+
+  protected override tooltipPropsChanged(oldValue: TooltipProps, newValue: TooltipProps): void {
+    super.tooltipPropsChanged(oldValue, newValue);
+    if (newValue.isVisible && !this.hideTooltip) {
+      const state = newValue as TooltipState;
+      const groupAccessibilityLabel = this.isCalloutForStack
+        ? (this._currentTooltipDataPoint as GroupedVerticalBarChartData | null)?.stackCallOutAccessibilityData
+            ?.ariaLabel
+        : undefined;
+      this.liveRegionText =
+        groupAccessibilityLabel ??
+        [state.xValue, ...state.entries.map(entry => `${entry.legend}: ${entry.value}`)].filter(Boolean).join('. ');
+    }
   }
 
   protected override _clearTooltip(): void {
-    this.tooltipProps = { isVisible: false, legend: '', xValue: '', yValue: '', color: '', xPos: 0, yPos: 0 };
+    this.tooltipProps = {
+      isVisible: false,
+      legend: '',
+      xValue: '',
+      yValue: '',
+      color: '',
+      xPos: 0,
+      yPos: 0,
+      entries: [],
+    };
   }
 
   protected override _buildDefaultTooltipHTML(): string {
-    return [
-      `<div class="tooltip-header">${this.tooltipProps.yValue}</div>`,
-      `<div class="tooltip-info" style="border-color: ${this.tooltipProps.color};">`,
-      `<div class="tooltip-legend-text">${this.tooltipProps.legend}</div>`,
-      `<div class="tooltip-primary-value" style="color: ${this.tooltipProps.color};">${this.tooltipProps.xValue}</div>`,
-      `</div>`,
-    ].join('');
+    const entries = this.tooltipProps.entries
+      .map(
+        entry =>
+          `<div class="tooltip-info" style="border-color: ${escapeHtml(
+            entry.color,
+          )};"><div class="tooltip-legend-text">${escapeHtml(
+            entry.legend,
+          )}</div><div class="tooltip-primary-value" style="color: ${escapeHtml(entry.color)};">${escapeHtml(
+            entry.value,
+          )}</div></div>`,
+      )
+      .join('');
+    return `<div class="tooltip-header">${escapeHtml(this.tooltipProps.xValue)}</div>${entries}`;
   }
 
   protected override _performRender(): void {
@@ -107,6 +164,7 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
 
     this._applyHostDimensions(this.width, this.height);
     this._clearChart();
+    this._renderedBars = [];
 
     const groups = Array.isArray(this.data) ? this.data : [];
     if (groups.length === 0) {
@@ -118,7 +176,11 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
 
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 600);
     const height = toNumber(this.height, 300);
-    const margins = getDirectionalMargins(defaultMargins, this._isRTL);
+    const hasSecondaryY = groups.some(
+      group =>
+        group.series.some(point => point.useSecondaryYScale) || group.lineData?.some(entry => entry.useSecondaryYScale),
+    );
+    const margins = resolveChartMargins(defaultMargins, this.margins, this._isRTL, hasSecondaryY);
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
 
@@ -136,27 +198,108 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
       group => group.points,
     ).map(group => group.key);
     const keyDomain = Array.from(new Set(groups.flatMap(group => group.series.map(point => point.key))));
-    const xAxisInnerPadding = toOptionalNumber(this.xAxisInnerPadding) ?? 2 / 3;
-    const xAxisOuterPadding = toOptionalNumber(this.xAxisOuterPadding) ?? 0;
+    const legendByKey = new Map<string, string>();
+    groups.flatMap(group => group.series).forEach(point => legendByKey.set(point.key, point.legend ?? point.key));
+    const groupWidthInBarUnits = calcTotalBandUnits(keyDomain.length, groupInnerPadding);
+    const xAxisInnerPadding = toOptionalNumber(this.xAxisInnerPadding) ?? 2 / (2 + groupWidthInBarUnits);
+    const configuredOuterPadding = toOptionalNumber(this.xAxisOuterPadding);
+    const xAxisOuterPadding = configuredOuterPadding ?? 0;
+    let xRangeStart = 0;
+    let xRangeEnd = innerWidth;
+    let centeredBarWidth: number | undefined;
+    if (configuredOuterPadding === undefined && this.barWidth !== 'auto') {
+      const fixedBarWidth = resolveBarWidth(this.barWidth, this.maxBarWidth, Number.POSITIVE_INFINITY, defaultBarWidth);
+      const requiredGroupWidth = fixedBarWidth * groupWidthInBarUnits;
+      const requiredChartWidth = calcRequiredWidth(requiredGroupWidth, groupDomain.length, xAxisInnerPadding);
+      const domainMargin = Math.max((innerWidth - requiredChartWidth) / 2, 0);
+      xRangeStart = domainMargin;
+      xRangeEnd = innerWidth - domainMargin;
+      if (domainMargin > 0) {
+        centeredBarWidth = fixedBarWidth;
+      }
+    }
     const xScale = scaleBand<string>()
       .domain(groupDomain)
-      .range([0, innerWidth])
+      .range([xRangeStart, xRangeEnd])
       .paddingInner(xAxisInnerPadding)
       .paddingOuter(xAxisOuterPadding);
-    const innerScale = scaleBand<string>().domain(keyDomain).range([0, xScale.bandwidth()]).padding(0.05);
-    const maxY = max(groups.flatMap(group => group.series.map(point => point.data))) ?? 0;
+    const availableBarWidth = xScale.bandwidth() / groupWidthInBarUnits;
+    const actualBarWidth =
+      centeredBarWidth ?? resolveBarWidth(this.barWidth, this.maxBarWidth, availableBarWidth, defaultBarWidth);
+    const effectiveGroupWidth = actualBarWidth * groupWidthInBarUnits;
+    const innerScale = scaleBand<string>()
+      .domain(keyDomain)
+      .range([0, effectiveGroupWidth])
+      .paddingInner(groupInnerPadding);
+    const primaryLineValues = groups
+      .flatMap(group => group.lineData ?? [])
+      .filter(entry => !entry.useSecondaryYScale)
+      .map(entry => entry.y);
+    const primaryValues = [
+      ...groups.flatMap(group => group.series.filter(point => !point.useSecondaryYScale).map(point => point.data)),
+      ...primaryLineValues,
+    ];
+    const maxY = max(primaryValues) ?? 0;
+    const minY = Math.min(...primaryValues);
+    const useLogPrimary = this.yScaleType === 'log' && primaryValues.every(value => value > 0);
     const preparedYAxis = computePreparedNumericYAxis({
-      minValue: toOptionalNumber(this.yMinValue) ?? 0,
-      maxValue: toOptionalNumber(this.yMaxValue) ?? Math.max(maxY, 1),
+      minValue: toOptionalNumber(this.yMinValue) ?? (this.supportNegativeData ? Math.min(minY, 0) : 0),
+      maxValue:
+        toOptionalNumber(this.yMaxValue) ??
+        (this.supportNegativeData && maxY <= 0 ? Math.max(maxY, -1) : Math.max(maxY, 1)),
       tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
       roundedTicks: this.roundedTicks,
     });
-    const yScale = scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
+    const yScale: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = useLogPrimary
+      ? scaleLog()
+          .domain([Math.max(minY / 10, Number.MIN_VALUE), maxY])
+          .range([innerHeight, 0])
+      : scaleLinear().domain([preparedYAxis.domainMin, preparedYAxis.domainMax]).range([innerHeight, 0]);
 
+    const secondaryValues = [
+      ...groups.flatMap(group =>
+        group.series.filter(point => point.useSecondaryYScale && Number.isFinite(point.data)).map(point => point.data),
+      ),
+      ...groups
+        .flatMap(group => group.lineData ?? [])
+        .filter(entry => entry.useSecondaryYScale && Number.isFinite(entry.y))
+        .map(entry => entry.y),
+    ];
+    const useLogSecondary =
+      hasSecondaryY && this.secondaryYScaleType === 'log' && secondaryValues.every(value => value > 0);
+    const secondaryMin = useLogSecondary
+      ? Math.min(...secondaryValues)
+      : secondaryValues.length > 0
+      ? Math.min(0, ...secondaryValues)
+      : 0;
+    let secondaryMax = secondaryValues.length > 0 ? Math.max(...secondaryValues) : 1;
+    if (secondaryMin === secondaryMax) secondaryMax += 1;
+    const preparedSecondaryYAxis = computePreparedNumericYAxis({
+      minValue: secondaryMin,
+      maxValue: secondaryMax,
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      roundedTicks: this.roundedTicks,
+    });
+    const yScaleSecondary: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = useLogSecondary
+      ? scaleLog().domain([secondaryMin, secondaryMax]).range([innerHeight, 0])
+      : scaleLinear()
+          .domain([preparedSecondaryYAxis.domainMin, preparedSecondaryYAxis.domainMax])
+          .range([innerHeight, 0]);
+
+    const firstPoint = groups.flatMap(group => group.series)[0];
+    const singleColor = this.useSingleColor ? resolveChartColor(firstPoint?.color, this.colors, 0) : undefined;
     const colorMap = new Map<string, string>();
     keyDomain.forEach((key, index) => {
       const match = groups.flatMap(group => group.series).find(point => point.key === key);
-      colorMap.set(key, match?.color ? getColorFromToken(match.color) : getNextColor(index, 0));
+      colorMap.set(key, singleColor ?? resolveChartColor(match?.color, this.colors, index));
+    });
+    const lineLegendOrder = Array.from(
+      new Set(groups.flatMap(group => (group.lineData ?? []).map(entry => entry.legend))),
+    );
+    const lineColorMap = new Map<string, string>();
+    lineLegendOrder.forEach((legend, index) => {
+      const match = groups.flatMap(group => group.lineData ?? []).find(entry => entry.legend === legend);
+      lineColorMap.set(legend, resolveChartColor(match?.color, this.colors, index, 10));
     });
 
     const svg = createSvgElement<SVGSVGElement>('svg');
@@ -164,6 +307,9 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     svg.setAttribute('width', String(width));
     svg.setAttribute('height', String(height));
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+    const defs = createSvgElement<SVGDefsElement>('defs');
+    svg.appendChild(defs);
 
     const plotGroup = createSvgElement<SVGGElement>('g');
     plotGroup.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
@@ -179,7 +325,7 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     applyAxisTickConfig(
       yAxis,
       this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
-      this.yAxisTickValues ?? preparedYAxis.tickValues,
+      this.yAxisTickValues ?? (useLogPrimary ? undefined : preparedYAxis.tickValues),
     );
     renderAxisGridLinesShared({
       layer: plotGroup,
@@ -190,54 +336,233 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
       spanEnd: innerWidth,
     });
 
+    const cornerRadius = this.roundCorners ? 3 : 0;
+
+    let pointIndex = 0;
     groups.forEach(group => {
-      const groupX = xScale(group.xAxisPoint) ?? 0;
+      const groupX = (xScale(group.xAxisPoint) ?? 0) + (xScale.bandwidth() - effectiveGroupWidth) / 2;
       group.series.forEach(point => {
         const slotX = innerScale(point.key) ?? 0;
-        const requestedWidth = toOptionalNumber(this.barWidth);
-        const actualWidth = Math.min(requestedWidth ?? innerScale.bandwidth(), innerScale.bandwidth());
-        const offset = (innerScale.bandwidth() - actualWidth) / 2;
+        const offset = (innerScale.bandwidth() - actualBarWidth) / 2;
         const color = colorMap.get(point.key) ?? getNextColor(0, 0);
+        const legend = legendByKey.get(point.key) ?? point.key;
+        const pointScale = point.useSecondaryYScale ? yScaleSecondary : yScale;
+        const usesLogScale = point.useSecondaryYScale ? useLogSecondary : useLogPrimary;
+        const pointY = pointScale(point.data);
+        const baselineY = usesLogScale ? innerHeight : pointScale(0);
+        const barTop = Math.min(pointY, baselineY);
+        const barBottom = Math.max(pointY, baselineY);
 
         const rect = createSvgElement<SVGRectElement>('rect');
         rect.classList.add('bar');
-        rect.dataset.legend = point.key;
+        rect.dataset.legend = legend;
         rect.setAttribute('x', String(groupX + slotX + offset));
-        rect.setAttribute('y', String(yScale(point.data)));
-        rect.setAttribute('width', String(actualWidth));
-        rect.setAttribute('height', String(Math.max(innerHeight - yScale(point.data), 0)));
-        rect.setAttribute('fill', color);
+        rect.setAttribute('y', String(barTop));
+        rect.setAttribute('width', String(actualBarWidth));
+        rect.setAttribute('height', String(Math.max(barBottom - barTop, 0)));
+        const gradientId = appendVerticalGradient(
+          defs,
+          `gvbc-gradient-${pointIndex++}`,
+          color,
+          this.enableGradient,
+          point.gradient,
+        );
+        rect.setAttribute('fill', gradientId ? `url(#${gradientId})` : color);
+        rect.setAttribute('rx', String(cornerRadius));
+        rect.setAttribute('ry', String(cornerRadius));
+        rect.setAttribute('role', 'img');
+        rect.setAttribute('tabindex', this._renderedBars.length === 0 ? '0' : '-1');
+        rect.setAttribute(
+          'aria-label',
+          point.callOutAccessibilityData?.ariaLabel ?? `${group.xAxisPoint}. ${legend}, ${point.data}.`,
+        );
         if (this.strokeWidth !== undefined) {
           rect.setAttribute('stroke-width', String(this.strokeWidth));
           rect.setAttribute('stroke', color);
         }
         const showTooltip = (event?: MouseEvent) => {
-          if (!this._shouldShowTooltip(point.key) || this.hideTooltip) {
+          if (!this._shouldShowTooltip(legend) || this.hideTooltip) {
             return;
           }
           const hostRect = this.getBoundingClientRect();
           const svgRect = svg.getBoundingClientRect();
-          const anchorX = svgRect.left - hostRect.left + margins.left + groupX + slotX + offset + actualWidth / 2;
-          const minY = svgRect.top - hostRect.top + margins.top + yScale(point.data);
-          const maxY = svgRect.top - hostRect.top + margins.top + innerHeight;
+          const anchorX = svgRect.left - hostRect.left + margins.left + groupX + slotX + offset + actualBarWidth / 2;
+          const minY = svgRect.top - hostRect.top + margins.top + barTop;
+          const maxY = svgRect.top - hostRect.top + margins.top + barBottom;
           const anchorY = event ? Math.min(Math.max(event.clientY - hostRect.top, minY), maxY) : (minY + maxY) / 2;
           const isFreshShow = !this.tooltipProps.isVisible;
-          this._currentTooltipDataPoint = { ...point, xAxisPoint: group.xAxisPoint };
+          this._currentTooltipDataPoint = this.isCalloutForStack ? group : { ...point, xAxisPoint: group.xAxisPoint };
+          const entries: TooltipEntry[] = (this.isCalloutForStack ? group.series : [point])
+            .filter(entry => this._shouldShowTooltip(legendByKey.get(entry.key) ?? entry.key))
+            .map(entry => ({
+              legend: legendByKey.get(entry.key) ?? entry.key,
+              color: colorMap.get(entry.key) ?? getNextColor(0, 0),
+              value: entry.yAxisCalloutData ?? formatNumberValue(entry.data, this.yAxisTickFormat, this.culture),
+            }));
+          if (this.isCalloutForStack) {
+            entries.push(
+              ...(group.lineData ?? [])
+                .filter(entry => this._shouldShowTooltip(entry.legend))
+                .map(entry => ({
+                  legend: entry.legend,
+                  color: lineColorMap.get(entry.legend) ?? getNextColor(0, 10),
+                  value: entry.yAxisCalloutData ?? formatNumberValue(entry.y, this.yAxisTickFormat, this.culture),
+                })),
+            );
+          }
           this.tooltipProps = {
             isVisible: true,
-            legend: point.key,
-            xValue: group.xAxisPoint,
-            yValue: formatNumberValue(point.data, this.yAxisTickFormat, this.culture),
+            legend,
+            xValue:
+              typeof point.xAxisCalloutData === 'string' && point.xAxisCalloutData
+                ? point.xAxisCalloutData
+                : group.xAxisPoint,
+            yValue: point.yAxisCalloutData ?? formatNumberValue(point.data, this.yAxisTickFormat, this.culture),
             color,
             xPos: anchorX,
             yPos: anchorY,
+            entries,
           };
           this._positionTooltipAvoidingOverlap(anchorX, minY, maxY, isFreshShow);
         };
         rect.addEventListener('mouseenter', showTooltip);
         rect.addEventListener('mousemove', showTooltip);
         rect.addEventListener('mouseleave', () => this._clearTooltip());
+        rect.addEventListener('focus', () => showTooltip());
+        rect.addEventListener('blur', () => this._clearTooltip());
+        rect.addEventListener('click', () => point.onClick?.());
+        rect.addEventListener('keydown', (event: KeyboardEvent) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            point.onClick?.();
+          } else {
+            this._rovingKeydown(
+              this._renderedBars.map(bar => bar.element),
+              event,
+            );
+          }
+        });
         plotGroup.appendChild(rect);
+        this._renderedBars.push({ legend, element: rect });
+
+        if (!this.hideLabels) {
+          const label = createSvgElement<SVGTextElement>('text');
+          label.classList.add('bar-label');
+          label.dataset.legend = legend;
+          label.setAttribute('x', String(groupX + slotX + offset + actualBarWidth / 2));
+          label.setAttribute('y', String(point.data < 0 ? barBottom + 12 : barTop - 6));
+          label.setAttribute('text-anchor', 'middle');
+          label.textContent = point.barLabel ?? formatNumberValue(point.data, this.yAxisTickFormat, this.culture);
+          plotGroup.appendChild(label);
+        }
+      });
+    });
+
+    lineLegendOrder.forEach(legend => {
+      const points = groups.reduce<LinePlotPoint[]>((result, group) => {
+        const entry = group.lineData?.find(item => item.legend === legend);
+        const groupX = xScale(group.xAxisPoint);
+        if (entry && groupX !== undefined && Number.isFinite(entry.y)) {
+          result.push({ group, entry, xCenter: groupX + xScale.bandwidth() / 2 });
+        }
+        return result;
+      }, []);
+      if (points.length === 0) return;
+
+      const color = lineColorMap.get(legend) ?? getNextColor(0, 10);
+      const getScale = (entry: GroupedVerticalBarChartLineDataPoint) =>
+        entry.useSecondaryYScale ? yScaleSecondary : yScale;
+      const pathBuilder = createLine<LinePlotPoint>()
+        .x(point => point.xCenter)
+        .y(point => getScale(point.entry)(point.entry.y));
+      const resolvedLineStrokeWidth = Number(this.lineStrokeWidth ?? 3);
+      const resolvedLineBorderWidth = Number(this.lineBorderWidth ?? 0);
+      if (resolvedLineBorderWidth > 0) {
+        const borderPath = createSvgElement<SVGPathElement>('path');
+        borderPath.classList.add('line-border');
+        borderPath.dataset.legend = legend;
+        borderPath.setAttribute('fill', 'none');
+        borderPath.setAttribute('stroke', this.lineBorderColor ?? 'var(--colorNeutralBackground1, #fff)');
+        borderPath.setAttribute('stroke-width', String(resolvedLineStrokeWidth + resolvedLineBorderWidth * 2));
+        borderPath.setAttribute('stroke-linecap', this.lineStrokeLinecap ?? 'square');
+        if (this.lineStrokeDasharray !== undefined)
+          borderPath.setAttribute('stroke-dasharray', String(this.lineStrokeDasharray));
+        if (this.lineStrokeDashoffset !== undefined)
+          borderPath.setAttribute('stroke-dashoffset', String(this.lineStrokeDashoffset));
+        borderPath.setAttribute('d', pathBuilder(points) ?? '');
+        plotGroup.appendChild(borderPath);
+      }
+      const path = createSvgElement<SVGPathElement>('path');
+      path.classList.add('line-path');
+      path.dataset.legend = legend;
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', String(resolvedLineStrokeWidth));
+      path.setAttribute('stroke-linecap', this.lineStrokeLinecap ?? 'square');
+      if (this.lineStrokeDasharray !== undefined)
+        path.setAttribute('stroke-dasharray', String(this.lineStrokeDasharray));
+      if (this.lineStrokeDashoffset !== undefined)
+        path.setAttribute('stroke-dashoffset', String(this.lineStrokeDashoffset));
+      path.setAttribute('d', pathBuilder(points) ?? '');
+      plotGroup.appendChild(path);
+
+      points.forEach(point => {
+        const marker = createSvgElement<SVGCircleElement>('circle');
+        marker.classList.add('line-marker');
+        marker.dataset.legend = legend;
+        marker.setAttribute('cx', String(point.xCenter));
+        marker.setAttribute('cy', String(getScale(point.entry)(point.entry.y)));
+        marker.setAttribute('r', '5');
+        marker.setAttribute('fill', 'var(--colorNeutralBackground1, #fff)');
+        marker.setAttribute('stroke', color);
+        marker.setAttribute('stroke-width', '2');
+        marker.setAttribute('role', 'img');
+        marker.setAttribute(
+          'aria-label',
+          point.entry.callOutAccessibilityData?.ariaLabel ?? `${point.group.xAxisPoint}. ${legend}, ${point.entry.y}.`,
+        );
+        const showTooltip = () => {
+          if (!this._shouldShowTooltip(legend) || this.hideTooltip) return;
+          const hostRect = this.getBoundingClientRect();
+          const svgRect = svg.getBoundingClientRect();
+          const value =
+            point.entry.yAxisCalloutData ?? formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture);
+          const entries: TooltipEntry[] = this.isCalloutForStack
+            ? [
+                ...point.group.series
+                  .filter(entry => this._shouldShowTooltip(legendByKey.get(entry.key) ?? entry.key))
+                  .map(entry => ({
+                    legend: legendByKey.get(entry.key) ?? entry.key,
+                    color: colorMap.get(entry.key) ?? getNextColor(0, 0),
+                    value: entry.yAxisCalloutData ?? formatNumberValue(entry.data, this.yAxisTickFormat, this.culture),
+                  })),
+                ...(point.group.lineData ?? [])
+                  .filter(entry => this._shouldShowTooltip(entry.legend))
+                  .map(entry => ({
+                    legend: entry.legend,
+                    color: lineColorMap.get(entry.legend) ?? getNextColor(0, 10),
+                    value: entry.yAxisCalloutData ?? formatNumberValue(entry.y, this.yAxisTickFormat, this.culture),
+                  })),
+              ]
+            : [{ legend, color, value }];
+          this._currentTooltipDataPoint = this.isCalloutForStack ? point.group : point.entry;
+          this.tooltipProps = {
+            isVisible: true,
+            legend,
+            xValue: point.group.xAxisPoint,
+            yValue: value,
+            color,
+            xPos: svgRect.left - hostRect.left + margins.left + point.xCenter,
+            yPos: svgRect.top - hostRect.top + margins.top + getScale(point.entry)(point.entry.y),
+            entries,
+          };
+        };
+        marker.addEventListener('mouseenter', showTooltip);
+        marker.addEventListener('focus', showTooltip);
+        marker.addEventListener('mouseleave', () => this._clearTooltip());
+        marker.addEventListener('blur', () => this._clearTooltip());
+        marker.addEventListener('click', () => point.entry.onClick?.());
+        plotGroup.appendChild(marker);
       });
     });
 
@@ -275,9 +600,57 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
       isRTL: this._isRTL,
       yAxisTitle: this.yAxisTitle,
     });
+    if (hasSecondaryY) {
+      const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6));
+      applyAxisTickConfig(
+        yAxisSecondary,
+        this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+        this.yAxisTickValues ?? (useLogSecondary ? undefined : preparedSecondaryYAxis.tickValues),
+      );
+      renderSecondaryYAxisShared({
+        svg,
+        scale: yScaleSecondary,
+        axis: yAxisSecondary as unknown as Axis<number>,
+        formatter: value => formatNumberValue(value, this.yAxisTickFormat, this.culture),
+        axisStartX: margins.left,
+        axisTop: margins.top,
+        innerHeight,
+        innerWidth,
+        tickPadding: toNumber(this.tickPadding, 6),
+        isRTL: this._isRTL,
+        yAxisTitle: this.secondaryYAxisTitle,
+      });
+    }
+
+    const annotationLayer = createSvgElement<SVGGElement>('g');
+    annotationLayer.classList.add('annotation-layer');
+    annotationLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+    svg.appendChild(annotationLayer);
+    renderChartAnnotations({
+      layer: annotationLayer,
+      collisionLayer: plotGroup,
+      annotations: this.annotations,
+      innerWidth,
+      innerHeight,
+      mapDataX: value => {
+        const bandX = xScale(String(value));
+        return bandX === undefined ? undefined : bandX + xScale.bandwidth() / 2;
+      },
+      mapDataY: (value, axis) => (axis === 'secondary' ? yScaleSecondary : yScale)(Number(value)),
+    });
 
     this.chartContainer.appendChild(svg);
-    this.legends = keyDomain.map(key => ({ legend: key, color: colorMap.get(key) ?? getNextColor(0, 0) }));
+    this.legends = [
+      ...lineLegendOrder.map(legend => ({
+        legend,
+        color: lineColorMap.get(legend) ?? getNextColor(0, 10),
+        isLineLegendInBarChart: true,
+      })),
+      ...keyDomain.map(key => ({
+        legend: legendByKey.get(key) ?? key,
+        color: colorMap.get(key) ?? getNextColor(0, 0),
+      })),
+    ];
     this._updateLegendInteractionState();
     this.elementInternals.ariaLabel = this._getHostAriaLabel();
   }
@@ -288,12 +661,27 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     }
     const highlighted = this._getHighlightedLegends();
     const hasSelection = highlighted.length > 0;
-    this.chartContainer.querySelectorAll<SVGElement>('.bar').forEach(element => {
-      const legend = element.dataset.legend ?? '';
-      const isActive = !hasSelection || highlighted.includes(legend);
-      element.classList.toggle('inactive', !isActive);
-      element.setAttribute('opacity', isActive ? '1' : '0.1');
+    this.chartContainer
+      .querySelectorAll<SVGElement>('.bar, .bar-label, .line-border, .line-path, .line-marker')
+      .forEach(element => {
+        const legend = element.dataset.legend ?? '';
+        const isActive = !hasSelection || highlighted.includes(legend);
+        element.classList.toggle('inactive', !isActive);
+        element.setAttribute('opacity', isActive ? '1' : '0.1');
+      });
+
+    this._renderedBars.forEach(({ legend, element }) => {
+      if (hasSelection && !highlighted.includes(legend)) {
+        element.tabIndex = -1;
+      }
     });
+    const activeBars = this._renderedBars
+      .filter(({ legend }) => !hasSelection || highlighted.includes(legend))
+      .map(bar => bar.element);
+    if (activeBars.length > 0 && !activeBars.some(element => element.tabIndex === 0)) {
+      activeBars[0].tabIndex = 0;
+    }
+    this._relocateFocusIfNeeded(this._renderedBars.map(bar => bar.element));
   }
 
   protected override _getHostAriaLabel(): string {

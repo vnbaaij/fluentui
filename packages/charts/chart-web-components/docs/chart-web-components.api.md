@@ -478,6 +478,10 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
+    enableGradient: boolean;
+    // (undocumented)
+    protected enableGradientChanged(): void;
+    // (undocumented)
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
@@ -487,6 +491,10 @@ export class GroupedVerticalBarChart extends CartesianChartBase {
     //
     // (undocumented)
     tooltipProps: TooltipState_2;
+    // (undocumented)
+    useSingleColor: boolean;
+    // (undocumented)
+    protected useSingleColorChanged(): void;
 }
 
 // @public (undocumented)

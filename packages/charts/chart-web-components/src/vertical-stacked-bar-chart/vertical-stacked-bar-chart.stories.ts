@@ -614,6 +614,84 @@ export const ChartAttributes: Story<VerticalStackedBarChart> = () => {
 ChartAttributes.storyName = 'Chart Attributes';
 ChartAttributes.parameters = { docs: { story: { height: '560px' } } };
 
+export const SharedFeatures: Story<VerticalStackedBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-vertical-stacked-bar-chart') as VerticalStackedBarChart;
+  chart.chartTitle = 'Vertical stacked bar chart shared features';
+  chart.width = 700;
+  chart.height = 400;
+  chart.barWidth = 'auto';
+  chart.maxBarWidth = 28;
+  chart.colors = ['#0f6cbd', '#d13438', '#107c10'];
+  chart.margins = { top: 56, right: 84, bottom: 60, left: 72 };
+  chart.isCalloutForStack = true;
+  chart.xAxisTitle = 'Quarter';
+  chart.yAxisTitle = 'Performance';
+  chart.secondaryYAxisTitle = 'Growth index';
+  chart.yScaleType = 'default';
+  chart.secondaryYScaleType = 'log';
+  chart.annotations = [
+    {
+      text: 'Combined target',
+      coordinates: { type: 'data', x: 'Q2', y: 65 },
+      layout: { offsetY: -14 },
+      connector: { dashArray: '3 2' },
+    },
+  ];
+  chart.data = [
+    {
+      xAxisPoint: 'Q1',
+      stackCallOutAccessibilityData: { ariaLabel: 'Q1 combined results' },
+      chartData: [
+        {
+          legend: 'North',
+          data: 35,
+          barLabel: 'Q1 total',
+          yAxisCalloutData: '35 percent',
+          callOutAccessibilityData: { ariaLabel: 'North Q1, 35 percent' },
+          onClick: () => (chart.chartTitle = 'North selected'),
+        },
+        { legend: 'South', data: 20 },
+      ],
+      lineData: [{ legend: 'Growth', y: 10, useSecondaryYScale: true }],
+    },
+    {
+      xAxisPoint: 'Q2',
+      chartData: [
+        { legend: 'North', data: 40 },
+        { legend: 'South', data: 25 },
+      ],
+      lineData: [{ legend: 'Growth', y: 100, useSecondaryYScale: true }],
+    },
+    {
+      xAxisPoint: 'Q3',
+      chartData: [
+        { legend: 'North', data: 30 },
+        { legend: 'South', data: 35 },
+      ],
+      lineData: [{ legend: 'Growth', y: 1000, useSecondaryYScale: true }],
+    },
+  ];
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  controls.appendChild(
+    createSwitchField('Show axis titles', 'vsbar-shared-axis-titles', true, checked => {
+      chart.xAxisTitle = checked ? 'Quarter' : '';
+      chart.yAxisTitle = checked ? 'Performance' : '';
+      chart.secondaryYAxisTitle = checked ? 'Growth index' : '';
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+SharedFeatures.storyName = 'Shared Features';
+SharedFeatures.parameters = { docs: { story: { height: '520px' } } };
+
 export const TooltipRendererStory: Story<VerticalStackedBarChart> = () => {
   const container = document.createElement('div');
 

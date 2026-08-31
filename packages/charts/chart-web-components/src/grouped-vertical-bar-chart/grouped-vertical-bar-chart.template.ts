@@ -1,5 +1,5 @@
-import { ElementViewTemplate, html, ref, when } from '@microsoft/fast-element';
-import type { GroupedVerticalBarChart } from './grouped-vertical-bar-chart.js';
+import { ElementViewTemplate, html, ref, repeat, when } from '@microsoft/fast-element';
+import type { GroupedVerticalBarChart, TooltipEntry } from './grouped-vertical-bar-chart.js';
 
 export function groupedVerticalBarChartTemplate<T extends GroupedVerticalBarChart>(): ElementViewTemplate<T> {
   return html<T>`
@@ -27,19 +27,20 @@ export function groupedVerticalBarChartTemplate<T extends GroupedVerticalBarChar
             style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x =>
               x.tooltipProps.yPos}px; transform: ${x => x.tooltipInlineTransform}"
           >
-            <div class="tooltip-body">
-              ${when(
-                x => !x.tooltipRenderer,
-                html<T>`
-                  <div class="tooltip-header">${x => x.tooltipProps.yValue}</div>
-                  <div class="tooltip-info" style="border-color: ${x => x.tooltipProps.color};">
-                    <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
-                    <div class="tooltip-primary-value" style="color: ${x => x.tooltipProps.color};">
-                      ${x => x.tooltipProps.xValue}
+            <div class="tooltip-body preserve-default-content">
+              <div class="tooltip-default-content" ?hidden="${x => !!x.tooltipRenderer}">
+                <div class="tooltip-header">${x => x.tooltipProps.xValue}</div>
+                ${repeat(
+                  x => x.tooltipProps.entries as TooltipEntry[],
+                  html<TooltipEntry, T>`
+                    <div class="tooltip-info" style="border-color: ${x => x.color};">
+                      <div class="tooltip-legend-text">${x => x.legend}</div>
+                      <div class="tooltip-primary-value" style="color: ${x => x.color};">${x => x.value}</div>
                     </div>
-                  </div>
-                `,
-              )}
+                  `,
+                )}
+              </div>
+              <div class="tooltip-custom-content" ?hidden="${x => !x.tooltipRenderer}"></div>
             </div>
           </div>
         `,

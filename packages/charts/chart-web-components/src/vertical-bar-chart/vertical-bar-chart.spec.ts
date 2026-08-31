@@ -89,6 +89,42 @@ test.describe('VerticalBarChart', () => {
     await expect(element.locator('.y-axis-secondary .y-axis-title')).toContainText('Line values');
   });
 
+  test('Shared Features should render shared layout, palette, metadata, annotations, and scales', async ({ page }) => {
+    await page.goto(fixtureURL('components-verticalbarchart--shared-features'));
+    const element = page.locator('fluent-vertical-bar-chart');
+    const bars = element.locator('.bar');
+
+    await expect(bars).toHaveCount(3);
+    await expect(bars.first()).toHaveAttribute('width', '24');
+    await expect(bars.first()).toHaveAttribute('fill', '#0f6cbd');
+    await expect(bars.first()).toHaveAttribute('aria-label', 'North, first quarter, 42 percent');
+    await expect(element.locator('.bar-label').first()).toHaveText('42%');
+    await expect(element.locator('.chart-annotation-text')).toHaveText('Target');
+    const annotation = element.locator('.chart-annotation-text');
+    const targetLabel = element.locator('.bar-label', { hasText: '70' });
+    await expect
+      .poll(async () => (await annotation.boundingBox())!.y + (await annotation.boundingBox())!.height)
+      .toBeLessThan((await targetLabel.boundingBox())!.y);
+    expect(await annotation.getAttribute('x')).toBe(
+      await element.locator('.chart-annotation-connector').getAttribute('x1'),
+    );
+    await expect(element.locator('.y-axis-secondary')).toHaveCount(1);
+    await expect(element.locator('.x-axis-title')).toHaveText('Category index');
+    await expect(element.locator('.y-axis > .y-axis-title')).toHaveText('Performance');
+    await expect(element.locator('.y-axis-secondary > .y-axis-title')).toHaveText('Growth index');
+
+    const axisTitlesSwitch = page.locator('#vbar-shared-axis-titles');
+    await axisTitlesSwitch.click();
+    await expect(element.locator('.x-axis-title, .y-axis-title')).toHaveCount(0);
+    await axisTitlesSwitch.click();
+    await expect(element.locator('.x-axis-title')).toHaveText('Category index');
+    await expect(element.locator('.y-axis > .y-axis-title')).toHaveText('Performance');
+    await expect(element.locator('.y-axis-secondary > .y-axis-title')).toHaveText('Growth index');
+
+    await bars.first().click();
+    await expect(element.locator('.chart-title')).toHaveText('North selected');
+  });
+
   test('Should support roving keyboard focus with left and right arrow keys', async ({ page }) => {
     const element = page.locator('fluent-vertical-bar-chart');
     const bars = element.locator('.bar');
@@ -121,9 +157,11 @@ test.describe('VerticalBarChart', () => {
       ></fluent-vertical-bar-chart>
     `);
 
-    const barXPositions = await page
-      .locator('fluent-vertical-bar-chart .bar')
-      .evaluateAll((bars: SVGRectElement[]) => bars.map(bar => Number(bar.getAttribute('x') ?? '0')));
+    const bars = page.locator('fluent-vertical-bar-chart .bar');
+    await expect(bars).toHaveCount(2);
+    const barXPositions = await bars.evaluateAll((bars: SVGRectElement[]) =>
+      bars.map(bar => Number(bar.getAttribute('x') ?? '0')),
+    );
 
     expect(barXPositions[0]).toBeLessThan(barXPositions[1]);
     expect(barXPositions[1] - barXPositions[0]).toBeGreaterThan(80);

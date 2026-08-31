@@ -151,6 +151,12 @@ export const styles: ElementStyles = css`
     opacity: 1;
   }
 
+  .bar-label {
+    fill: ${colorNeutralForeground2};
+    font-size: 10px;
+    font-weight: 600;
+  }
+
   .bar.inactive {
     opacity: 0.1;
   }
