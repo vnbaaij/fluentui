@@ -77,7 +77,13 @@ export type { LineChartDataPoint, LineChartSeries } from './line-chart/index.js'
 
 export { PolarChart, PolarChartDefinition, PolarChartStyles, PolarChartTemplate } from './polar-chart/index.js';
 
-export type { PolarChartDataPoint, PolarChartSeries } from './polar-chart/index.js';
+export type {
+  PolarAxisOptions,
+  PolarChartDataPoint,
+  PolarChartSeries,
+  PolarChartValue,
+  PolarLineOptions,
+} from './polar-chart/index.js';
 
 export { SankeyChart, SankeyChartDefinition, SankeyChartStyles, SankeyChartTemplate } from './sankey-chart/index.js';
 

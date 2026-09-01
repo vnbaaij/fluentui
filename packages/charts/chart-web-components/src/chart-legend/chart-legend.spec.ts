@@ -215,6 +215,50 @@ test.describe('ChartLegend - position', () => {
   });
 });
 
+test.describe('ChartLegend - overflow menu', () => {
+  test('Should scroll vertically when more than 10 items overflow', async ({ page }) => {
+    const manyItems = Array.from({ length: 15 }, (_, index) => ({
+      legend: `Legend ${index + 1}`,
+      color: '#637cef',
+    }));
+
+    await page.goto(fixtureURL('components-chartlegend--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 120px;">
+        <fluent-chart-legend label="Chart legend" style="width: 120px;"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      (document.querySelector('fluent-chart-legend') as any).items = items;
+    }, manyItems);
+
+    const element = page.locator('fluent-chart-legend');
+    await page.waitForFunction(() => {
+      const legend = document.querySelector('fluent-chart-legend') as any;
+      return legend?._overflowCount > 10;
+    });
+    await element.locator('fluent-menu-button').evaluate(button => (button as HTMLElement).click());
+
+    const menuList = element.locator('fluent-menu-list');
+    await expect(menuList).toBeVisible();
+    await expect(menuList.locator('fluent-menu-item')).toHaveCount(14);
+    const dimensions = await menuList.evaluate(menu => ({
+      clientHeight: menu.clientHeight,
+      scrollHeight: menu.scrollHeight,
+      overflowY: getComputedStyle(menu).overflowY,
+      paddingTop: Number.parseFloat(getComputedStyle(menu).paddingTop),
+      paddingBottom: Number.parseFloat(getComputedStyle(menu).paddingBottom),
+      itemHeight: menu.querySelector('fluent-menu-item')?.getBoundingClientRect().height ?? 0,
+    }));
+    expect((dimensions.clientHeight - dimensions.paddingTop - dimensions.paddingBottom) / dimensions.itemHeight).toBe(
+      10,
+    );
+    expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
+    expect(dimensions.overflowY).toBe('auto');
+  });
+});
+
 test.describe('ChartLegend - events', () => {
   test('Should emit legend-click with legend title on button click', async ({ page }) => {
     await setup(page);

@@ -1,5 +1,5 @@
-import { ElementViewTemplate, html, ref, when } from '@microsoft/fast-element';
-import type { PolarChart } from './polar-chart.js';
+import { ElementViewTemplate, html, ref, repeat, when } from '@microsoft/fast-element';
+import type { PolarChart, PolarTooltipEntry } from './polar-chart.js';
 
 export function polarChartTemplate<T extends PolarChart>(): ElementViewTemplate<T> {
   return html<T>`
@@ -23,20 +23,38 @@ export function polarChartTemplate<T extends PolarChart>(): ElementViewTemplate<
         x => !x.hideTooltip && x.tooltipProps.isVisible,
         html<T>`
           <div
-            class="tooltip"
-            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x => x.tooltipProps.yPos}px;"
+            class="tooltip ${x => (x.isMeasuringTooltip ? 'measuring' : '')}"
+            style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x =>
+              x.tooltipProps.yPos}px; transform: ${x => x.tooltipInlineTransform}"
           >
             <div class="tooltip-body">
               ${when(
                 x => !x.tooltipRenderer,
                 html<T>`
-                  <div class="tooltip-header">Value</div>
-                  <div class="tooltip-inner" style="border-color: ${x => x.tooltipProps.color};">
-                    <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
-                    <div class="tooltip-content-y" style="color: ${x => x.tooltipProps.color};">
-                      ${x => x.tooltipProps.yValue}
-                    </div>
-                  </div>
+                  ${when(
+                    x => x.enableMultiValueCallout,
+                    html<T>`
+                      <div class="tooltip-header">${x => x.tooltipProps.angularLabel}</div>
+                      ${repeat(
+                        x => x.tooltipProps.entries ?? [],
+                        html<PolarTooltipEntry, T>`
+                          <div class="tooltip-inner" style="border-color: ${x => x.color};">
+                            <div class="tooltip-legend-text">${x => x.legend}</div>
+                            <div class="tooltip-content-y" style="color: ${x => x.color};">${x => x.value}</div>
+                          </div>
+                        `,
+                      )}
+                    `,
+                    html<T>`
+                      <div class="tooltip-header">Value</div>
+                      <div class="tooltip-inner" style="border-color: ${x => x.tooltipProps.color};">
+                        <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
+                        <div class="tooltip-content-y" style="color: ${x => x.tooltipProps.color};">
+                          ${x => x.tooltipProps.yValue}
+                        </div>
+                      </div>
+                    `,
+                  )}
                 `,
               )}
             </div>

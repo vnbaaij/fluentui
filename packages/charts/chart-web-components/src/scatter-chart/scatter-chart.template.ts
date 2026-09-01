@@ -1,5 +1,11 @@
-import { ElementViewTemplate, html, ref, when } from '@microsoft/fast-element';
+import { ElementViewTemplate, html, ref, repeat, when } from '@microsoft/fast-element';
 import type { ScatterChart } from './scatter-chart.js';
+
+type ScatterTooltipEntry = {
+  legend: string;
+  yValue: string;
+  color: string;
+};
 
 export function scatterChartTemplate<T extends ScatterChart>(): ElementViewTemplate<T> {
   return html<T>`
@@ -31,13 +37,16 @@ export function scatterChartTemplate<T extends ScatterChart>(): ElementViewTempl
               ${when(
                 x => !x.tooltipRenderer,
                 html<T>`
-                  <div class="tooltip-header">${x => x.tooltipProps.yValue}</div>
-                  <div class="tooltip-info" style="border-color: ${x => x.tooltipProps.color};">
-                    <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
-                    <div class="tooltip-primary-value" style="color: ${x => x.tooltipProps.color};">
-                      ${x => x.tooltipProps.xValue}
-                    </div>
-                  </div>
+                  <div class="tooltip-header">${x => x.tooltipProps.xValue}</div>
+                  ${repeat(
+                    x => x.tooltipProps.entries,
+                    html<ScatterTooltipEntry, T>`
+                      <div class="tooltip-info" style="border-color: ${x => x.color};">
+                        <div class="tooltip-legend-text">${x => x.legend}</div>
+                        <div class="tooltip-primary-value" style="color: ${x => x.color};">${x => x.yValue}</div>
+                      </div>
+                    `,
+                  )}
                 `,
               )}
             </div>

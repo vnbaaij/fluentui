@@ -43,7 +43,6 @@ export const styles = css`
 
   .chart-container {
     grid-area: chart;
-    
   }
 
   fluent-chart-legend {
@@ -123,29 +122,98 @@ export const styles = css`
   }
 
   .polar-series {
-    fill-opacity: 0.2;
-    stroke-width: 2;
+    pointer-events: none;
   }
 
-  .polar-series.inactive,
-  .polar-marker.inactive {
+  .polar-area {
+    fill-opacity: 0.7;
+  }
+
+  .polar-series.inactive {
     opacity: 0.1;
   }
 
   .polar-grid {
     fill: none;
-    stroke: #ccc;
-    stroke-width: 0.5;
+    opacity: 0.2;
+    stroke: ${colorNeutralForeground1};
+    stroke-width: 1;
+  }
+
+  .polar-grid-outer,
+  .polar-radial-axis,
+  .polar-radial-tick {
+    opacity: 1;
+    stroke: ${colorNeutralForeground1};
+    stroke-width: 1;
   }
 
   .polar-axis {
-    stroke: #ccc;
-    stroke-width: 0.5;
+    opacity: 0.2;
+    stroke: ${colorNeutralForeground1};
+    stroke-width: 1;
   }
 
   .polar-axis-label {
     font-size: 11px;
-    fill: #666;
+    fill: ${colorNeutralForeground1};
+    font-weight: 600;
+    text-anchor: middle;
+  }
+
+  .polar-radial-tick-label {
+    fill: ${colorNeutralForeground1};
+    font-size: 10px;
+    font-weight: 600;
+    dominant-baseline: middle;
+  }
+
+  .polar-marker {
+    opacity: 0;
+    stroke-width: 0;
+  }
+
+  .polar-marker.inactive {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .polar-marker.always-visible {
+    opacity: 1;
+  }
+
+  .polar-marker.always-visible.inactive,
+  .polar-point-text.inactive {
+    opacity: 0.1;
+  }
+
+  .polar-marker.active {
+    fill: ${colorNeutralBackground1};
+    opacity: 1;
+    stroke-width: 2;
+  }
+
+  .polar-marker.clickable {
+    cursor: pointer;
+  }
+
+  .polar-callout-guide {
+    stroke: ${colorNeutralForeground1};
+    stroke-dasharray: 5 3;
+    stroke-width: 1;
+    pointer-events: none;
+  }
+
+  .polar-callout-surface {
+    fill: ${colorNeutralBackground1};
+    fill-opacity: 0;
+    pointer-events: all;
+  }
+
+  .polar-point-text {
+    fill: ${colorNeutralForeground1};
+    font-size: 10px;
+    pointer-events: none;
     text-anchor: middle;
   }
 
@@ -173,6 +241,10 @@ export const styles = css`
     filter: drop-shadow(0 0 2px ${colorNeutralShadowAmbient}) drop-shadow(0 8px 16px ${colorNeutralShadowKey});
     min-width: 120px;
     transform: translateX(-50%);
+  }
+
+  .tooltip.measuring {
+    visibility: hidden;
   }
 
   .tooltip-header {

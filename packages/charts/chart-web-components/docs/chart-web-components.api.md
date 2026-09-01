@@ -959,9 +959,41 @@ export const LineChartStyles: ElementStyles;
 export const LineChartTemplate: ElementViewTemplate<LineChart>;
 
 // @public (undocumented)
+export interface PolarAxisOptions {
+    // (undocumented)
+    categoryOrder?: AxisCategoryOrder;
+    // (undocumented)
+    rangeEnd?: number | Date;
+    // (undocumented)
+    rangeStart?: number | Date;
+    // (undocumented)
+    scaleType?: AxisScaleType;
+    // (undocumented)
+    tick0?: number | Date;
+    // (undocumented)
+    tickCount?: number;
+    // (undocumented)
+    tickFormat?: string;
+    // (undocumented)
+    tickStep?: number | string;
+    // (undocumented)
+    tickText?: string[];
+    // (undocumented)
+    tickValues?: PolarChartValue[];
+    // (undocumented)
+    unit?: 'radians' | 'degrees';
+}
+
+// @public (undocumented)
 export class PolarChart extends ChartBase {
     // (undocumented)
+    angularAxis?: PolarAxisOptions;
+    // (undocumented)
+    protected angularAxisChanged(): void;
+    // (undocumented)
     protected _applyActiveLegendState(): void;
+    // (undocumented)
+    protected _buildDefaultTooltipHTML(dataPoint: unknown): string;
     // (undocumented)
     connectedCallback(): void;
     // (undocumented)
@@ -969,23 +1001,81 @@ export class PolarChart extends ChartBase {
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
+    dateLocalizeOptions?: Intl.DateTimeFormatOptions;
+    // (undocumented)
+    protected dateLocalizeOptionsChanged(): void;
+    // (undocumented)
+    direction: 'clockwise' | 'counterclockwise';
+    // (undocumented)
+    protected directionChanged(): void;
+    // (undocumented)
+    enableMultiValueCallout: boolean;
+    // (undocumented)
+    protected enableMultiValueCalloutChanged(): void;
+    // (undocumented)
     protected _enableResizeObserver: boolean;
     // (undocumented)
     protected _getHostAriaLabel(): string;
     // (undocumented)
+    hole: number | string;
+    // (undocumented)
+    protected holeChanged(): void;
+    // (undocumented)
+    margins?: ChartMargins;
+    // (undocumented)
+    protected marginsChanged(): void;
+    // (undocumented)
     protected _performRender(): void;
+    // (undocumented)
+    radialAxis?: PolarAxisOptions;
+    // (undocumented)
+    protected radialAxisChanged(): void;
+    // (undocumented)
+    shape: 'circle' | 'polygon';
+    // (undocumented)
+    protected shapeChanged(): void;
     // (undocumented)
     showMarkers: boolean;
     // (undocumented)
     protected showMarkersChanged(): void;
+    // Warning: (ae-forgotten-export) The symbol "PolarTooltipState" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    tooltipProps: PolarTooltipState;
+    // (undocumented)
+    protected tooltipPropsChanged(oldValue: TooltipProps, newValue: PolarTooltipState): void;
+    // (undocumented)
+    useUTC: boolean;
+    // (undocumented)
+    protected useUTCChanged(): void;
 }
 
 // @public (undocumented)
 export interface PolarChartDataPoint {
     // (undocumented)
-    x: string;
+    angularAxisCalloutData?: string;
     // (undocumented)
-    y: number;
+    callOutAccessibilityData?: {
+        ariaLabel?: string;
+    };
+    // (undocumented)
+    color?: string;
+    // (undocumented)
+    markerSize?: number;
+    // (undocumented)
+    onClick?: () => void;
+    // (undocumented)
+    r?: PolarChartValue;
+    // (undocumented)
+    radialAxisCalloutData?: string;
+    // (undocumented)
+    text?: string;
+    // (undocumented)
+    theta?: string | number;
+    // (undocumented)
+    x?: string;
+    // (undocumented)
+    y?: number;
 }
 
 // @public (undocumented)
@@ -999,6 +1089,10 @@ export interface PolarChartSeries {
     data: PolarChartDataPoint[];
     // (undocumented)
     legend: string;
+    // (undocumented)
+    lineOptions?: PolarLineOptions;
+    // (undocumented)
+    type?: 'areapolar' | 'linepolar' | 'scatterpolar';
 }
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -1010,6 +1104,23 @@ export const PolarChartStyles: ElementStyles;
 //
 // @public (undocumented)
 export const PolarChartTemplate: ElementViewTemplate<PolarChart>;
+
+// @public (undocumented)
+export type PolarChartValue = string | number | Date;
+
+// @public (undocumented)
+export interface PolarLineOptions {
+    // (undocumented)
+    curve?: 'linear' | 'natural' | 'step' | 'stepAfter' | 'stepBefore';
+    // (undocumented)
+    strokeDasharray?: number | string;
+    // (undocumented)
+    strokeDashoffset?: number | string;
+    // (undocumented)
+    strokeLinecap?: 'butt' | 'round' | 'square' | 'inherit';
+    // (undocumented)
+    strokeWidth?: number | string;
+}
 
 // @public (undocumented)
 export class SankeyChart extends ChartBase {
@@ -1092,8 +1203,6 @@ export class ScatterChart extends CartesianChartBase {
     protected _getHostAriaLabel(): string;
     // (undocumented)
     protected _performRender(): void;
-    // (undocumented)
-    get tooltipInlineTransform(): string;
     // Warning: (ae-forgotten-export) The symbol "TooltipState_4" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -1103,9 +1212,9 @@ export class ScatterChart extends CartesianChartBase {
 // @public (undocumented)
 export interface ScatterChartDataPoint {
     // (undocumented)
-    size?: number;
+    markerSize?: number;
     // (undocumented)
-    x: number;
+    x: number | Date | string;
     // (undocumented)
     y: number;
 }
@@ -1135,6 +1244,7 @@ export const ScatterChartTemplate: ElementViewTemplate<ScatterChart>;
 
 // @public (undocumented)
 export class SparklineChart extends ChartBase {
+    constructor();
     // (undocumented)
     protected _applyActiveLegendState(): void;
     // (undocumented)

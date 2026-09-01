@@ -9,6 +9,9 @@ const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
 
 const defaultNumberFormatter = format(',.2~f');
+const NODE_WIDTH = 124;
+const MIN_HEIGHT_FOR_LABEL = 24;
+const MIN_HEIGHT_FOR_TWO_LINE_LABEL = 36;
 
 const toNumber = (value: number | string | undefined, fallback: number): number => {
   if (value === undefined || value === null || value === '') {
@@ -19,12 +22,68 @@ const toNumber = (value: number | string | undefined, fallback: number): number 
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-interface SankeyNodeDatum extends SankeyChartNode {}
-interface SankeyLinkDatum extends SankeyChartLink {}
+interface SankeyNodeDatum extends SankeyChartNode {
+  actualValue?: number;
+}
+interface SankeyLinkDatum extends SankeyChartLink {
+  unnormalizedValue?: number;
+}
 interface SankeyLayoutData {
   nodes: SankeyNodeDatum[];
   links: SankeyLinkDatum[];
 }
+
+const normalizeSmallNodes = (
+  nodes: Array<SankeyNode<SankeyNodeDatum, SankeyLinkDatum>>,
+  links: Array<SankeyLink<SankeyNodeDatum, SankeyLinkDatum>>,
+): void => {
+  const nodesByColumn = new Map<number, Array<SankeyNode<SankeyNodeDatum, SankeyLinkDatum>>>();
+
+  nodes.forEach(node => {
+    node.actualValue = node.value ?? 0;
+    const column = node.depth ?? 0;
+    const columnNodes = nodesByColumn.get(column) ?? [];
+    columnNodes.push(node);
+    nodesByColumn.set(column, columnNodes);
+  });
+  links.forEach(link => {
+    link.unnormalizedValue = link.value;
+  });
+
+  nodesByColumn.forEach(columnNodes => {
+    const columnValue = columnNodes.reduce((total, node) => total + (node.actualValue ?? 0), 0);
+    if (columnValue === 0) {
+      return;
+    }
+
+    const onePercent = columnValue * 0.01;
+    let totalPercentage = 0;
+    columnNodes.forEach(node => {
+      const nodePercentage = ((node.actualValue ?? 0) / columnValue) * 100;
+      node.value = nodePercentage < 1 ? onePercent : node.actualValue;
+      totalPercentage += Math.max(nodePercentage, 1);
+    });
+
+    const scalingRatio = totalPercentage / 100;
+    if (scalingRatio <= 1) {
+      return;
+    }
+
+    columnNodes.forEach(node => {
+      const actualValue = node.actualValue ?? 0;
+      const normalizedValue = (node.value ?? 0) / scalingRatio;
+      node.value = normalizedValue;
+      if (actualValue === 0) {
+        return;
+      }
+
+      [...(node.sourceLinks ?? []), ...(node.targetLinks ?? [])].forEach(link => {
+        const originalLinkValue = link.unnormalizedValue ?? link.value;
+        link.value = Math.max(normalizedValue * (originalLinkValue / actualValue), link.value);
+      });
+    });
+  });
+};
 
 interface RenderedNode {
   legend: string;
@@ -101,7 +160,7 @@ export class SankeyChart extends ChartBase {
 
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 700);
     const height = this.chartContainer.getBoundingClientRect().height || toNumber(this.height, 300);
-    const margins = { top: 16, right: 88, bottom: 16, left: 88 };
+    const margins = { top: 16, right: 48, bottom: 32, left: 48 };
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const innerHeight = Math.max(height - margins.top - margins.bottom, 1);
 
@@ -120,13 +179,16 @@ export class SankeyChart extends ChartBase {
       links: links.map(link => ({ ...link })),
     };
 
-    const graph = sankey<SankeyLayoutData, SankeyNodeDatum, SankeyLinkDatum>()
-      .nodeWidth(16)
-      .nodePadding(16)
+    const layout = sankey<SankeyLayoutData, SankeyNodeDatum, SankeyLinkDatum>()
+      .nodeWidth(NODE_WIDTH)
+      .nodePadding(8)
       .extent([
         [0, 0],
         [innerWidth, innerHeight],
-      ])(graphData);
+      ]);
+    let graph = layout(graphData);
+    normalizeSmallNodes(graph.nodes, graph.links);
+    graph = layout(graphData);
 
     this.legends = graph.nodes.map((node, index) => ({
       legend: node.name,
@@ -148,15 +210,30 @@ export class SankeyChart extends ChartBase {
         : getNextColor(source.index ?? index, 0);
 
       const path = createSvgElement<SVGPathElement>('path');
+      const pathData = linkPath(link) ?? '';
+      const linkWidth = Math.max(link.width ?? 1, 1);
+      const outerFocusPath = createSvgElement<SVGPathElement>('path');
+      outerFocusPath.classList.add('sankey-link-focus-outline', 'outer');
+      outerFocusPath.setAttribute('d', pathData);
+      outerFocusPath.setAttribute('aria-hidden', 'true');
+      outerFocusPath.style.setProperty('--sankey-link-width', `${linkWidth}px`);
+      const innerFocusPath = createSvgElement<SVGPathElement>('path');
+      innerFocusPath.classList.add('sankey-link-focus-outline', 'inner');
+      innerFocusPath.setAttribute('d', pathData);
+      innerFocusPath.setAttribute('aria-hidden', 'true');
+      innerFocusPath.style.setProperty('--sankey-link-width', `${linkWidth}px`);
       path.classList.add('sankey-link');
       path.dataset.sourceLegend = sourceLegend;
       path.dataset.targetLegend = targetLegend;
-      path.setAttribute('d', linkPath(link) ?? '');
+      path.setAttribute('d', pathData);
       path.setAttribute('stroke', strokeColor);
-      path.setAttribute('stroke-width', String(Math.max(link.width ?? 1, 1)));
-      path.setAttribute('aria-hidden', 'true');
+      path.setAttribute('stroke-width', String(linkWidth));
+      const linkValue = link.unnormalizedValue ?? link.value;
+      path.setAttribute('role', 'img');
+      path.setAttribute('aria-label', `${sourceLegend} to ${targetLegend}, ${defaultNumberFormatter(linkValue)}`);
+      path.setAttribute('tabindex', index === 0 ? '0' : '-1');
 
-      path.addEventListener('mouseenter', () => {
+      const showLinkCallout = (): void => {
         if (!this._shouldShowLinkTooltip(sourceLegend, targetLegend) || this.hideTooltip) {
           return;
         }
@@ -169,19 +246,23 @@ export class SankeyChart extends ChartBase {
         this.tooltipProps = {
           isVisible: true,
           legend: `${sourceLegend} → ${targetLegend}`,
-          yValue: defaultNumberFormatter(link.value),
+          yValue: defaultNumberFormatter(linkValue),
           color: strokeColor,
           xPos: this._isRTL ? rootBounds.width - anchorX : anchorX,
           yPos: Math.max(anchorY, 0),
         };
         this._positionTooltipFromAnchor(anchorX, anchorY, { preferredVertical: 'above', horizontalAlign: 'center' });
+      };
+
+      path.addEventListener('mouseenter', showLinkCallout);
+      path.addEventListener('focus', showLinkCallout);
+      path.addEventListener('mouseleave', () => this._clearTooltip());
+      path.addEventListener('blur', () => this._clearTooltip());
+      path.addEventListener('keydown', (event: KeyboardEvent) => {
+        this._rovingKeydown(this._getRovingElements(), event);
       });
 
-      path.addEventListener('mouseleave', () => {
-        this._clearTooltip();
-      });
-
-      group.appendChild(path);
+      group.append(outerFocusPath, innerFocusPath, path);
       return { sourceLegend, targetLegend, path };
     });
 
@@ -195,18 +276,68 @@ export class SankeyChart extends ChartBase {
       rect.setAttribute('width', String(Math.max((node.x1 ?? 0) - (node.x0 ?? 0), 0)));
       rect.setAttribute('height', String(Math.max((node.y1 ?? 0) - (node.y0 ?? 0), 0)));
       rect.setAttribute('fill', fill);
+      rect.setAttribute('role', 'img');
+      rect.setAttribute('tabindex', graph.links.length === 0 && index === 0 ? '0' : '-1');
+      const nodeValue = node.actualValue ?? node.value ?? 0;
+      rect.setAttribute('aria-label', `${node.name}, ${defaultNumberFormatter(nodeValue)}`);
       group.appendChild(rect);
 
       const label = createSvgElement<SVGTextElement>('text');
       label.classList.add('sankey-node-label');
       label.dataset.legend = node.name;
-      const isLeftAligned = (node.x0 ?? 0) < innerWidth / 2;
-      label.setAttribute('x', String(isLeftAligned ? (node.x1 ?? 0) + 6 : (node.x0 ?? 0) - 6));
-      label.setAttribute('y', String(((node.y0 ?? 0) + (node.y1 ?? 0)) / 2));
-      label.setAttribute('dy', '0.35em');
-      label.setAttribute('text-anchor', isLeftAligned ? 'start' : 'end');
-      label.textContent = node.name;
+      const nodeHeight = Math.max((node.y1 ?? 0) - (node.y0 ?? 0), 0);
+      label.setAttribute('x', String((node.x0 ?? 0) + 5));
+      label.setAttribute('y', String((node.y0 ?? 0) + 5));
+      label.setAttribute('text-anchor', 'start');
+
+      if (nodeHeight > MIN_HEIGHT_FOR_LABEL) {
+        const name = createSvgElement<SVGTSpanElement>('tspan');
+        name.classList.add('sankey-node-name');
+        name.setAttribute('x', String((node.x0 ?? 0) + 5));
+        name.setAttribute('dy', '0.8em');
+        name.textContent = node.name;
+        label.appendChild(name);
+
+        const value = createSvgElement<SVGTSpanElement>('tspan');
+        value.classList.add('sankey-node-value');
+        const hasTwoLineLabel = nodeHeight > MIN_HEIGHT_FOR_TWO_LINE_LABEL;
+        value.setAttribute('x', String(hasTwoLineLabel ? (node.x0 ?? 0) + 5 : (node.x1 ?? 0) - 8));
+        value.setAttribute('dy', hasTwoLineLabel ? '1.2em' : '0');
+        value.setAttribute('text-anchor', hasTwoLineLabel ? 'start' : 'end');
+        value.textContent = defaultNumberFormatter(nodeValue);
+        label.appendChild(value);
+      }
       group.appendChild(label);
+
+      const showNodeCallout = (): void => {
+        if (nodeHeight > MIN_HEIGHT_FOR_LABEL || this.hideTooltip) {
+          return;
+        }
+
+        const rootBounds = this.getBoundingClientRect();
+        const nodeBounds = rect.getBoundingClientRect();
+        const anchorX = nodeBounds.left - rootBounds.left + nodeBounds.width / 2;
+        const anchorY = nodeBounds.top - rootBounds.top;
+        const position = this._resolveTooltipPositionFromAnchor(anchorX, anchorY, {
+          preferredVertical: 'above',
+          horizontalAlign: 'center',
+        });
+        this._currentTooltipDataPoint = node;
+        this.tooltipProps = {
+          isVisible: true,
+          legend: node.name,
+          yValue: defaultNumberFormatter(nodeValue),
+          color: fill,
+          ...position,
+        };
+      };
+      rect.addEventListener('mouseenter', showNodeCallout);
+      rect.addEventListener('focus', showNodeCallout);
+      rect.addEventListener('mouseleave', () => this._clearTooltip());
+      rect.addEventListener('blur', () => this._clearTooltip());
+      rect.addEventListener('keydown', (event: KeyboardEvent) => {
+        this._rovingKeydown(this._getRovingElements(), event);
+      });
 
       return { legend: node.name, node: rect, label };
     });
@@ -251,6 +382,10 @@ export class SankeyChart extends ChartBase {
   private _shouldShowLinkTooltip(sourceLegend: string, targetLegend: string): boolean {
     const highlighted = this._getHighlightedLegends();
     return highlighted.length === 0 || highlighted.includes(sourceLegend) || highlighted.includes(targetLegend);
+  }
+
+  private _getRovingElements(): SVGElement[] {
+    return [...this._links.map(link => link.path), ...this._nodes.map(node => node.node)];
   }
 
   private _clearChart(): void {

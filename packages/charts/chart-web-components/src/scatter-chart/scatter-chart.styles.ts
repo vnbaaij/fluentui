@@ -1,6 +1,7 @@
 import type { ElementStyles } from '@microsoft/fast-element';
 import { css } from '@microsoft/fast-element';
 import {
+  colorNeutralBackground1,
   colorNeutralForeground1,
   colorNeutralForeground2,
   colorNeutralStroke1,
@@ -15,6 +16,7 @@ import {
   typographyCaption1Styles,
   typographySubtitle2StrongerStyles,
 } from '@fluentui/web-components';
+import { axisGridLineStyles } from '../utils/cartesian-grid.styles.js';
 import { tooltipBaseStyles } from '../utils/tooltip.styles.js';
 
 export const styles: ElementStyles = css`
@@ -121,18 +123,25 @@ export const styles: ElementStyles = css`
     overflow: visible;
   }
 
-  .axis-domain,
   .origin-line {
     stroke: ${colorNeutralStroke1};
     stroke-width: 1;
     opacity: 0.2;
   }
 
-  .axis-tick-line {
+  .x-axis .axis-domain,
+  .x-axis .axis-tick-line {
     stroke: ${colorNeutralForeground1};
     stroke-width: 1;
-    opacity: 0.24;
+    opacity: 0.2;
   }
+
+  .y-axis .axis-domain,
+  .y-axis .axis-tick-line {
+    display: none;
+  }
+
+  ${axisGridLineStyles}
 
   .axis-text,
   .y-axis-text,
@@ -146,6 +155,18 @@ export const styles: ElementStyles = css`
 
   .scatter-point {
     opacity: 0.9;
+  }
+
+  .scatter-point.active {
+    fill: ${colorNeutralBackground1};
+    opacity: 1;
+  }
+
+  .hover-line {
+    stroke: ${colorNeutralForeground1};
+    stroke-width: 1;
+    stroke-dasharray: 5 5;
+    pointer-events: none;
   }
 
   .scatter-point.inactive {

@@ -151,6 +151,11 @@ export const styles: ElementStyles = css`
     flex-shrink: 0;
   }
 
+  fluent-menu-list {
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
   /*
    * fluent-menu-list sets data-indent="2" on all items when any item has
    * role="menuitemcheckbox", which reserves a 20px column for the checkmark.

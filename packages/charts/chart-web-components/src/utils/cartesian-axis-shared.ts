@@ -359,6 +359,7 @@ export const renderBottomAxisShared = <Domain extends AxisDomain>({
 
   const tickValues = getAxisTickValues(axis, scale);
   const tickPositions = tickValues.map(value => getAxisPosition(scale, value));
+  const tickLabelFormatter = getAxisTickLabelFormatter(axis, scale);
 
   tickValues.forEach((value, tickIndex) => {
     const tick = createSvgElement<SVGGElement>('g');
@@ -373,38 +374,41 @@ export const renderBottomAxisShared = <Domain extends AxisDomain>({
       tick.appendChild(line);
     }
 
-    const text = createSvgElement<SVGTextElement>('text');
-    text.classList.add(labelClassName);
-    text.setAttribute('y', String(6 + tickPadding));
-    text.setAttribute('text-anchor', rotateXAxisLabels ? 'end' : 'middle');
-    text.setAttribute('dominant-baseline', labelDominantBaseline);
-    const fullLabel = formatter(value);
-    const shouldTruncateForTooltip = showXAxisLabelsTooltip && !wrapXAxisLabels;
-    const renderedLabel =
-      shouldTruncateForTooltip && fullLabel.length > safeTruncateChars
-        ? `${fullLabel.slice(0, safeTruncateChars)}...`
-        : fullLabel;
-    text.textContent = renderedLabel;
-    if (rotateXAxisLabels) {
-      // Nudge rotated labels toward the chart center so the text midpoint aligns
-      // closer to the tick mark (LTR: left, RTL: right).
-      const rotatedLabelShiftX = isRTL ? 10 : -10;
-      text.setAttribute('transform', `translate(${rotatedLabelShiftX}, 0) rotate(-45)`);
-    }
-    if (showXAxisLabelsTooltip && renderedLabel !== fullLabel) {
-      if (axisLabelTooltipHandlers) {
-        text.addEventListener('mouseover', () => axisLabelTooltipHandlers.show(text, fullLabel));
-        text.addEventListener('mouseout', () => axisLabelTooltipHandlers.hide());
-      } else {
-        const title = createSvgElement<SVGTitleElement>('title');
-        title.textContent = fullLabel;
-        text.appendChild(title);
+    if (tickLabelFormatter?.(value, tickIndex) !== '') {
+      const text = createSvgElement<SVGTextElement>('text');
+      text.classList.add(labelClassName);
+      text.setAttribute('y', String(6 + tickPadding));
+      text.setAttribute('text-anchor', rotateXAxisLabels ? 'end' : 'middle');
+      text.setAttribute('dominant-baseline', labelDominantBaseline);
+      const fullLabel = formatter(value);
+      const shouldTruncateForTooltip = showXAxisLabelsTooltip && !wrapXAxisLabels;
+      const renderedLabel =
+        shouldTruncateForTooltip && fullLabel.length > safeTruncateChars
+          ? `${fullLabel.slice(0, safeTruncateChars)}...`
+          : fullLabel;
+      text.textContent = renderedLabel;
+      if (rotateXAxisLabels) {
+        // Nudge rotated labels toward the chart center so the text midpoint aligns
+        // closer to the tick mark (LTR: left, RTL: right).
+        const rotatedLabelShiftX = isRTL ? 10 : -10;
+        text.setAttribute('transform', `translate(${rotatedLabelShiftX}, 0) rotate(-45)`);
       }
+      if (showXAxisLabelsTooltip && renderedLabel !== fullLabel) {
+        if (axisLabelTooltipHandlers) {
+          text.addEventListener('mouseover', () => axisLabelTooltipHandlers.show(text, fullLabel));
+          text.addEventListener('mouseout', () => axisLabelTooltipHandlers.hide());
+        } else {
+          const title = createSvgElement<SVGTitleElement>('title');
+          title.textContent = fullLabel;
+          text.appendChild(title);
+        }
+      }
+      tick.appendChild(text);
     }
-    tick.appendChild(text);
     group.appendChild(tick);
 
-    if (wrapXAxisLabels) {
+    const text = tick.querySelector<SVGTextElement>(`.${labelClassName}`);
+    if (wrapXAxisLabels && text) {
       let width: number | undefined;
       if (typeof wrapLabelWidth === 'number') {
         width = wrapLabelWidth;

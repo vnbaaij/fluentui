@@ -6,6 +6,7 @@ import {
   type Meta,
   type Story,
 } from '../helpers.stories.js';
+import { DataVizPalette, getColorFromToken } from '../utils/chart-helpers.js';
 import { definition } from './polar-chart.definition.js';
 import type { PolarChartSeries } from './polar-chart.options.js';
 import type { PolarChart } from './polar-chart.js';
@@ -15,7 +16,7 @@ import type { PolarChart } from './polar-chart.js';
 const basicData: PolarChartSeries[] = [
   {
     legend: 'Mike',
-    color: '#8884d8',
+    color: DataVizPalette.color1,
     data: [
       { x: 'Math', y: 120 },
       { x: 'Chinese', y: 98 },
@@ -27,7 +28,7 @@ const basicData: PolarChartSeries[] = [
   },
   {
     legend: 'Lily',
-    color: '#82ca9d',
+    color: DataVizPalette.color3,
     data: [
       { x: 'Math', y: 110 },
       { x: 'Chinese', y: 130 },
@@ -47,6 +48,8 @@ export const Basic: Story<PolarChart> = () => {
   const chart = document.createElement('fluent-polar-chart') as PolarChart;
   chart.data = basicData;
   chart.chartTitle = basicTitle;
+  chart.shape = 'polygon';
+  chart.direction = 'clockwise';
   chart.setAttribute('width', '500');
   chart.setAttribute('height', '450');
   return chart;
@@ -118,6 +121,150 @@ export const StandardAttributes: Story<PolarChart> = () => {
 StandardAttributes.storyName = 'Standard Attributes';
 StandardAttributes.parameters = { docs: { story: { height: '420px' } } };
 
+export const ShowMarkers: Story<PolarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', controlsRowStyle);
+  container.appendChild(controls);
+
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Polar chart attributes example';
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  controls.appendChild(
+    createDropdownField('Shape', 'polar-shape', ['circle', 'polygon'], 'circle', nextShape => {
+      chart.setAttribute('shape', nextShape);
+    }).element,
+  );
+  controls.appendChild(
+    createDropdownField(
+      'Direction',
+      'polar-direction',
+      ['counterclockwise', 'clockwise'],
+      'counterclockwise',
+      nextDirection => {
+        chart.setAttribute('direction', nextDirection);
+      },
+    ).element,
+  );
+  controls.appendChild(
+    createSwitchField('Show markers', 'polar-show-markers', false, checked => {
+      chart.toggleAttribute('show-markers', checked);
+    }).element,
+  );
+  controls.appendChild(
+    createSwitchField('Multi-value callout', 'polar-multi-value-callout', false, checked => {
+      chart.toggleAttribute('enable-multi-value-callout', checked);
+    }).element,
+  );
+
+  container.appendChild(chart);
+  return container;
+};
+ShowMarkers.storyName = 'Chart Attributes';
+ShowMarkers.parameters = { docs: { story: { height: '620px' } } };
+
+export const MixedSeries: Story<PolarChart> = () => {
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = [
+    {
+      type: 'areapolar',
+      legend: 'Current',
+      color: DataVizPalette.color1,
+      data: [
+        { theta: 'Quality', r: 82 },
+        { theta: 'Speed', r: 74 },
+        { theta: 'Reliability', r: 88 },
+        { theta: 'Support', r: 70 },
+        { theta: 'Value', r: 78 },
+        { theta: 'Adoption', r: 65 },
+      ],
+    },
+    {
+      type: 'linepolar',
+      legend: 'Target',
+      color: DataVizPalette.color7,
+      lineOptions: { curve: 'natural', strokeWidth: 3, strokeDasharray: '7 4', strokeLinecap: 'round' },
+      data: [
+        { theta: 'Quality', r: 90 },
+        { theta: 'Speed', r: 85 },
+        { theta: 'Reliability', r: 92 },
+        { theta: 'Support', r: 80 },
+        { theta: 'Value', r: 88 },
+        { theta: 'Adoption', r: 82 },
+      ],
+    },
+    {
+      type: 'scatterpolar',
+      legend: 'Milestones',
+      color: DataVizPalette.success,
+      data: [
+        { theta: 'Quality', r: 95, markerSize: 8 },
+        { theta: 'Reliability', r: 96, markerSize: 12, text: 'Release' },
+        { theta: 'Value', r: 91, markerSize: 10 },
+      ],
+    },
+  ];
+  chart.chartTitle = 'Mixed polar series';
+  chart.shape = 'polygon';
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  return chart;
+};
+MixedSeries.storyName = 'Mixed Series';
+MixedSeries.parameters = { docs: { story: { height: '570px' } } };
+
+export const NumericAndLogarithmicAxes: Story<PolarChart> = () => {
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = [
+    {
+      type: 'areapolar',
+      legend: 'Response time',
+      color: DataVizPalette.color6,
+      data: [
+        { theta: 0, r: 10 },
+        { theta: 60, r: 40 },
+        { theta: 120, r: 300 },
+        { theta: 180, r: 80 },
+        { theta: 240, r: 600 },
+        { theta: 300, r: 120 },
+      ],
+    },
+  ];
+  chart.chartTitle = 'Numeric angle and logarithmic radius';
+  chart.hole = 0.2;
+  chart.angularAxis = { tickCount: 6, unit: 'radians' };
+  chart.radialAxis = {
+    scaleType: 'log',
+    rangeStart: 1,
+    rangeEnd: 1000,
+    tickValues: [1, 10, 100, 1000],
+    tickFormat: '.0s',
+  };
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  return chart;
+};
+NumericAndLogarithmicAxes.storyName = 'Numeric and Logarithmic Axes';
+NumericAndLogarithmicAxes.parameters = { docs: { story: { height: '570px' } } };
+
+export const MultiValueCallout: Story<PolarChart> = () => {
+  const chart = document.createElement('fluent-polar-chart') as PolarChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Grouped values by subject';
+  chart.shape = 'polygon';
+  chart.direction = 'clockwise';
+  chart.enableMultiValueCallout = true;
+  chart.setAttribute('width', '500');
+  chart.setAttribute('height', '450');
+  return chart;
+};
+MultiValueCallout.storyName = 'Multi-value Callout';
+MultiValueCallout.parameters = { docs: { story: { height: '570px' } } };
+
 export const TooltipRendererStory: Story<PolarChart> = () => {
   const container = document.createElement('div');
 
@@ -132,8 +279,9 @@ export const TooltipRendererStory: Story<PolarChart> = () => {
   chart.setAttribute('width', '500');
   chart.setAttribute('height', '450');
   chart.tooltipRenderer = (_point, defaultRender) => {
+    const accentColor = getColorFromToken(DataVizPalette.color1);
     const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.style.cssText = `padding:8px;border-left:3px solid ${accentColor};background:color-mix(in srgb, ${accentColor} 10%, transparent);`;
     wrapper.innerHTML = defaultRender(_point);
     return wrapper;
   };
@@ -273,15 +421,3 @@ export const RTL: Story<PolarChart> = () => {
   return wrapper;
 };
 RTL.parameters = { docs: { story: { height: '570px' } } };
-
-export const ShowMarkers: Story<PolarChart> = () => {
-  const chart = document.createElement('fluent-polar-chart') as PolarChart;
-  chart.data = basicData;
-  chart.chartTitle = 'Academic Performance with data point markers';
-  chart.setAttribute('width', '500');
-  chart.setAttribute('height', '450');
-  chart.setAttribute('show-markers', '');
-  return chart;
-};
-ShowMarkers.storyName = 'Chart Attributes';
-ShowMarkers.parameters = { docs: { story: { height: '570px' } } };

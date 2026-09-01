@@ -33,6 +33,7 @@ interface TooltipPositionOptions {
 
 interface TooltipOverlapPositionOptions {
   horizontalPlacement?: 'center' | 'side';
+  preferredHorizontalSide?: 'left' | 'right';
   gap?: number;
 }
 
@@ -781,14 +782,14 @@ export abstract class ChartBase extends FASTElement {
           estimatedWidth,
           gap,
         });
-        const fitsPreferredSide = this._isRTL
-          ? anchorX - gap - estimatedWidth >= padding
-          : anchorX + gap + estimatedWidth <= hostWidth - padding;
-        const physicalLeft = this._isRTL
-          ? fitsPreferredSide
-            ? anchorX - gap - estimatedWidth
-            : anchorX + gap
+        const preferLeft = options.preferredHorizontalSide ? options.preferredHorizontalSide === 'left' : this._isRTL;
+        const preferredLeft = preferLeft ? anchorX - gap - estimatedWidth : anchorX + gap;
+        const fitsPreferredSide = preferredLeft >= padding && preferredLeft + estimatedWidth <= hostWidth - padding;
+        const physicalLeft = options.preferredHorizontalSide
+          ? preferredLeft
           : fitsPreferredSide
+          ? preferredLeft
+          : preferLeft
           ? anchorX + gap
           : anchorX - gap - estimatedWidth;
         const clampedLeft = ChartBase._clamp(physicalLeft, padding, hostWidth - estimatedWidth - padding);

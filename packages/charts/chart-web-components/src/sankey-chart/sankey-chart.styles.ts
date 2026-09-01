@@ -3,14 +3,19 @@ import {
   borderRadiusMedium,
   colorNeutralBackground1,
   colorNeutralForeground1,
+  colorNeutralForegroundStaticInverted,
   colorNeutralShadowAmbient,
   colorNeutralShadowKey,
+  colorStrokeFocus1,
+  colorStrokeFocus2,
   colorTransparentStroke,
   display,
   spacingHorizontalL,
   spacingHorizontalS,
   spacingVerticalMNudge,
   spacingVerticalS,
+  strokeWidthThick,
+  strokeWidthThickest,
   typographyBody1StrongStyles,
   typographyBody1Styles,
   typographyCaption1Styles,
@@ -43,6 +48,7 @@ export const styles = css`
 
   .chart-container {
     grid-area: chart;
+    min-width: 0;
   }
 
   fluent-chart-legend {
@@ -123,20 +129,53 @@ export const styles = css`
 
   .sankey-link {
     fill: none;
-    stroke-opacity: 0.4;
+    stroke-opacity: 0.3;
   }
 
   .sankey-link:hover {
     stroke-opacity: 0.7;
   }
 
-  .sankey-node {
+  .sankey-node:focus-visible {
+    outline: 2px solid ${colorNeutralForeground1};
+    outline-offset: 2px;
+  }
+
+  .sankey-link:focus-visible {
     outline: none;
+    stroke-opacity: 1;
+  }
+
+  .sankey-link-focus-outline {
+    fill: none;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .sankey-link-focus-outline.outer {
+    stroke: ${colorStrokeFocus2};
+    stroke-width: calc(var(--sankey-link-width) + ${strokeWidthThickest});
+  }
+
+  .sankey-link-focus-outline.inner {
+    stroke: ${colorStrokeFocus1};
+    stroke-width: calc(var(--sankey-link-width) + ${strokeWidthThick});
+  }
+
+  .sankey-link-focus-outline.outer:has(+ .sankey-link-focus-outline.inner + .sankey-link:focus-visible),
+  .sankey-link-focus-outline.inner:has(+ .sankey-link:focus-visible) {
+    opacity: 1;
   }
 
   .sankey-node-label {
-    font-size: 12px;
+    fill: ${colorNeutralForegroundStaticInverted};
+    font-size: 10px;
     pointer-events: none;
+  }
+
+  .sankey-node-value {
+    font-size: 14px;
+    font-weight: 700;
   }
 
   .sankey-node.inactive,
@@ -168,7 +207,6 @@ export const styles = css`
     border: 1px solid ${colorTransparentStroke};
     filter: drop-shadow(0 0 2px ${colorNeutralShadowAmbient}) drop-shadow(0 8px 16px ${colorNeutralShadowKey});
     min-width: 120px;
-    transform: translateX(-50%);
   }
 
   .tooltip-header {
