@@ -67,6 +67,28 @@ test.describe('ChartLegend - rendering', () => {
     await expect(swatches.first()).toHaveClass(/line/);
     await expect(swatches.nth(1)).not.toHaveClass(/line/);
   });
+
+  test('Should render an optional marker at the same size as the default swatch', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    await element.evaluate(el => {
+      (el as any).items = [
+        { legend: 'Custom marker', color: '#637cef', shape: 'square' },
+        { legend: 'Default marker', color: '#e3008c' },
+      ];
+    });
+
+    const shape = element.locator('.legend-shape');
+    const defaultSwatch = element.locator('.legend-rect');
+    await expect(shape).toHaveAttribute('data-shape', 'square');
+    await expect(shape.locator('path')).toHaveAttribute('fill', '#637cef');
+    const shapeBounds = await shape.boundingBox();
+    const defaultBounds = await defaultSwatch.boundingBox();
+    expect(shapeBounds?.width).toBe(defaultBounds?.width);
+    expect(shapeBounds?.height).toBe(defaultBounds?.height);
+    expect(shapeBounds).toMatchObject({ width: 12, height: 12 });
+    expect(await shape.locator('path').evaluate(path => (path as SVGGraphicsElement).getBBox().width)).toBe(11);
+  });
 });
 
 // ── Accessibility ────────────────────────────────────────────────────────────
@@ -216,6 +238,35 @@ test.describe('ChartLegend - position', () => {
 });
 
 test.describe('ChartLegend - overflow menu', () => {
+  test('Should dim only inactive custom shapes in the overflow menu', async ({ page }) => {
+    const shapedItems = Array.from({ length: 5 }, (_, index) => ({
+      legend: `Legend ${index + 1}`,
+      color: '#637cef',
+      shape: 'circle',
+    }));
+
+    await page.goto(fixtureURL('components-chartlegend--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 120px;">
+        <fluent-chart-legend label="Chart legend" style="width: 120px;"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      const legend = document.querySelector('fluent-chart-legend') as any;
+      legend.items = items;
+      legend.highlighted = ['Legend 2'];
+    }, shapedItems);
+
+    const element = page.locator('fluent-chart-legend');
+    await page.waitForFunction(() => (document.querySelector('fluent-chart-legend') as any)?._overflowCount > 0);
+    await element.locator('fluent-menu-button').evaluate(button => (button as HTMLElement).click());
+
+    const overflowItems = element.locator('fluent-menu-item');
+    await expect(overflowItems.filter({ hasText: 'Legend 2' }).locator('.legend-shape')).toHaveCSS('opacity', '1');
+    await expect(overflowItems.filter({ hasText: 'Legend 3' }).locator('.legend-shape')).toHaveCSS('opacity', '0.1');
+  });
+
   test('Should scroll vertically when more than 10 items overflow', async ({ page }) => {
     const manyItems = Array.from({ length: 15 }, (_, index) => ({
       legend: `Legend ${index + 1}`,

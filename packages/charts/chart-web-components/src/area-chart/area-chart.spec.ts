@@ -491,6 +491,15 @@ test.describe('AreaChart', () => {
     const tooltip = element.locator('.tooltip');
     const markerLine = element.locator('.hover-line');
 
+    expect(
+      await element.evaluate(chart => {
+        const root = chart.shadowRoot!;
+        const lineEnd = Number(root.querySelector('.hover-line')!.getAttribute('y2'));
+        const axisTransform = root.querySelector('.x-axis')!.getAttribute('transform') ?? '';
+        return { lineEnd, axisY: Number(axisTransform.match(/,\s*([\d.]+)\)/)?.[1]) };
+      }),
+    ).toEqual({ lineEnd: 250, axisY: 250 });
+
     const firstPoint = await points.first().boundingBox();
     expect(firstPoint).not.toBeNull();
     await overlay.dispatchEvent('mousemove', {

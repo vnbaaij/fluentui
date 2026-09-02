@@ -486,6 +486,20 @@ test.describe('Donut-chart - allow-multiple-legend-selection', () => {
     await expect(thirdPath).toHaveCSS('opacity', '1');
   });
 
+  test('Should restore all arcs when every legend is selected', async ({ page }) => {
+    const element = page.locator('fluent-donut-chart');
+    const legends = element.getByRole('option');
+
+    await legends.nth(0).click();
+    await legends.nth(1).click();
+    await legends.nth(2).click();
+
+    await expect(element.getByLabel('first,')).toHaveCSS('opacity', '1');
+    await expect(element.getByLabel('second,')).toHaveCSS('opacity', '1');
+    await expect(element.getByLabel('third,')).toHaveCSS('opacity', '1');
+    expect(await element.evaluate(chart => (chart as any).selectedLegends)).toEqual([]);
+  });
+
   test('Should set aria-selected on selected legends', async ({ page }) => {
     const element = page.locator('fluent-donut-chart');
     const firstLegend = element.getByRole('option', { name: 'first' });

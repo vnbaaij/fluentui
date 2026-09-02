@@ -1,4 +1,3 @@
-
 export { definition as ScatterChartDefinition } from './scatter-chart.definition.js';
 export { ScatterChart } from './scatter-chart.js';
 export { styles as ScatterChartStyles } from './scatter-chart.styles.js';

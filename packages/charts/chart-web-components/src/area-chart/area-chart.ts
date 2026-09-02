@@ -1,7 +1,7 @@
 import { attr } from '@microsoft/fast-element';
 import { bisector, extent } from 'd3-array';
 import { axisBottom, axisLeft, axisRight, type Axis, type AxisDomain } from 'd3-axis';
-import { format, formatPrefix } from 'd3-format';
+import { format } from 'd3-format';
 import { scaleLinear, scaleTime, type ScaleLinear, type ScaleTime } from 'd3-scale';
 import { area as createArea, curveMonotoneX, line as createLine, stack as createStack } from 'd3-shape';
 import { timeFormat, utcFormat } from 'd3-time-format';
@@ -22,6 +22,7 @@ import {
   toOptionalAxisNumber as toOptionalNumber,
 } from '../utils/cartesian-axis-shared.js';
 import {
+  defaultYAxisTickFormatter,
   escapeHtml,
   formatLocaleNumber,
   getColorFromToken,
@@ -56,18 +57,6 @@ const formatNumberValue = (value: number, specifier: string | undefined, culture
     }
   }
   return formatLocaleNumber(value, culture);
-};
-
-/**
- * Default y-axis tick formatter matching React charting's `defaultYAxisTickFormatter`.
- * Uses d3 SI-prefix notation (e.g. 10k, 1.5M) for values ≥ 1 and general format for
- * small values, keeping up to 2 significant digits and trimming trailing zeros.
- */
-const defaultYAxisTickFormatter = (value: number): string => {
-  if (Math.abs(value) < 1) {
-    return format('.2~g')(value);
-  }
-  return formatPrefix('.2~', value)(value);
 };
 
 const formatDateValue = (chart: AreaChart, value: Date): string => {
@@ -588,7 +577,7 @@ export class AreaChart extends CartesianChartBase {
     const hoverLine = createSvgElement<SVGLineElement>('line');
     hoverLine.classList.add('hover-line');
     const hoverLineY1 = margins.top / 2;
-    const hoverLineY2 = height - margins.bottom / 2;
+    const hoverLineY2 = margins.top + innerHeight;
     hoverLine.setAttribute('y1', String(hoverLineY1));
     hoverLine.setAttribute('y2', String(hoverLineY2));
     hoverLine.style.display = 'none';

@@ -1,7 +1,7 @@
 import { attr } from '@microsoft/fast-element';
 import { extent, max } from 'd3-array';
 import { type Axis, axisBottom, type AxisDomain, axisLeft } from 'd3-axis';
-import { format, formatPrefix } from 'd3-format';
+import { format } from 'd3-format';
 import { scalePoint, scaleTime, scaleUtc } from 'd3-scale';
 import { timeFormat, utcFormat } from 'd3-time-format';
 import type { AxisScaleType, TooltipProps } from '../utils/chart-options.js';
@@ -19,6 +19,7 @@ import {
   toOptionalAxisNumber as toOptionalNumber,
 } from '../utils/cartesian-axis-shared.js';
 import {
+  defaultYAxisTickFormatter,
   formatLocaleNumber,
   getColorFromToken,
   getNextColor,
@@ -78,13 +79,6 @@ const formatNumberValue = (value: number, specifier: string | undefined, culture
     }
   }
   return formatLocaleNumber(value, culture);
-};
-
-const defaultYAxisTickFormatter = (value: number): string => {
-  if (Math.abs(value) < 1) {
-    return format('.2~g')(value);
-  }
-  return formatPrefix('.2~', value)(value);
 };
 
 const normalizeXValue = (value: XValue): XValue => {

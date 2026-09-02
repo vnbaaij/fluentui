@@ -1,4 +1,3 @@
-
 export { definition as VerticalBarChartDefinition } from './vertical-bar-chart.definition.js';
 export { VerticalBarChart } from './vertical-bar-chart.js';
 export { styles as VerticalBarChartStyles } from './vertical-bar-chart.styles.js';

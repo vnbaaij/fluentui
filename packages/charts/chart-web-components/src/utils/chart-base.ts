@@ -34,6 +34,7 @@ interface TooltipPositionOptions {
 interface TooltipOverlapPositionOptions {
   horizontalPlacement?: 'center' | 'side';
   preferredHorizontalSide?: 'left' | 'right';
+  preferredVerticalSide?: TooltipVerticalPlacement;
   gap?: number;
 }
 
@@ -528,9 +529,14 @@ export abstract class ChartBase extends FASTElement {
 
   public handleLegendClick(legendTitle: string) {
     if (this.allowMultipleLegendSelection) {
-      const nextSelection = this.selectedLegends.includes(legendTitle)
+      let nextSelection = this.selectedLegends.includes(legendTitle)
         ? this.selectedLegends.filter(legend => legend !== legendTitle)
         : [...this.selectedLegends, legendTitle];
+
+      const legendCount = new Set(this.legends.map(legend => legend.legend)).size;
+      if (nextSelection.length === legendCount) {
+        nextSelection = [];
+      }
 
       this.selectedLegends = nextSelection;
 
@@ -771,7 +777,14 @@ export abstract class ChartBase extends FASTElement {
       const hostWidth = this.offsetWidth;
       const roomAbove = topY - padding;
       const roomBelow = hostHeight - bottomY - padding;
-      const preferredVertical = roomAbove >= estimatedHeight + gap || roomAbove >= roomBelow ? 'above' : 'below';
+      const preferBelow = options.preferredVerticalSide === 'below';
+      const preferredVertical = preferBelow
+        ? roomBelow >= estimatedHeight + gap || roomBelow >= roomAbove
+          ? 'below'
+          : 'above'
+        : roomAbove >= estimatedHeight + gap || roomAbove >= roomBelow
+        ? 'above'
+        : 'below';
       const anchorY = preferredVertical === 'above' ? topY : bottomY;
 
       if (useSidePlacement) {
@@ -785,9 +798,7 @@ export abstract class ChartBase extends FASTElement {
         const preferLeft = options.preferredHorizontalSide ? options.preferredHorizontalSide === 'left' : this._isRTL;
         const preferredLeft = preferLeft ? anchorX - gap - estimatedWidth : anchorX + gap;
         const fitsPreferredSide = preferredLeft >= padding && preferredLeft + estimatedWidth <= hostWidth - padding;
-        const physicalLeft = options.preferredHorizontalSide
-          ? preferredLeft
-          : fitsPreferredSide
+        const physicalLeft = fitsPreferredSide
           ? preferredLeft
           : preferLeft
           ? anchorX + gap

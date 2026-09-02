@@ -1,6 +1,7 @@
 import type { ValueConverter } from '@microsoft/fast-element';
 import { Direction } from '@microsoft/fast-web-utilities';
 import { getDirection } from '@fluentui/web-components';
+import { format, formatPrefix } from 'd3-format';
 
 /**
  * Creates an `Intl.NumberFormat` instance for the given locale, falling back to
@@ -32,6 +33,13 @@ export const formatLocaleNumber = (value: number, locale: string | undefined): s
   } catch {
     return createNumberFormat(undefined).format(value);
   }
+};
+
+/** Formats Y-axis ticks using the same SI-prefix behavior as React charts. */
+export const defaultYAxisTickFormatter = (value: number): string => {
+  const formatter = Math.abs(value) < 1 ? format('.2~g') : formatPrefix('.2~', value);
+  const formattedValue = formatter(value);
+  return Math.abs(value) >= 1e9 ? formattedValue.replace('G', 'B') : formattedValue;
 };
 
 export const escapeHtml = (str: string): string =>

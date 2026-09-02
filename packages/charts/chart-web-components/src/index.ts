@@ -3,7 +3,10 @@ export type {
   AxisScaleType,
   ChartAnnotation,
   ChartAnnotationCoordinate,
+  ChartLegendPosition,
+  ChartMarkerShape,
   ChartMargins,
+  Legend,
   VerticalBarDataPointMetadata,
 } from './utils/chart-options.js';
 

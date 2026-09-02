@@ -93,7 +93,3 @@ test('check polar-chart for errors', async ({ page }) => {
   console.log('Polar Errors:', JSON.stringify(errors, null, 2));
   console.log('Polar chart info:', JSON.stringify(info, null, 2));
 });
-
-
-
-

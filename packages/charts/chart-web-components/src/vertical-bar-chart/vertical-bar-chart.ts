@@ -38,6 +38,7 @@ import {
   parseDateOrNumber,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
+import { renderBorderedLinePath } from '../utils/line-path-helpers.js';
 import type { VerticalBarChartDataPoint } from './vertical-bar-chart.options.js';
 import { VerticalBarChartBase } from '../utils/vertical-bar-chart-base.js';
 
@@ -672,39 +673,18 @@ export class VerticalBarChart extends VerticalBarChartBase {
         this._positionTooltipAvoidingOverlap(anchorX, anchorY, anchorY, isFreshShow);
       };
 
-      if (lineBorderWidth > 0) {
-        const lineBorderPath = createSvgElement<SVGPathElement>('path');
-        lineBorderPath.classList.add('line-border');
-        lineBorderPath.dataset.legend = lineLegend;
-        lineBorderPath.setAttribute('fill', 'none');
-        lineBorderPath.setAttribute('stroke', lineBorderColor);
-        lineBorderPath.setAttribute('stroke-width', String(resolvedLineStrokeWidth + lineBorderWidth * 2));
-        lineBorderPath.setAttribute('stroke-linecap', lineStrokeLinecap);
-        if (this.lineStrokeDasharray !== undefined) {
-          lineBorderPath.setAttribute('stroke-dasharray', String(this.lineStrokeDasharray));
-        }
-        if (this.lineStrokeDashoffset !== undefined) {
-          lineBorderPath.setAttribute('stroke-dashoffset', String(this.lineStrokeDashoffset));
-        }
-        lineBorderPath.setAttribute('d', linePathData);
-        plotGroup.appendChild(lineBorderPath);
-      }
-
-      const linePath = createSvgElement<SVGPathElement>('path');
-      linePath.classList.add('line-path');
-      linePath.dataset.legend = lineLegend;
-      linePath.setAttribute('fill', 'none');
-      linePath.setAttribute('stroke', lineColor);
-      linePath.setAttribute('stroke-width', String(resolvedLineStrokeWidth));
-      linePath.setAttribute('stroke-linecap', lineStrokeLinecap);
-      if (this.lineStrokeDasharray !== undefined) {
-        linePath.setAttribute('stroke-dasharray', String(this.lineStrokeDasharray));
-      }
-      if (this.lineStrokeDashoffset !== undefined) {
-        linePath.setAttribute('stroke-dashoffset', String(this.lineStrokeDashoffset));
-      }
-      linePath.setAttribute('d', linePathData);
-      plotGroup.appendChild(linePath);
+      const { linePath } = renderBorderedLinePath({
+        layer: plotGroup,
+        pathData: linePathData,
+        legend: lineLegend,
+        color: lineColor,
+        strokeWidth: resolvedLineStrokeWidth,
+        borderWidth: lineBorderWidth,
+        borderColor: lineBorderColor,
+        strokeLinecap: lineStrokeLinecap,
+        strokeDasharray: this.lineStrokeDasharray,
+        strokeDashoffset: this.lineStrokeDashoffset,
+      });
 
       const lineHitArea = createSvgElement<SVGPathElement>('path');
       lineHitArea.classList.add('line-hit-area');

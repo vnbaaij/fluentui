@@ -156,7 +156,6 @@ export class ChartLegend extends FASTElement {
     disconnectedCallback(): void;
     _handleLegendKeydown(e: KeyboardEvent): boolean;
     highlighted: string[];
-    // Warning: (ae-forgotten-export) The symbol "Legend" needs to be exported by the entry point index.d.ts
     items: Legend[];
     itemsChanged(): void;
     label?: string;
@@ -164,7 +163,6 @@ export class ChartLegend extends FASTElement {
     _overflowCount: number;
     _overflowItems: Legend[];
     overflowText?: string;
-    // Warning: (ae-forgotten-export) The symbol "ChartLegendPosition" needs to be exported by the entry point index.d.ts
     position?: ChartLegendPosition;
     roundBoxes?: boolean;
     selected: string[];
@@ -172,6 +170,9 @@ export class ChartLegend extends FASTElement {
 
 // @public (undocumented)
 export const ChartLegendDefinition: PartialFASTElementDefinition;
+
+// @public
+export type ChartLegendPosition = 'top' | 'bottom' | 'start' | 'end';
 
 // @public
 export const ChartLegendStyles: ElementStyles;
@@ -192,6 +193,9 @@ export interface ChartMargins {
     // (undocumented)
     top: number;
 }
+
+// @public
+export type ChartMarkerShape = 'circle' | 'square' | 'triangle' | 'diamond' | 'pyramid' | 'hexagon' | 'pentagon' | 'octagon';
 
 // Warning: (ae-forgotten-export) The symbol "ChartBase" needs to be exported by the entry point index.d.ts
 // Warning: (ae-missing-release-tag) "DonutChart" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -891,14 +895,36 @@ export const HorizontalBarChartWithAxisStyles: ElementStyles;
 // @public (undocumented)
 export const HorizontalBarChartWithAxisTemplate: ElementViewTemplate<HorizontalBarChartWithAxis>;
 
+// @public
+export interface Legend {
+    // (undocumented)
+    color: string;
+    // (undocumented)
+    isLineLegendInBarChart?: boolean;
+    // (undocumented)
+    legend: string;
+    // (undocumented)
+    shape?: ChartMarkerShape;
+}
+
 // @public (undocumented)
 export class LineChart extends CartesianChartBase {
+    // (undocumented)
+    allowMultipleShapesForPoints: boolean;
+    // (undocumented)
+    protected allowMultipleShapesForPointsChanged(): void;
     // (undocumented)
     protected _applyActiveLegendState(): void;
     // (undocumented)
     protected _buildDefaultTooltipHTML(): string;
     // (undocumented)
     protected _clearTooltip(): void;
+    // Warning: (ae-forgotten-export) The symbol "LineChartColorFillBar" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    colorFillBars?: LineChartColorFillBar[];
+    // (undocumented)
+    protected colorFillBarsChanged(): void;
     // (undocumented)
     connectedCallback(): void;
     // (undocumented)
@@ -910,13 +936,15 @@ export class LineChart extends CartesianChartBase {
     // (undocumented)
     protected _getHostAriaLabel(): string;
     // (undocumented)
+    isCalloutForStack: boolean;
+    // (undocumented)
+    protected isCalloutForStackChanged(): void;
+    // (undocumented)
     protected _performRender(): void;
     // (undocumented)
     showMarkers: boolean;
     // (undocumented)
     protected showMarkersChanged(): void;
-    // (undocumented)
-    get tooltipInlineTransform(): string;
     // Warning: (ae-forgotten-export) The symbol "TooltipState_3" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -930,9 +958,19 @@ export class LineChart extends CartesianChartBase {
 // @public (undocumented)
 export interface LineChartDataPoint {
     // (undocumented)
+    hideCallout?: boolean;
+    // @deprecated (undocumented)
+    onClick?: VoidFunction;
+    // (undocumented)
+    onDataPointClick?: VoidFunction;
+    // (undocumented)
     x: number | Date;
     // (undocumented)
+    xAxisCalloutData?: string | Date;
+    // (undocumented)
     y: number;
+    // (undocumented)
+    yAxisCalloutData?: string;
 }
 
 // @public (undocumented)
@@ -944,8 +982,20 @@ export interface LineChartSeries {
     color?: string;
     // (undocumented)
     data: LineChartDataPoint[];
+    // Warning: (ae-forgotten-export) The symbol "LineChartGap" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    gaps?: LineChartGap[];
     // (undocumented)
     legend: string;
+    // Warning: (ae-forgotten-export) The symbol "LineChartLineOptions" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    lineOptions?: LineChartLineOptions;
+    // (undocumented)
+    onLineClick?: VoidFunction;
+    // (undocumented)
+    useSecondaryYScale?: boolean;
 }
 
 // Warning: (ae-missing-release-tag) "styles" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

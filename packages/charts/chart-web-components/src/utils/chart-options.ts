@@ -20,6 +20,21 @@ export type ChartTitlePosition = 'top' | 'bottom';
 export type ChartLegendPosition = 'top' | 'bottom' | 'start' | 'end';
 
 /**
+ * Marker shape displayed for a chart series and its legend item.
+ *
+ * @public
+ */
+export type ChartMarkerShape =
+  | 'circle'
+  | 'square'
+  | 'triangle'
+  | 'diamond'
+  | 'pyramid'
+  | 'hexagon'
+  | 'pentagon'
+  | 'octagon';
+
+/**
  * A single legend item shared across all chart components.
  *
  * @public
@@ -28,6 +43,7 @@ export interface Legend {
   legend: string;
   color: string;
   isLineLegendInBarChart?: boolean;
+  shape?: ChartMarkerShape;
 }
 
 /**

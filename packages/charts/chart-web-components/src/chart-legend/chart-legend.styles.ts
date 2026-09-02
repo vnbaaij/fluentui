@@ -106,10 +106,20 @@ export const styles: ElementStyles = css`
   }
 
   .legend-rect {
+    box-sizing: border-box;
     width: 12px;
     height: 12px;
+    flex: none;
     margin-inline-end: ${spacingHorizontalS};
     border: ${strokeWidthThin} solid;
+  }
+
+  .legend-shape {
+    width: 12px;
+    height: 12px;
+    flex: none;
+    margin-inline-end: ${spacingHorizontalS};
+    overflow: hidden;
   }
 
   .legend-rect.line {
@@ -129,7 +139,8 @@ export const styles: ElementStyles = css`
     color: ${colorNeutralForeground1};
   }
 
-  .legend.inactive .legend-rect {
+  .legend.inactive .legend-rect,
+  .legend.inactive .legend-shape {
     opacity: 0.1;
   }
 
@@ -137,7 +148,8 @@ export const styles: ElementStyles = css`
     opacity: 0.67;
   }
 
-  .legend.selected .legend-rect {
+  .legend.selected .legend-rect,
+  .legend.selected .legend-shape {
     transform: scale(1.04);
   }
 
@@ -173,11 +185,18 @@ export const styles: ElementStyles = css`
     border: ${strokeWidthThin} solid;
   }
 
+  fluent-menu-item .legend-shape {
+    width: 12px;
+    height: 12px;
+    margin-inline-end: 0;
+  }
+
   fluent-menu-item .legend-rect.line {
     height: 4px;
   }
 
-  fluent-menu-item.inactive .legend-rect {
+  fluent-menu-item.inactive .legend-rect,
+  fluent-menu-item.inactive .legend-shape {
     opacity: 0.1;
   }
 

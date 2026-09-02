@@ -15,6 +15,7 @@ import {
   typographyCaption1Styles,
   typographySubtitle2StrongerStyles,
 } from '@fluentui/web-components';
+import { axisGridLineStyles } from '../utils/cartesian-grid.styles.js';
 import { tooltipBaseStyles } from '../utils/tooltip.styles.js';
 
 export const styles: ElementStyles = css`
@@ -144,22 +145,33 @@ export const styles: ElementStyles = css`
     font-weight: 600;
   }
 
+  ${axisGridLineStyles}
 
-.line-path {
-  fill: none;
-  stroke-width: 2;
-}
+  .line-path {
+    fill: none;
+  }
 
-.line-marker {
-  stroke: white;
-  stroke-width: 1.5;
-}
+  .line-marker {
+    stroke: white;
+    stroke-width: 1.5;
+  }
 
-.line-path.inactive,
-.line-marker.inactive {
-  opacity: 0.1;
-}
+  .hover-line {
+    stroke: ${colorNeutralStroke1};
+    stroke-width: 1;
+    stroke-dasharray: 5 3;
+    pointer-events: none;
+  }
 
+  .hover-dot {
+    pointer-events: none;
+  }
+
+  .line-border.inactive,
+  .line-path.inactive,
+  .line-marker.inactive {
+    opacity: 0.1;
+  }
 
   ${tooltipBaseStyles}
 

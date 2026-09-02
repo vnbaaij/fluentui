@@ -1,4 +1,4 @@
-import { ElementViewTemplate, html, ref, when } from '@microsoft/fast-element';
+import { ElementViewTemplate, html, ref, repeat, when } from '@microsoft/fast-element';
 import type { LineChart } from './line-chart.js';
 
 export function lineChartTemplate<T extends LineChart>(): ElementViewTemplate<T> {
@@ -11,7 +11,7 @@ export function lineChartTemplate<T extends LineChart>(): ElementViewTemplate<T>
         label="${x => x.legendListLabel}"
         position="${x => x.legendPosition}"
         ?hidden="${x => x.hideLegends}"
-        :roundBoxes="${x => x.roundCorners}"
+        :roundBoxes="${x => x.roundCorners && !x.allowMultipleShapesForPoints}"
         @legend-click="${(x, c) => x.handleLegendClick((c.event as CustomEvent<string>).detail)}"
         @legend-mouseover="${(x, c) => x.handleLegendMouseoverAndFocus((c.event as CustomEvent<string>).detail)}"
         @legend-mouseout="${x => x.handleLegendMouseoutAndBlur()}"
@@ -23,23 +23,24 @@ export function lineChartTemplate<T extends LineChart>(): ElementViewTemplate<T>
         x => !x.hideTooltip && x.tooltipProps.isVisible,
         html<T>`
           <div
-            class="tooltip"
+            class="tooltip ${x => (x.isMeasuringTooltip ? 'measuring' : '')}"
             style="inset-inline-start: ${x => x.tooltipProps.xPos}px; top: ${x =>
               x.tooltipProps.yPos}px; transform: ${x => x.tooltipInlineTransform}"
           >
-            <div class="tooltip-body">
-              ${when(
-                x => !x.tooltipRenderer,
-                html<T>`
-                  <div class="tooltip-header">${x => x.tooltipProps.yValue}</div>
-                  <div class="tooltip-info" style="border-color: ${x => x.tooltipProps.color};">
-                    <div class="tooltip-legend-text">${x => x.tooltipProps.legend}</div>
-                    <div class="tooltip-primary-value" style="color: ${x => x.tooltipProps.color};">
-                      ${x => x.tooltipProps.xValue}
+            <div class="tooltip-body preserve-default-content">
+              <div class="tooltip-default-content" ?hidden="${x => !!x.tooltipRenderer}">
+                <div class="tooltip-header">${x => x.tooltipProps.xValue}</div>
+                ${repeat(
+                  x => x.tooltipProps.entries,
+                  html`
+                    <div class="tooltip-info" style="border-color: ${x => x.color};">
+                      <div class="tooltip-legend-text">${x => x.legend}</div>
+                      <div class="tooltip-primary-value" style="color: ${x => x.color};">${x => x.value}</div>
                     </div>
-                  </div>
-                `,
-              )}
+                  `,
+                )}
+              </div>
+              <div class="tooltip-custom-content" ?hidden="${x => !x.tooltipRenderer}"></div>
             </div>
           </div>
         `,
