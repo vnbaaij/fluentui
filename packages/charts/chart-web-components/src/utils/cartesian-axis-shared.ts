@@ -4,7 +4,7 @@ import { scaleLinear, scaleLog, type ScaleLinear, type ScaleLogarithmic } from '
 import type { AxisCategoryOrder, AxisScaleType } from './chart-options.js';
 import { SVG_NAMESPACE_URI, wrapText } from './chart-helpers.js';
 
-export const DEFAULT_REACT_NUMERIC_Y_TICK_COUNT = 4;
+export const DEFAULT_NUMERIC_Y_TICK_COUNT = 4;
 
 export type AxisScaleLike<Domain extends AxisDomain> = {
   domain(): Domain[];
@@ -193,12 +193,12 @@ export type PreparedNumericYAxis = {
 export const computePreparedNumericYAxis = ({
   minValue,
   maxValue,
-  tickCount = DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  tickCount = DEFAULT_NUMERIC_Y_TICK_COUNT,
   isIntegralDataset = false,
   roundedTicks = false,
 }: PreparedNumericYAxisOptions): PreparedNumericYAxis => {
   const safeTickCount =
-    Number.isFinite(tickCount) && tickCount > 0 ? Math.floor(tickCount) : DEFAULT_REACT_NUMERIC_Y_TICK_COUNT;
+    Number.isFinite(tickCount) && tickCount > 0 ? Math.floor(tickCount) : DEFAULT_NUMERIC_Y_TICK_COUNT;
   const low = Math.min(minValue, maxValue);
   let high = Math.max(minValue, maxValue);
   if (low === high) {

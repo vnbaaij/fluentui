@@ -20,7 +20,7 @@ import {
   applyAxisTickConfig,
   computePreparedNumericYAxis,
   createPreparedNumericContinuousScale,
-  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  DEFAULT_NUMERIC_Y_TICK_COUNT,
   renderAxisGridLinesShared,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
@@ -398,7 +398,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
     const preparedYAxis = computePreparedNumericYAxis({
       minValue: resolvedMinValue,
       maxValue: resolvedMaxValue,
-      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_NUMERIC_Y_TICK_COUNT),
       roundedTicks: this.roundedTicks,
     });
     const yScale: ScaleLinear<number, number> | ScaleLogarithmic<number, number> = useLogPrimary
@@ -418,7 +418,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
         values: secondaryLineValues,
         range: [innerHeight, 0],
         scaleType: this.secondaryYScaleType,
-        tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+        tickCount: toNumber(this.yAxisTickCount, DEFAULT_NUMERIC_Y_TICK_COUNT),
         roundedTicks: this.roundedTicks,
       });
       preparedSecondaryYAxis = secondaryYAxis.preparedAxis;
@@ -432,7 +432,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
       yAxis,
-      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickCount ?? DEFAULT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? (useLogPrimary ? undefined : preparedYAxis.tickValues),
     );
     renderAxisGridLinesShared({
@@ -835,7 +835,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
       const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6));
       applyAxisTickConfig(
         yAxisSecondary,
-        this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+        this.yAxisTickCount ?? DEFAULT_NUMERIC_Y_TICK_COUNT,
         this.yAxisTickValues ?? (useLogSecondary ? undefined : preparedSecondaryYAxis.tickValues),
       );
       renderSecondaryYAxisShared({

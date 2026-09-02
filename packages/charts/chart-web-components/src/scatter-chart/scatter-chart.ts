@@ -11,7 +11,7 @@ import {
   type AxisScaleLike,
   computePreparedNumericYAxis,
   createNumericContinuousScale,
-  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  DEFAULT_NUMERIC_Y_TICK_COUNT,
   renderAxisGridLinesShared,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
@@ -306,7 +306,7 @@ export class ScatterChart extends CartesianChartBase {
     const preparedYAxis = computePreparedNumericYAxis({
       minValue: yMin,
       maxValue: yMax,
-      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_NUMERIC_Y_TICK_COUNT),
       roundedTicks: this.roundedTicks,
     });
     const { scale: yScale, isLogarithmic: isLogarithmicY } = createNumericContinuousScale({
@@ -356,7 +356,7 @@ export class ScatterChart extends CartesianChartBase {
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
       yAxis,
-      isLogarithmicY ? this.yAxisTickCount : this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      isLogarithmicY ? this.yAxisTickCount : this.yAxisTickCount ?? DEFAULT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? (isLogarithmicY ? undefined : preparedYAxis.tickValues),
     );
 

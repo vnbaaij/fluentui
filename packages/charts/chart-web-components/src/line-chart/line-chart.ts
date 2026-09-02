@@ -12,7 +12,7 @@ import {
   type AxisScaleLike,
   computePreparedNumericYAxis,
   createNumericContinuousScale,
-  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  DEFAULT_NUMERIC_Y_TICK_COUNT,
   type NumericContinuousScale,
   renderAxisGridLinesShared,
   renderBottomAxisShared,
@@ -361,7 +361,7 @@ export class LineChart extends CartesianChartBase {
     const preparedYAxis = computePreparedNumericYAxis({
       minValue: yMin,
       maxValue: yMax,
-      tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+      tickCount: toNumber(this.yAxisTickCount, DEFAULT_NUMERIC_Y_TICK_COUNT),
       roundedTicks: this.roundedTicks,
     });
 
@@ -389,7 +389,7 @@ export class LineChart extends CartesianChartBase {
       preparedSecondaryYAxis = computePreparedNumericYAxis({
         minValue: secondaryYMin,
         maxValue: secondaryYMax,
-        tickCount: toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT),
+        tickCount: toNumber(this.yAxisTickCount, DEFAULT_NUMERIC_Y_TICK_COUNT),
         roundedTicks: this.roundedTicks,
       });
       const secondaryScale = createNumericContinuousScale({
@@ -436,7 +436,7 @@ export class LineChart extends CartesianChartBase {
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
       yAxis,
-      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickCount ?? DEFAULT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? (isLogarithmicY ? undefined : preparedYAxis.tickValues),
     );
 
@@ -819,7 +819,7 @@ export class LineChart extends CartesianChartBase {
       const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6));
       applyAxisTickConfig(
         yAxisSecondary,
-        this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+        this.yAxisTickCount ?? DEFAULT_NUMERIC_Y_TICK_COUNT,
         isLogarithmicSecondaryY ? undefined : preparedSecondaryYAxis.tickValues,
       );
       renderSecondaryYAxisShared({

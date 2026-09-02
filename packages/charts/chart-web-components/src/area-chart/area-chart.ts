@@ -13,7 +13,7 @@ import {
   computePreparedNumericYAxis,
   createNumericContinuousScale,
   createPreparedNumericContinuousScale,
-  DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+  DEFAULT_NUMERIC_Y_TICK_COUNT,
   renderAxisGridLinesShared,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
@@ -338,7 +338,7 @@ export class AreaChart extends CartesianChartBase {
     const stackedDataMin = allPrimaryValues.length > 0 ? Math.min(...allPrimaryValues) : 0;
     const stackedDataMax = allPrimaryValues.length > 0 ? Math.max(...allPrimaryValues) : 1;
     const maxOfYVal = hasSecondaryY ? rawPrimaryMax : stackedDataMax;
-    const yTickCount = toNumber(this.yAxisTickCount, DEFAULT_REACT_NUMERIC_Y_TICK_COUNT);
+    const yTickCount = toNumber(this.yAxisTickCount, DEFAULT_NUMERIC_Y_TICK_COUNT);
 
     let yMin = toOptionalNumber(this.yMinValue) ?? Math.min(0, rawPrimaryMin, stackedDataMin);
     let yMax = toOptionalNumber(this.yMaxValue) ?? Math.max(0, maxOfYVal);
@@ -451,7 +451,7 @@ export class AreaChart extends CartesianChartBase {
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
       yAxis,
-      this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+      this.yAxisTickCount ?? DEFAULT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? preparedPrimaryYAxis.tickValues,
     );
 
@@ -926,7 +926,7 @@ export class AreaChart extends CartesianChartBase {
       const yAxisSecondary = axisRight(yScaleSecondary).tickPadding(toNumber(this.tickPadding, 6));
       applyAxisTickConfig(
         yAxisSecondary,
-        this.yAxisTickCount ?? DEFAULT_REACT_NUMERIC_Y_TICK_COUNT,
+        this.yAxisTickCount ?? DEFAULT_NUMERIC_Y_TICK_COUNT,
         preparedSecondaryYAxis.tickValues,
       );
       renderSecondaryYAxisShared({
