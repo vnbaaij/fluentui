@@ -1,6 +1,7 @@
 /** @public */
 export interface LineChartDataPoint {
-  /** @public */ x: number | Date;
+  /** Numeric value, Date, or an ISO 8601 date string from a serialized data source. */
+  /** @public */ x: number | Date | string;
   /** @public */ y: number;
   /** @public */ xAxisCalloutData?: string | Date;
   /** @public */ yAxisCalloutData?: string;
@@ -27,8 +28,8 @@ export interface LineChartLineOptions {
 
 /** @public */
 export interface LineChartColorFillBarData {
-  /** @public */ startX: number | Date;
-  /** @public */ endX: number | Date;
+  /** @public */ startX: number | Date | string;
+  /** @public */ endX: number | Date | string;
 }
 
 /** @public */
@@ -41,8 +42,11 @@ export interface LineChartColorFillBar {
 
 /** @public */
 export interface LineChartEventAnnotation {
-  /** @public */ date: Date;
+  /** Date value or an ISO 8601 date string from a serialized data source. */
+  /** @public */ date: Date | string;
   /** @public */ event: string;
+  /** Plain-text content rendered in the event detail card. */
+  /** @public */ cardContent?: string;
   /** @public */ onRenderCard?: () => HTMLElement | string;
 }
 
@@ -53,7 +57,8 @@ export interface LineChartEventAnnotationProps {
   /** @public */ labelColor?: string;
   /** @public */ labelHeight?: number;
   /** @public */ labelWidth?: number;
-  /** @public */ mergedLabel: (count: number) => string;
+  /** Label for grouped events. Strings may include a `{count}` placeholder. */
+  /** @public */ mergedLabel?: string | ((count: number) => string);
 }
 
 /** @public */

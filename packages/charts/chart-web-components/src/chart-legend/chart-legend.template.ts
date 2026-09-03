@@ -12,6 +12,20 @@ const getLegendShapePath = (shape: ChartMarkerShape | undefined): string => {
   return getMarkerPath(6, 6, 11, Math.max(shapeIndex, 0));
 };
 
+const getLegendRectStyle = (item: Legend): string => {
+  const color = getColorFromToken(item.color);
+  if (!item.isLineLegendInBarChart || item.lineStrokeDasharray === undefined) {
+    return `background-color: ${color}; border-color: ${color};`;
+  }
+
+  const dashLength = Math.max(Number.parseFloat(String(item.lineStrokeDasharray)) || 1, 1);
+  return (
+    `background-color: transparent; border-color: transparent; ` +
+    `background-image: repeating-linear-gradient(to right, ${color} 0 ${dashLength}px, ` +
+    `transparent ${dashLength}px ${dashLength * 2}px);`
+  );
+};
+
 /**
  * Generates a template for the ChartLegend component.
  *
@@ -63,8 +77,7 @@ export function chartLegendTemplate<T extends ChartLegend>(): ElementViewTemplat
                 <div
                   class="${(x, c) =>
                     `legend-rect${x.isLineLegendInBarChart ? ' line' : ''}${c.parent.roundBoxes ? ' rounded' : ''}`}"
-                  style="background-color: ${x => getColorFromToken(x.color)}; border-color: ${x =>
-                    getColorFromToken(x.color)};"
+                  style="${x => getLegendRectStyle(x)}"
                 ></div>
               `,
             )}
@@ -124,8 +137,7 @@ export function chartLegendTemplate<T extends ChartLegend>(): ElementViewTemplat
                             `legend-rect${x.isLineLegendInBarChart ? ' line' : ''}${
                               c.parent.roundBoxes ? ' rounded' : ''
                             }`}"
-                          style="background-color: ${x => getColorFromToken(x.color)}; border-color: ${x =>
-                            getColorFromToken(x.color)};"
+                          style="${x => getLegendRectStyle(x)}"
                         ></div>
                       `,
                     )}

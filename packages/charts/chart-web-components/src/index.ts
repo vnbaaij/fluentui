@@ -3,6 +3,8 @@ export type {
   AxisScaleType,
   ChartAnnotation,
   ChartAnnotationCoordinate,
+  ChartAnnotationTextLine,
+  ChartAnnotationTextRun,
   ChartLegendPosition,
   ChartMarkerShape,
   ChartMargins,
@@ -25,7 +27,12 @@ export { GanttChart, GanttChartDefinition, GanttChartStyles, GanttChartTemplate 
 export type { GanttChartDataPoint } from './gantt-chart/index.js';
 
 export { GaugeChart, GaugeChartDefinition, GaugeChartStyles, GaugeChartTemplate } from './gauge-chart/index.js';
-export type { GaugeChartSegment, GaugeChartVariant, GaugeValueFormat } from './gauge-chart/index.js';
+export type {
+  GaugeChartSegment,
+  GaugeChartVariant,
+  GaugeValueFormat,
+  GaugeValueFormatTemplate,
+} from './gauge-chart/index.js';
 export {
   HeatMapChart,
   HeatMapChartDefinition,
@@ -33,7 +40,12 @@ export {
   HeatMapChartTemplate,
 } from './heat-map-chart/index.js';
 
-export type { HeatMapChartData, HeatMapChartDataPoint, HeatMapSortOrder } from './heat-map-chart/index.js';
+export type {
+  HeatMapAccessibilityData,
+  HeatMapChartData,
+  HeatMapChartDataPoint,
+  HeatMapSortOrder,
+} from './heat-map-chart/index.js';
 
 export {
   HorizontalBarChart,
@@ -77,9 +89,13 @@ export type {
 export { LineChart, LineChartDefinition, LineChartStyles, LineChartTemplate } from './line-chart/index.js';
 
 export type {
+  LineChartColorFillBar,
+  LineChartColorFillBarData,
   LineChartDataPoint,
   LineChartEventAnnotation,
   LineChartEventAnnotationProps,
+  LineChartGap,
+  LineChartLineOptions,
   LineChartSeries,
 } from './line-chart/index.js';
 

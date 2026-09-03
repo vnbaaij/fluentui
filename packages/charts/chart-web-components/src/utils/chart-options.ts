@@ -43,6 +43,7 @@ export interface Legend {
   legend: string;
   color: string;
   isLineLegendInBarChart?: boolean;
+  lineStrokeDasharray?: string | number;
   shape?: ChartMarkerShape;
 }
 
@@ -91,9 +92,25 @@ export interface ChartAnnotationCoordinate {
 }
 
 /** @public */
+export interface ChartAnnotationTextRun {
+  text: string;
+  textColor?: string;
+  fontWeight?: string | number;
+  fontStyle?: 'normal' | 'italic';
+}
+
+/** @public */
+export interface ChartAnnotationTextLine {
+  runs: ChartAnnotationTextRun[];
+  bullet?: boolean;
+  indent?: number;
+}
+
+/** @public */
 export interface ChartAnnotation {
   id?: string;
   text: string;
+  textLines?: ChartAnnotationTextLine[];
   coordinates: ChartAnnotationCoordinate;
   layout?: {
     align?: 'start' | 'center' | 'end';
@@ -112,6 +129,7 @@ export interface ChartAnnotation {
     strokeColor?: string;
     strokeWidth?: number;
     dashArray?: string;
+    arrow?: boolean;
   };
   accessibility?: AccessibilityData & { role?: string };
   data?: Record<string, unknown>;

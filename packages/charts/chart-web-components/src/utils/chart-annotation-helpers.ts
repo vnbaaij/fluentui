@@ -67,6 +67,22 @@ export const renderChartAnnotations = ({
       if (annotation.connector.dashArray) {
         connector.setAttribute('stroke-dasharray', annotation.connector.dashArray);
       }
+      if (annotation.connector.arrow) {
+        const marker = document.createElementNS(SVG_NAMESPACE_URI, 'marker');
+        const markerId = `chart-annotation-arrow-${annotation.id ?? index}`;
+        marker.setAttribute('id', markerId);
+        marker.setAttribute('markerWidth', '7');
+        marker.setAttribute('markerHeight', '7');
+        marker.setAttribute('refX', '1');
+        marker.setAttribute('refY', '3.5');
+        marker.setAttribute('orient', 'auto');
+        const arrowhead = document.createElementNS(SVG_NAMESPACE_URI, 'path');
+        arrowhead.setAttribute('d', 'M 7 0 L 0 3.5 L 7 7 z');
+        arrowhead.setAttribute('fill', getColorFromToken(annotation.connector.strokeColor ?? 'colorNeutralStroke1'));
+        marker.appendChild(arrowhead);
+        group.appendChild(marker);
+        connector.setAttribute('marker-start', `url(#${markerId})`);
+      }
       group.appendChild(connector);
     }
 
@@ -92,7 +108,37 @@ export const renderChartAnnotations = ({
     if (annotation.layout?.rotation) {
       text.setAttribute('transform', `rotate(${annotation.layout.rotation} ${textX} ${textY})`);
     }
-    text.textContent = annotation.text;
+    if (annotation.textLines) {
+      annotation.textLines.forEach((line, lineIndex) => {
+        const lineElement = document.createElementNS(SVG_NAMESPACE_URI, 'tspan');
+        lineElement.classList.add('chart-annotation-line');
+        lineElement.setAttribute('x', String(textX + (line.indent ?? 0)));
+        if (lineIndex > 0) {
+          lineElement.setAttribute('dy', '1.2em');
+        }
+        if (line.bullet) {
+          lineElement.append('• ');
+        }
+        line.runs.forEach(run => {
+          const runElement = document.createElementNS(SVG_NAMESPACE_URI, 'tspan');
+          runElement.classList.add('chart-annotation-run');
+          runElement.textContent = run.text;
+          if (run.textColor) {
+            runElement.setAttribute('fill', getColorFromToken(run.textColor));
+          }
+          if (run.fontWeight !== undefined) {
+            runElement.setAttribute('font-weight', String(run.fontWeight));
+          }
+          if (run.fontStyle) {
+            runElement.setAttribute('font-style', run.fontStyle);
+          }
+          lineElement.appendChild(runElement);
+        });
+        text.appendChild(lineElement);
+      });
+    } else {
+      text.textContent = annotation.text;
+    }
     group.appendChild(text);
     layer.appendChild(group);
 

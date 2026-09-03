@@ -6,6 +6,29 @@ export function lineChartTemplate<T extends LineChart>(): ElementViewTemplate<T>
     <template>
       ${when(x => !!x.chartTitle, html<T>`<div class="chart-title">${x => x.chartTitle}</div>`)}
       <div class="chart-container" ${ref('chartContainer')}></div>
+      ${when(
+        x => !!x.eventAnnotationCard,
+        html<T>`
+          <div
+            class="event-annotation-card"
+            role="dialog"
+            aria-label="${x => x.eventAnnotationCard?.label} details"
+            style="left: ${x => x.eventAnnotationCard?.x}px; top: ${x => x.eventAnnotationCard?.y}px;"
+            tabindex="-1"
+            @keydown="${(x, c) => x.handleEventAnnotationCardKeydown(c.event as KeyboardEvent)}"
+          >
+            <button
+              class="event-annotation-card-close"
+              type="button"
+              aria-label="Close event details"
+              @click="${x => x.dismissEventAnnotationCard(true)}"
+            >
+              &#x2715;
+            </button>
+            <div class="event-annotation-card-content" ${ref('eventAnnotationCardContent')}></div>
+          </div>
+        `,
+      )}
       <fluent-chart-legend
         :items="${x => x.legends}"
         label="${x => x.legendListLabel}"

@@ -35,6 +35,31 @@ test.describe('LineChart', () => {
     await expect(element.locator('.line-path')).toHaveCount(2);
   });
 
+  test('Should render serialized event annotations from an attribute', async ({ page }) => {
+    const element = page.locator('fluent-line-chart');
+    await element.evaluate(chart => {
+      chart.setAttribute(
+        'event-annotation-props',
+        JSON.stringify({
+          events: [
+            {
+              event: 'Deployment',
+              date: '1970-01-01T00:00:00.000Z',
+              cardContent: 'Deployment completed',
+            },
+          ],
+          labelHeight: 18,
+          mergedLabel: '{count} events',
+        }),
+      );
+    });
+
+    const label = element.locator('.event-annotation-label');
+    await expect(label).toHaveText('Deployment');
+    await label.click();
+    await expect(element.locator('.event-annotation-card-item')).toHaveText('Deployment completed');
+  });
+
   test('Should show a hollow point marker for a single callout', async ({ page }) => {
     const element = page.locator('fluent-line-chart');
     await element.evaluate(chart => chart.setAttribute('show-markers', ''));
@@ -257,6 +282,44 @@ test.describe('LineChart', () => {
       )
       .toBe(true);
 
+    const seriesPoints = element.locator('.data-point-focus-target[data-legend="From_Legacy_to_O365"]');
+    const focusedPoint = seriesPoints.nth(3);
+    await focusedPoint.focus();
+    await expect(element.locator('.tooltip-info')).toHaveCount(2);
+    await expect(element.locator('.hover-dot:visible')).toHaveCount(2);
+
+    const focusedPointX = Number(await focusedPoint.getAttribute('cx'));
+    const focusedCallout = await element.evaluate(chart => {
+      const root = chart.shadowRoot!;
+      return {
+        guidelineX: Number(root.querySelector('.hover-line')!.getAttribute('x1')),
+        markerXs: [...root.querySelectorAll<SVGElement>('.hover-dot')]
+          .filter(marker => marker.style.display !== 'none')
+          .map(marker => Number(marker.getAttribute('cx'))),
+      };
+    });
+    expect(focusedCallout.markerXs).toEqual([focusedPointX, focusedPointX]);
+
+    await focusedPoint.press('ArrowRight');
+    const nextPoint = seriesPoints.nth(4);
+    await expect(nextPoint).toBeFocused();
+    await expect(element.locator('.tooltip-info')).toHaveCount(2);
+    await expect(element.locator('.hover-dot:visible')).toHaveCount(2);
+
+    const nextPointX = Number(await nextPoint.getAttribute('cx'));
+    const movedCallout = await element.evaluate(chart => {
+      const root = chart.shadowRoot!;
+      return {
+        guidelineX: Number(root.querySelector('.hover-line')!.getAttribute('x1')),
+        markerXs: [...root.querySelectorAll<SVGElement>('.hover-dot')]
+          .filter(marker => marker.style.display !== 'none')
+          .map(marker => Number(marker.getAttribute('cx'))),
+      };
+    });
+    expect(movedCallout.markerXs).toEqual([nextPointX, nextPointX]);
+    expect(movedCallout.guidelineX).not.toBe(focusedCallout.guidelineX);
+    expect(nextPointX).not.toBe(focusedPointX);
+
     await page.locator('fluent-radio[value="single"]').click();
     await expect(element.locator('.callout-overlay')).toHaveCount(0);
     await expect(element.locator('.hover-line')).toHaveCount(1);
@@ -392,6 +455,216 @@ test.describe('LineChart', () => {
         ).toEqual({ arePaths: true, areHollow: true, matchSeries: true, shapeCount: 8 });
       }
 
+      if (story.id === 'gaps') {
+        const confidenceLine = element.locator('.line-path[data-legend="Confidence Level"]');
+        await expect(confidenceLine).toHaveCount(1);
+        await expect(confidenceLine).toHaveAttribute('stroke-dasharray', '5');
+        await expect(element.locator('.legend-text')).toHaveText([
+          'Confidence Level',
+          'Normal Data',
+          'Low Confidence Data*',
+          'Green Data',
+        ]);
+        const confidenceLegend = element
+          .getByRole('option', { name: 'Confidence Level', exact: true })
+          .locator('.legend-rect');
+        const lowConfidenceLegend = element
+          .getByRole('option', { name: 'Low Confidence Data*', exact: true })
+          .locator('.legend-rect');
+        await expect(confidenceLegend).toHaveClass(/line/);
+        await expect(confidenceLegend).toHaveCSS('background-image', /repeating-linear-gradient/);
+        await expect(lowConfidenceLegend).toHaveClass(/line/);
+        await expect(lowConfidenceLegend).toHaveCSS('background-image', /repeating-linear-gradient/);
+        await expect(
+          element.getByRole('option', { name: 'Normal Data', exact: true }).locator('.legend-rect'),
+        ).not.toHaveClass(/line/);
+        await expect(
+          element.getByRole('option', { name: 'Green Data', exact: true }).locator('.legend-rect'),
+        ).not.toHaveClass(/line/);
+        await expect(element.locator('.line-path[data-legend="Green Data"]')).toHaveAttribute('stroke', '#107c10');
+        await expect(
+          element.getByRole('option', { name: 'Green Data', exact: true }).locator('.legend-rect'),
+        ).toHaveCSS('background-color', 'rgb(16, 124, 16)');
+
+        const lowConfidencePoint = element
+          .locator('.data-point-focus-target[data-legend="Low Confidence Data*"]')
+          .nth(4);
+        await lowConfidencePoint.focus();
+        const customCallout = element.locator('.tooltip-custom-content');
+        await expect(customCallout.locator('.tooltip-legend-text')).toHaveText(['Low Confidence Data*', 'Green Data']);
+        await expect(customCallout.locator('.gaps-callout-description')).toHaveText(
+          '* This data was below our confidence threshold.',
+        );
+      }
+
+      if (story.id === 'large-data') {
+        const allLine = element.locator('.line-path[data-legend="All"]');
+        await expect(allLine).toHaveAttribute('stroke', '#107c10');
+        expect((await allLine.boundingBox())?.width).toBeGreaterThan(500);
+        expect(await element.locator('.x-axis .axis-text').allTextContents()).toContainEqual(
+          expect.stringMatching(/[A-Za-z]/),
+        );
+        await expect(element.getByRole('option', { name: 'All', exact: true }).locator('.legend-rect')).toHaveCSS(
+          'background-color',
+          'rgb(16, 124, 16)',
+        );
+
+        const allPoint = element.locator('.data-point-focus-target[data-legend="All"]').first();
+        await allPoint.focus();
+        const calloutHeader = await element.locator('.tooltip-header').textContent();
+        expect(calloutHeader?.replaceAll(',', '')).toMatch(/^\d{13}$/);
+
+        const singlePoint = element.locator('.data-point-focus-target[data-legend="Single point"]');
+        await singlePoint.focus();
+        await expect(element.locator('.tooltip-header')).toHaveText(/^\d{1,2}\/\d{1,2}\/\d{4}$/);
+      }
+
+      if (story.id === 'negative' || story.id === 'all-negative') {
+        await expect(page.locator(`.line-${story.id}-size-controls > fluent-field`)).toHaveCount(2);
+        await expect(page.locator(`.line-${story.id}-switch-controls > fluent-field`)).toHaveCount(3);
+        const sizeBounds = await page.locator(`.line-${story.id}-size-controls`).boundingBox();
+        const switchBounds = await page.locator(`.line-${story.id}-switch-controls`).boundingBox();
+        const chartBounds = await element.boundingBox();
+        expect(switchBounds!.y - (sizeBounds!.y + sizeBounds!.height)).toBeGreaterThanOrEqual(16);
+        expect(chartBounds!.y - (switchBounds!.y + switchBounds!.height)).toBeGreaterThanOrEqual(20);
+        expect(
+          await element.evaluate(chart => (chart as HTMLElement & { isCalloutForStack: boolean }).isCalloutForStack),
+        ).toBe(true);
+      }
+
+      if (story.id === 'all-negative') {
+        const sharedPoint = element.locator('.data-point-focus-target[data-legend="From_Legacy_to_O365"]').first();
+        await sharedPoint.focus();
+        await expect(element.locator('.tooltip-info')).toHaveCount(2);
+        await expect(element.locator('.hover-dot:visible')).toHaveCount(2);
+        await expect(element.locator('.hover-line')).not.toHaveCSS('display', 'none');
+
+        const overlay = element.locator('.callout-overlay');
+        const singlePointBounds = await element
+          .locator('.data-point-focus-target[data-legend="Single point"]')
+          .boundingBox();
+        await overlay.dispatchEvent('mousemove', {
+          clientX: singlePointBounds!.x + singlePointBounds!.width / 2,
+          clientY: singlePointBounds!.y + singlePointBounds!.height / 2,
+        });
+        await expect(element.locator('.hover-dot:visible')).toHaveCount(1);
+
+        const sharedPointBounds = await sharedPoint.boundingBox();
+        await element.locator('.line-path[data-legend="From_Legacy_to_O365"]').dispatchEvent('mousemove', {
+          clientX: sharedPointBounds!.x + sharedPointBounds!.width / 2,
+          clientY: sharedPointBounds!.y + sharedPointBounds!.height / 2,
+        });
+        await expect(element.locator('.hover-dot:visible')).toHaveCount(2);
+        await expect(element.locator('.hover-dot[data-legend="Single point"]')).toBeHidden();
+      }
+
+      if (story.id === 'secondary-y-axis') {
+        await expect(element.locator('.secondary-y-axis-title')).toHaveCount(0);
+        expect(
+          await element.evaluate(chart => (chart as HTMLElement & { isCalloutForStack: boolean }).isCalloutForStack),
+        ).toBe(true);
+
+        await element.locator('.data-point-focus-target[data-legend="Primary"]').first().focus();
+        await expect(element.locator('.tooltip-info')).toHaveCount(2);
+        await expect(element.locator('.hover-dot:visible')).toHaveCount(2);
+        await expect(element.locator('.hover-line')).not.toHaveCSS('display', 'none');
+      }
+
+      if (story.id === 'log-axis-example') {
+        const paths = element.locator('.line-path');
+        await expect(paths).toHaveCount(2);
+        await expect(paths.nth(0)).not.toHaveCSS('stroke', 'none');
+        await expect(paths.nth(1)).not.toHaveCSS('stroke', 'none');
+        expect(
+          await element.evaluate(chart => (chart as HTMLElement & { isCalloutForStack: boolean }).isCalloutForStack),
+        ).toBe(true);
+
+        await element.locator('.data-point-focus-target[data-legend="Series 1"]').first().focus();
+        await expect(element.locator('.tooltip-info')).toHaveCount(2);
+        await expect(element.locator('.hover-dot:visible')).toHaveCount(2);
+        await expect(element.locator('.hover-line')).not.toHaveCSS('display', 'none');
+
+        const sizeBounds = await page.locator('.line-log-size-controls').boundingBox();
+        const scaleBounds = await page.locator('.line-log-scale-controls').boundingBox();
+        const chartTitleBounds = await element.locator('.chart-title').boundingBox();
+        expect(scaleBounds!.y - (sizeBounds!.y + sizeBounds!.height)).toBeGreaterThanOrEqual(16);
+        expect(chartTitleBounds!.y - (scaleBounds!.y + scaleBounds!.height)).toBeGreaterThanOrEqual(20);
+      }
+
+      if (story.id === 'annotations-example') {
+        const launch = element.locator('.chart-annotation[data-annotation-id="launch"]');
+        await expect(launch.locator('.chart-annotation-run')).toHaveText(['Launch day: ', '+18%', ' conversions']);
+        await expect(launch.locator('.chart-annotation-run').nth(0)).toHaveAttribute('font-weight', '600');
+        await expect(launch.locator('.chart-annotation-run').nth(1)).toHaveAttribute('fill', '#2aa0a4');
+        await expect(launch.locator('.chart-annotation-connector')).toHaveAttribute(
+          'marker-start',
+          /chart-annotation-arrow-launch/,
+        );
+        expect(
+          await launch.evaluate(annotation => {
+            const connector = annotation.querySelector('.chart-annotation-connector')!;
+            return {
+              offsetX: Math.round(Number(connector.getAttribute('x2')) - Number(connector.getAttribute('x1'))),
+              offsetY: Math.round(Number(connector.getAttribute('y2')) - Number(connector.getAttribute('y1'))),
+            };
+          }),
+        ).toEqual({ offsetX: -8, offsetY: -64 });
+
+        const experiment = element.locator('.chart-annotation[data-annotation-id="experiment"]');
+        await expect(experiment.locator('.chart-annotation-line')).toHaveCount(4);
+        await expect(experiment.locator('.chart-annotation-line')).toHaveText([
+          'Pricing experiment',
+          'A/B test running',
+          '• Variant B at 52%',
+          '• Average order ↑',
+        ]);
+        await expect(experiment.locator('.chart-annotation-run').nth(0)).toHaveAttribute('font-weight', '600');
+        await expect(experiment.locator('.chart-annotation-run').nth(1)).toHaveAttribute('font-style', 'italic');
+        await expect(experiment.locator('.chart-annotation-connector')).toHaveAttribute(
+          'marker-start',
+          /chart-annotation-arrow-experiment/,
+        );
+        expect(
+          await experiment.evaluate(annotation => {
+            const connector = annotation.querySelector('.chart-annotation-connector')!;
+            return {
+              offsetX: Math.round(Number(connector.getAttribute('x2')) - Number(connector.getAttribute('x1'))),
+              offsetY: Math.round(Number(connector.getAttribute('y2')) - Number(connector.getAttribute('y1'))),
+            };
+          }),
+        ).toEqual({ offsetX: 100, offsetY: 20 });
+
+        const goal = element.locator('.chart-annotation[data-annotation-id="goal"]');
+        await expect(goal.locator('.chart-annotation-line')).toHaveText(['Stretch goal', '5k signups']);
+        await expect(goal.locator('.chart-annotation-run').nth(1)).toHaveAttribute('font-weight', '600');
+
+        const note = element.locator('.chart-annotation[data-annotation-id="note"]');
+        await expect(note.locator('.chart-annotation-run')).toHaveText([
+          'Note: ',
+          'Values rounded to nearest whole signup.',
+        ]);
+        await expect(note.locator('.chart-annotation-text')).toHaveAttribute('font-size', '10px');
+        await expect(note.locator('.chart-annotation-run').nth(0)).toHaveAttribute('font-weight', '600');
+      }
+
+      if (story.id === 'negative') {
+        expect(
+          await element
+            .locator('.y-axis-text')
+            .evaluateAll(ticks => ticks.map(tick => tick.textContent?.replace('\u2212', '-'))),
+        ).toEqual(['-302k', '-151k', '0', '151k', '302k', '453k']);
+        expect(
+          await element.evaluate(chart => {
+            const lineChart = chart as HTMLElement & {
+              yMinValue: number;
+              yMaxValue: number;
+              xAxisTickCount: number;
+            };
+            return [lineChart.yMinValue, lineChart.yMaxValue, lineChart.xAxisTickCount];
+          }),
+        ).toEqual([200, 301, 10]);
+      }
+
       if (story.id === 'events') {
         await expect(page.locator('label[for="line-events-color"]')).toHaveText(
           'Use Custom Color for Event Annotation',
@@ -407,10 +680,33 @@ test.describe('LineChart', () => {
         expect(await labels.allTextContents()).toEqual(['3 events', 'event 4', 'event 5']);
         await expect(labels.first()).toHaveAttribute('data-label-width', '50');
         await expect(labels.first()).toHaveAttribute('role', 'button');
+        await expect(labels.first()).toHaveAttribute('aria-haspopup', 'dialog');
         await expect(element.locator('.event-annotation-line').first()).toHaveAttribute(
           'stroke',
           'var(--colorNeutralForeground1)',
         );
+
+        await labels.first().click();
+        const eventCard = element.locator('.event-annotation-card');
+        await expect(eventCard).toBeVisible();
+        await expect(eventCard).toHaveAttribute('aria-label', '3 events details');
+        await expect(eventCard.locator('.event-annotation-card-item')).toHaveText([
+          'event 1 message',
+          'event 2 message',
+          'event 3 message',
+        ]);
+        await expect(eventCard.locator('.event-annotation-card-close')).toBeFocused();
+        await eventCard.locator('.event-annotation-card-close').click();
+        await expect(eventCard).toHaveCount(0);
+        await expect(labels.first()).toBeFocused();
+
+        await labels.nth(1).focus();
+        await labels.nth(1).press('Enter');
+        await expect(eventCard.locator('.event-annotation-card-item')).toHaveText(['event 4 message']);
+        await page.keyboard.press('Escape');
+        await expect(eventCard).toHaveCount(0);
+        await expect(labels.nth(1)).toBeFocused();
+
         const eventLabelStyle = await labels.first().evaluate(label => {
           const style = getComputedStyle(label);
           return { fontFamily: style.fontFamily, fontSize: style.fontSize, fontWeight: style.fontWeight };
@@ -453,6 +749,34 @@ test.describe('LineChart', () => {
         await expect(labels.first()).toHaveAttribute('fill', '#ff0000');
       }
     }
+  });
+
+  test('Negative should switch between UTC and local date-axis ticks', async ({ page }) => {
+    const devtools = await page.context().newCDPSession(page);
+    await devtools.send('Emulation.setTimezoneOverride', { timezoneId: 'America/Los_Angeles' });
+    await page.goto(fixtureURL('components-linechart--negative'));
+
+    const element = page.locator('fluent-line-chart');
+    const getTickPositions = () =>
+      element.locator('.x-axis .tick').evaluateAll(ticks => ticks.map(tick => tick.getAttribute('transform')));
+    const utcTickPositions = await getTickPositions();
+    const utcLinePath = await element.locator('.line-path[data-legend="From_Legacy_to_O365"]').getAttribute('d');
+    const utcPointX = await element
+      .locator('.data-point-focus-target[data-legend="From_Legacy_to_O365"]')
+      .first()
+      .getAttribute('cx');
+
+    await page.locator('#line-negative-utc').click();
+    await expect.poll(getTickPositions).not.toEqual(utcTickPositions);
+    await expect
+      .poll(() => element.locator('.line-path[data-legend="From_Legacy_to_O365"]').getAttribute('d'))
+      .not.toBe(utcLinePath);
+    await expect
+      .poll(() =>
+        element.locator('.data-point-focus-target[data-legend="From_Legacy_to_O365"]').first().getAttribute('cx'),
+      )
+      .not.toBe(utcPointX);
+    expect(await element.evaluate(chart => (chart as HTMLElement & { useUTC: boolean }).useUTC)).toBe(false);
   });
 
   test('Custom Locale should update date labels and expose point and line click callbacks', async ({ page }) => {
@@ -572,7 +896,15 @@ test.describe('LineChart', () => {
       await element.evaluate(chart => ((chart as HTMLElement & { showMarkers: boolean }).showMarkers = true));
       await expect(element.locator('.line-marker')).toHaveCount(17);
       await element.locator('.line-marker').first().dispatchEvent('mouseenter');
-      return element.locator('.tooltip-header').innerText();
+      const header = element.locator('.tooltip-header');
+      let headerText = '';
+      await expect
+        .poll(async () => {
+          headerText = (await header.textContent().catch(() => null)) ?? '';
+          return headerText;
+        })
+        .toMatch(/\S/);
+      return headerText;
     };
 
     const basicHeader = await readFirstTooltipHeader('basic');

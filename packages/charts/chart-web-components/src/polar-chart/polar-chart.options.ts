@@ -29,11 +29,12 @@ export interface PolarAxisOptions {
   /** @public */ tickText?: string[];
   /** @public */ tickFormat?: string;
   /** @public */ tickStep?: number | string;
-  /** @public */ tick0?: number | Date;
+  /** Numeric value, Date, or an ISO 8601 date string from a serialized data source. */
+  /** @public */ tick0?: number | Date | string;
   /** @public */ categoryOrder?: AxisCategoryOrder;
   /** @public */ scaleType?: AxisScaleType;
-  /** @public */ rangeStart?: number | Date;
-  /** @public */ rangeEnd?: number | Date;
+  /** @public */ rangeStart?: number | Date | string;
+  /** @public */ rangeEnd?: number | Date | string;
   /** @public */ unit?: 'radians' | 'degrees';
 }
 

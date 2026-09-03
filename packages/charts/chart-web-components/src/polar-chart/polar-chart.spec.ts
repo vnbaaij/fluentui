@@ -195,21 +195,26 @@ test.describe('PolarChart', () => {
   test('Should support date and categorical radial scales', async ({ page }) => {
     const element = page.locator('fluent-polar-chart');
     await element.evaluate(chart => {
-      const polarChart = chart as HTMLElement & { data: unknown; radialAxis: unknown; useUTC: boolean };
-      const start = new Date('2024-01-01T00:00:00Z');
-      const end = new Date('2025-01-01T00:00:00Z');
-      polarChart.data = [
-        {
-          type: 'linepolar',
-          legend: 'Dates',
-          data: [
-            { theta: 'A', r: start },
-            { theta: 'B', r: end },
-          ],
-        },
-      ];
-      polarChart.radialAxis = { tickStep: 'M6', tick0: start, tickFormat: '%Y-%m' };
-      polarChart.useUTC = true;
+      const start = '2024-01-01T00:00:00.000Z';
+      const end = '2025-01-01T00:00:00.000Z';
+      chart.setAttribute(
+        'data',
+        JSON.stringify([
+          {
+            type: 'linepolar',
+            legend: 'Dates',
+            data: [
+              { theta: 'A', r: start },
+              { theta: 'B', r: end },
+            ],
+          },
+        ]),
+      );
+      chart.setAttribute(
+        'radial-axis',
+        JSON.stringify({ tickStep: 'M6', tick0: start, rangeStart: start, rangeEnd: end, tickFormat: '%Y-%m' }),
+      );
+      chart.setAttribute('use-utc', '');
     });
     await expect(element.locator('.polar-radial-tick-label')).toHaveText(['2024-01', '2024-07', '2025-01']);
 

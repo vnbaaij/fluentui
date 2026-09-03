@@ -1,9 +1,12 @@
 import type { ElementStyles } from '@microsoft/fast-element';
 import { css } from '@microsoft/fast-element';
 import {
+  borderRadiusMedium,
+  colorNeutralBackground1,
   colorNeutralForeground1,
   colorNeutralForeground2,
   colorNeutralStroke1,
+  colorNeutralStroke2,
   display,
   fontSizeBase500,
   shadow4,
@@ -148,6 +151,42 @@ export const styles: ElementStyles = css`
   .event-annotation-label {
     ${typographyCaption1Styles}
     fill: ${colorNeutralForeground1};
+    cursor: pointer;
+  }
+
+  .event-annotation-card {
+    position: absolute;
+    z-index: 1000;
+    box-sizing: border-box;
+    inline-size: max-content;
+    max-inline-size: min(280px, calc(100% - 32px));
+    padding: 12px 36px 12px 16px;
+    border: 1px solid ${colorNeutralStroke2};
+    border-radius: ${borderRadiusMedium};
+    background: ${colorNeutralBackground1};
+    box-shadow: ${shadow4};
+    color: ${colorNeutralForeground1};
+    transform: translateX(-50%);
+    ${typographyCaption1Styles}
+  }
+
+  .event-annotation-card-close {
+    position: absolute;
+    inset-block-start: 4px;
+    inset-inline-end: 4px;
+    display: grid;
+    place-items: center;
+    inline-size: 28px;
+    block-size: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: ${colorNeutralForeground1};
+    cursor: pointer;
+  }
+
+  .event-annotation-card-item + .event-annotation-card-item {
+    margin-block-start: 8px;
   }
 
   ${axisGridLineStyles}

@@ -179,7 +179,11 @@ export const ChartAttributes: Story<LineChart> = () => {
       chart.toggleAttribute('use-utc', checked);
     }).element,
   );
-  controls.appendChild(
+
+  const calloutControls = document.createElement('div');
+  calloutControls.setAttribute('style', `margin-top:16px;${controlsRowStyle}`);
+  container.appendChild(calloutControls);
+  calloutControls.appendChild(
     createRadioGroupField(
       'Callout',
       'line-callout',
@@ -400,15 +404,15 @@ export const Events: Story<LineChart> = () => {
   chart.yMaxValue = 301;
   chart.eventAnnotationProps = {
     events: [
-      { event: 'event 1', date: dates[1], onRenderCard: () => 'event 1 message' },
-      { event: 'event 2', date: dates[1], onRenderCard: () => 'event 2 message' },
-      { event: 'event 3', date: dates[1], onRenderCard: () => 'event 3 message' },
-      { event: 'event 4', date: dates[3], onRenderCard: () => 'event 4 message' },
-      { event: 'event 5', date: dates[5], onRenderCard: () => 'event 5 message' },
+      { event: 'event 1', date: dates[1].toISOString(), cardContent: 'event 1 message' },
+      { event: 'event 2', date: dates[1].toISOString(), cardContent: 'event 2 message' },
+      { event: 'event 3', date: dates[1].toISOString(), cardContent: 'event 3 message' },
+      { event: 'event 4', date: dates[3].toISOString(), cardContent: 'event 4 message' },
+      { event: 'event 5', date: dates[5].toISOString(), cardContent: 'event 5 message' },
     ],
     labelHeight: 18,
     labelWidth: 50,
-    mergedLabel: count => `${count} events`,
+    mergedLabel: '{count} events',
   };
 
   const shapeControls = document.createElement('div');
@@ -448,38 +452,67 @@ Events.storyName = 'Events';
 Events.parameters = { docs: { story: { height: '500px' } } };
 
 export const Gaps: Story<LineChart> = () => {
-  const dates = Array.from({ length: 8 }, (_, index) => new Date(Date.UTC(2020, 2, 3 + index)));
+  const at = (day: number, hour = 0, minute = 0) => new Date(Date.UTC(2020, 2, day, hour, minute));
   const { container, chart } = createLineStory(
     'line-gaps',
     [
+      {
+        legend: 'Confidence Level',
+        color: 'qualitative.11',
+        lineOptions: { strokeDasharray: 5, strokeLinecap: 'butt', strokeWidth: 2, lineBorderWidth: 4 },
+        data: [
+          { x: at(3), y: 250000, hideCallout: true },
+          { x: at(10), y: 250000, hideCallout: true },
+        ],
+      },
       {
         legend: 'Normal Data',
         color: 'qualitative.12',
         gaps: [
           { startIndex: 1, endIndex: 2 },
           { startIndex: 3, endIndex: 4 },
-          { startIndex: 5, endIndex: 6 },
+          { startIndex: 6, endIndex: 7 },
         ],
-        lineOptions: { lineBorderWidth: 2 },
-        data: dates.map((x, i) => ({ x, y: [216000, 218123, 219000, 248000, 252000, 274000, 260000, 300000][i] })),
+        lineOptions: { lineBorderWidth: 4 },
+        data: [
+          { x: at(3), y: 216000 },
+          { x: at(3, 10, 30), y: 218123, hideCallout: true },
+          { x: at(3, 11), y: 219000, hideCallout: true },
+          { x: at(4), y: 248000, hideCallout: true },
+          { x: at(5), y: 252000, hideCallout: true },
+          { x: at(6), y: 274000 },
+          { x: at(7), y: 260000, hideCallout: true },
+          { x: at(8), y: 300000, hideCallout: true },
+          { x: at(8, 12), y: 218000 },
+          { x: at(9), y: 218000 },
+          { x: at(10), y: 269000 },
+        ],
       },
       {
         legend: 'Low Confidence Data*',
         color: 'qualitative.13',
-        lineOptions: { strokeDasharray: 2, strokeDashoffset: -1, strokeLinecap: 'butt', lineBorderWidth: 2 },
+        gaps: [
+          { startIndex: 1, endIndex: 2 },
+          { startIndex: 3, endIndex: 4 },
+        ],
+        lineOptions: { strokeDasharray: 2, strokeDashoffset: -1, strokeLinecap: 'butt', lineBorderWidth: 4 },
         data: [
-          { x: dates[1], y: 218123 },
-          { x: dates[2], y: 219000 },
-          { x: dates[3], y: 248000 },
-          { x: dates[4], y: 252000 },
-          { x: dates[5], y: 274000 },
-          { x: dates[6], y: 260000 },
+          { x: at(3, 10, 30), y: 218123 },
+          { x: at(3, 11), y: 219000 },
+          { x: at(4), y: 248000 },
+          { x: at(5), y: 252000 },
+          { x: at(7), y: 260000 },
+          { x: at(8), y: 300000 },
         ],
       },
       {
         legend: 'Green Data',
-        color: 'colorPaletteGreenForeground1',
-        data: dates.map((x, i) => ({ x, y: [297000, 284000, 282000, 294000, 224000, 300000, 298000, 299000][i] })),
+        color: 'semantic.success',
+        lineOptions: { lineBorderWidth: 4 },
+        data: [297000, 284000, 282000, 294000, 224000, 300000, 298000, 299000].map((y, index) => ({
+          x: at(3 + index),
+          y,
+        })),
       },
     ],
     700,
@@ -487,6 +520,20 @@ export const Gaps: Story<LineChart> = () => {
   );
   chart.yMinValue = 150000;
   chart.yMaxValue = 400000;
+  chart.isCalloutForStack = true;
+  chart.tooltipRenderer = (point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = defaultRender(point);
+    const entries = (point as { entries?: Array<{ legend: string }> }).entries ?? [];
+    if (entries.some(entry => entry.legend === 'Low Confidence Data*')) {
+      const description = document.createElement('div');
+      description.className = 'gaps-callout-description';
+      description.setAttribute('style', 'margin-top:12px;padding-top:10px;border-top:1px solid #d1d1d1;');
+      description.textContent = '* This data was below our confidence threshold.';
+      wrapper.appendChild(description);
+    }
+    return wrapper;
+  };
   return container;
 };
 Gaps.storyName = 'Gaps';
@@ -494,23 +541,31 @@ Gaps.parameters = { docs: { story: { height: '580px' } } };
 
 const largeDataStart = new Date('2020-03-01T00:00:00Z').getTime();
 const createLargeData = (start: number, count: number, value: (index: number) => number) =>
-  Array.from({ length: count }, (_, index) => ({
-    x: new Date(largeDataStart + (start + index) * 60 * 60 * 1000),
-    y: value(start + index),
-  }));
+  Array.from({ length: count }, (_, index) => {
+    const x = largeDataStart + (start + index) * 60 * 60 * 1000;
+    return {
+      x: new Date(x),
+      xAxisCalloutData: String(x),
+      y: value(start + index),
+    };
+  });
 
 export const LargeData: Story<LineChart> = () => {
   const data: LineChartSeries[] = [
     { legend: 'Constant', color: 'qualitative.1', data: createLargeData(0, 10000, () => 500000) },
     {
-      legend: 'Wave',
-      color: 'colorPaletteGreenForeground1',
+      legend: 'All',
+      color: 'semantic.success',
       data: createLargeData(1000, 8000, index => {
         const n = index % 1000;
         return n < 500 ? n * n : 1000000 - n * n;
       }),
     },
-    { legend: 'Single point', color: 'qualitative.10', data: [{ x: new Date('2020-03-05T00:00:00Z'), y: 282000 }] },
+    {
+      legend: 'Single point',
+      color: 'qualitative.10',
+      data: [{ x: new Date('2020-03-05T00:00:00Z'), y: 282000 }],
+    },
   ];
   const { container, controls, chart } = createLineStory('line-large', data);
   addMultipleShapesControl(controls, chart, 'line-large-shapes');
@@ -520,18 +575,34 @@ LargeData.storyName = 'Large Data';
 LargeData.parameters = { docs: { story: { height: '500px' } } };
 
 const createNegativeData = (allNegative: boolean): LineChartSeries[] => {
-  const dates = Array.from({ length: 7 }, (_, index) => new Date(Date.UTC(2020, 2, 3 + index)));
   const sign = (value: number, index: number) => (allNegative || index % 2 === 0 ? -value : value);
+  const firstSeries = [
+    ['2020-03-03T00:00:00.000Z', 216000],
+    ['2020-03-03T10:00:00.000Z', 218123],
+    ['2020-03-03T11:00:00.000Z', 217124],
+    ['2020-03-04T00:00:00.000Z', 248000],
+    ['2020-03-05T00:00:00.000Z', 252000],
+    ['2020-03-06T00:00:00.000Z', 274000],
+    ['2020-03-07T00:00:00.000Z', 260000],
+    ['2020-03-08T00:00:00.000Z', 304000],
+    ['2020-03-09T00:00:00.000Z', 218000],
+  ] as const;
+  const secondSeries = [297000, 284000, 282000, 294000, 224000, 300000, 298000];
   return [
     {
       legend: 'From_Legacy_to_O365',
       color: 'qualitative.3',
-      data: dates.map((x, i) => ({ x, y: sign([216000, 218123, 217124, 248000, 252000, 274000, 260000][i], i) })),
+      lineOptions: { lineBorderWidth: 4 },
+      data: firstSeries.map(([x, y], index) => ({ x: new Date(x), y: sign(y, index) })),
     },
     {
       legend: 'All',
       color: 'qualitative.4',
-      data: dates.map((x, i) => ({ x, y: sign([297000, 284000, 282000, 294000, 224000, 300000, 298000][i], i + 1) })),
+      lineOptions: { lineBorderWidth: 4 },
+      data: secondSeries.map((y, index) => ({
+        x: new Date(Date.UTC(2020, 2, 3 + index)),
+        y: sign(y, index + 1),
+      })),
     },
     {
       legend: 'Single point',
@@ -543,19 +614,29 @@ const createNegativeData = (allNegative: boolean): LineChartSeries[] => {
 
 const createNegativeStory = (id: string, allNegative: boolean) => {
   const { container, controls, chart } = createLineStory(id, createNegativeData(allNegative));
+  controls.classList.add(`${id}-size-controls`);
   chart.useUTC = true;
+  chart.yMinValue = 200;
+  chart.yMaxValue = 301;
+  chart.xAxisTickCount = 10;
   chart.xAxisTitle = 'Values of each category';
   chart.yAxisTitle = 'Different categories of mail flow';
-  addMultipleShapesControl(controls, chart, `${id}-shapes`);
-  controls.appendChild(
+  chart.isCalloutForStack = true;
+
+  const switchControls = document.createElement('div');
+  switchControls.classList.add(`${id}-switch-controls`);
+  switchControls.setAttribute('style', `margin-top:16px;margin-bottom:20px;${controlsRowStyle}`);
+  addMultipleShapesControl(switchControls, chart, `${id}-shapes`);
+  switchControls.appendChild(
     createSwitchField('Show axis titles', `${id}-titles`, true, checked => {
       chart.xAxisTitle = checked ? 'Values of each category' : undefined;
       chart.yAxisTitle = checked ? 'Different categories of mail flow' : undefined;
     }).element,
   );
-  controls.appendChild(
+  switchControls.appendChild(
     createSwitchField('Use UTC time', `${id}-utc`, true, checked => chart.toggleAttribute('use-utc', checked)).element,
   );
+  container.insertBefore(switchControls, chart);
   return container;
 };
 
@@ -583,7 +664,7 @@ export const SecondaryYAxis: Story<LineChart> = () => {
     },
   ]);
   chart.useUTC = true;
-  chart.secondaryYAxisTitle = 'Secondary values';
+  chart.isCalloutForStack = true;
   return container;
 };
 SecondaryYAxis.storyName = 'Secondary Y Axis';
@@ -595,13 +676,18 @@ export const LogAxisExample: Story<LineChart> = () => {
     { legend: 'Series 1', color: 'qualitative.1', data: values.map(value => ({ x: value, y: 9 - value })) },
     {
       legend: 'Series 2',
-      color: 'colorPaletteDarkOrangeForeground1',
+      color: 'warning',
       data: values.map(value => ({ x: value, y: value })),
     },
   ]);
   chart.xScaleType = 'log';
   chart.yScaleType = 'log';
-  controls.appendChild(
+  chart.isCalloutForStack = true;
+  controls.classList.add('line-log-size-controls');
+  const scaleControls = document.createElement('div');
+  scaleControls.classList.add('line-log-scale-controls');
+  scaleControls.setAttribute('style', `margin-top:16px;margin-bottom:20px;${controlsRowStyle}`);
+  scaleControls.appendChild(
     createRadioGroupField(
       'X scale',
       'line-log-x',
@@ -613,7 +699,7 @@ export const LogAxisExample: Story<LineChart> = () => {
       value => chart.setAttribute('x-scale-type', value),
     ).element,
   );
-  controls.appendChild(
+  scaleControls.appendChild(
     createRadioGroupField(
       'Y scale',
       'line-log-y',
@@ -625,6 +711,7 @@ export const LogAxisExample: Story<LineChart> = () => {
       value => chart.setAttribute('y-scale-type', value),
     ).element,
   );
+  container.insertBefore(scaleControls, chart);
   return container;
 };
 LogAxisExample.storyName = 'Log Axis Example';
@@ -635,31 +722,52 @@ export const AnnotationsExample: Story<LineChart> = () => {
     {
       id: 'launch',
       text: 'Launch day: +18% conversions',
+      textLines: [
+        {
+          runs: [
+            { text: 'Launch day: ', fontWeight: 600 },
+            { text: '+18%', textColor: '#2aa0a4' },
+            { text: ' conversions' },
+          ],
+        },
+      ],
       coordinates: { type: 'data', x: 1, y: 26 },
-      layout: { align: 'start', offsetX: 16, offsetY: -48 },
-      style: { textColor: 'qualitative.3', fontSize: '12px' },
-      connector: { strokeColor: 'qualitative.3', strokeWidth: 2 },
+      layout: { align: 'start', offsetX: -8, offsetY: -64 },
+      style: { fontSize: '12px', fontWeight: 400 },
+      connector: { strokeColor: '#2aa0a4', strokeWidth: 2, arrow: true },
     },
     {
       id: 'experiment',
-      text: 'Pricing experiment: A/B test running',
+      text: 'Pricing experiment. A/B test running. Variant B at 52%. Average order up.',
+      textLines: [
+        { runs: [{ text: 'Pricing experiment', fontWeight: 600 }] },
+        { runs: [{ text: 'A/B test running', fontStyle: 'italic' }] },
+        { runs: [{ text: 'Variant B at 52%' }], bullet: true, indent: 8 },
+        { runs: [{ text: 'Average order ↑' }], bullet: true, indent: 8 },
+      ],
       coordinates: { type: 'data', x: 3, y: 37 },
-      layout: { offsetX: 100, offsetY: -20 },
-      style: { textColor: 'qualitative.6', fontSize: '12px' },
-      connector: { strokeColor: 'qualitative.6', strokeWidth: 2, dashArray: '5 5' },
+      layout: { offsetX: 100, offsetY: 20 },
+      style: { fontSize: '12px', fontWeight: 400 },
+      connector: { strokeColor: 'qualitative.6', strokeWidth: 2, arrow: true },
     },
     {
       id: 'goal',
-      text: 'Stretch goal: 5k signups',
+      text: 'Stretch goal. 5k signups.',
+      textLines: [{ runs: [{ text: 'Stretch goal' }] }, { runs: [{ text: '5k signups', fontWeight: 600 }] }],
       coordinates: { type: 'relative', x: 0.8, y: 0.28 },
-      style: { textColor: '#d83b01', fontSize: '12px' },
+      style: { textColor: '#d83b01', fontSize: '12px', fontWeight: 400 },
     },
     {
       id: 'note',
-      text: 'Values rounded to whole signups',
+      text: 'Note: Values rounded to nearest whole signup.',
+      textLines: [
+        {
+          runs: [{ text: 'Note: ', fontWeight: 600 }, { text: 'Values rounded to nearest whole signup.' }],
+        },
+      ],
       coordinates: { type: 'pixel', x: 24, y: 24 },
       layout: { align: 'start' },
-      style: { fontSize: '11px' },
+      style: { textColor: 'colorNeutralForeground2', fontSize: '10px', fontWeight: 400 },
     },
   ];
   const { container, chart } = createLineStory(

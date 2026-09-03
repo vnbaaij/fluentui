@@ -3,7 +3,7 @@ import { colorNeutralForeground1 } from '@fluentui/web-components';
 import { extent } from 'd3-array';
 import { type Axis, axisBottom, type AxisDomain, axisLeft, axisRight } from 'd3-axis';
 import { format } from 'd3-format';
-import { type ScaleTime, scaleTime } from 'd3-scale';
+import { type ScaleTime, scaleTime, scaleUtc } from 'd3-scale';
 import { line as createLine } from 'd3-shape';
 import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
@@ -50,6 +50,12 @@ type XValue = number | Date;
 type ContinuousScale = NumericContinuousScale | ScaleTime<number, number>;
 type NormalizedPoint = LineChartDataPoint & { x: XValue; xLabel: string; cx: number; cy: number };
 type NormalizedSeries = Omit<LineChartSeries, 'color' | 'data'> & { color: string; data: NormalizedPoint[] };
+type EventAnnotationCardState = {
+  label: string;
+  x: number;
+  y: number;
+  contents: Array<HTMLElement | string>;
+};
 
 const defaultMargins = { top: 40, right: 20, bottom: 50, left: 60 };
 const markerSize = 12;
@@ -99,8 +105,8 @@ const formatDateAxisValue = (chart: LineChart, value: Date): string => {
   }
 };
 
-const getNormalizedXValue = (value: number | Date): XValue => {
-  const parsed = parseDateOrNumber(value as number | Date | string);
+const getNormalizedXValue = (value: number | Date | string): XValue => {
+  const parsed = parseDateOrNumber(value);
   return parsed instanceof Date ? parsed : Number(parsed);
 };
 
@@ -149,8 +155,15 @@ export class LineChart extends CartesianChartBase {
   @attr({ attribute: 'y-axis-tick-label-max-width' })
   public yAxisTickLabelMaxWidth?: number | string;
 
-  @observable
+  @attr({ attribute: 'event-annotation-props', converter: jsonConverter })
   public eventAnnotationProps?: LineChartEventAnnotationProps;
+
+  @observable
+  public eventAnnotationCard?: EventAnnotationCardState;
+
+  public eventAnnotationCardContent!: HTMLDivElement;
+
+  private _eventAnnotationTrigger?: SVGTextElement;
 
   protected override _enableResizeObserver = true;
 
@@ -163,21 +176,16 @@ export class LineChart extends CartesianChartBase {
       'isCalloutForStack',
       'colorFillBars',
       'yAxisTickLabelMaxWidth',
+      'eventAnnotationProps',
     ] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
-    const eventAnnotationProps = self.eventAnnotationProps;
 
     for (const field of attrFields) {
       saved[field] = self[field];
       delete self[field];
     }
-    delete self.eventAnnotationProps;
 
     super.connectedCallback();
-
-    if (eventAnnotationProps !== undefined) {
-      self.eventAnnotationProps = eventAnnotationProps;
-    }
 
     for (const field of attrFields) {
       if (self[field] === undefined && saved[field] !== undefined) {
@@ -215,7 +223,63 @@ export class LineChart extends CartesianChartBase {
   }
 
   protected eventAnnotationPropsChanged(): void {
+    this.dismissEventAnnotationCard();
     this._requestRender();
+  }
+
+  public dismissEventAnnotationCard(restoreFocus = false): void {
+    const trigger = this._eventAnnotationTrigger;
+    this.eventAnnotationCard = undefined;
+    this._eventAnnotationTrigger = undefined;
+    if (restoreFocus) {
+      trigger?.focus();
+    }
+  }
+
+  public handleEventAnnotationCardKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.dismissEventAnnotationCard(true);
+    }
+  }
+
+  private _showEventAnnotationCard(trigger: SVGTextElement, label: string, events: LineChartEventAnnotation[]): void {
+    const contents = events.flatMap(event => {
+      const content = event.cardContent ?? event.onRenderCard?.();
+      return content === undefined ? [] : [content];
+    });
+    if (contents.length === 0) {
+      return;
+    }
+
+    const hostRect = this.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+    const card = {
+      label,
+      x: triggerRect.left - hostRect.left + triggerRect.width / 2,
+      y: triggerRect.bottom - hostRect.top + 8,
+      contents,
+    };
+    this._eventAnnotationTrigger = trigger;
+    this.eventAnnotationCard = card;
+
+    requestAnimationFrame(() => {
+      if (this.eventAnnotationCard !== card || !this.eventAnnotationCardContent) {
+        return;
+      }
+      const items = contents.map(content => {
+        const item = document.createElement('div');
+        item.classList.add('event-annotation-card-item');
+        if (typeof content === 'string') {
+          item.textContent = content;
+        } else {
+          item.appendChild(content);
+        }
+        return item;
+      });
+      this.eventAnnotationCardContent.replaceChildren(...items);
+      this.shadowRoot?.querySelector<HTMLButtonElement>('.event-annotation-card-close')?.focus();
+    });
   }
 
   protected override _clearTooltip(): void {
@@ -341,10 +405,8 @@ export class LineChart extends CartesianChartBase {
           : new Date(rawExtent[1] ?? 0);
       const domainMin = xMin instanceof Date ? xMin : new Date(Number(xMin));
       const domainMax = xMax instanceof Date ? xMax : new Date(Number(xMax));
-      xScale = scaleTime().domain([domainMin, domainMax]).range(xRange);
-      if (this.roundedTicks) {
-        xScale.nice();
-      }
+      xScale = (this.useUTC ? scaleUtc() : scaleTime()).domain([domainMin, domainMax]).range(xRange);
+      xScale.nice();
       xFormatter = value => formatDateAxisValue(this, value as Date);
     } else {
       const xValues = normalizedSeries
@@ -580,27 +642,15 @@ export class LineChart extends CartesianChartBase {
         showTooltipForPoint(legend, color, nearest, shapeIndex);
         return;
       }
-
-      const entries = normalizedSeries.flatMap(series => {
-        const matchingPoint = series.data.find(point => Number(point.x) === Number(nearest.x));
-        return matchingPoint && this._shouldShowTooltip(series.legend)
-          ? [
-              {
-                legend: series.legend,
-                color: series.color,
-                value: formatNumberValue(matchingPoint.y, this.yAxisTickFormat, this.culture),
-              },
-            ]
-          : [];
-      });
-      showTooltipForPoint(legend, color, nearest, shapeIndex);
-      this.tooltipProps = { ...this.tooltipProps, entries };
+      showStackedTooltipForPoint?.(nearest);
     };
 
     const focusablePoints: SVGCircleElement[] = [];
     const calloutMarkerLayer = createSvgElement<SVGGElement>('g');
     calloutMarkerLayer.classList.add('callout-marker-layer');
     calloutMarkerLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+    let showStackedTooltipForPoint: ((point: NormalizedPoint) => void) | undefined;
+    let clearStackedPointTooltip: (() => void) | undefined;
     const pointKeydown = (event: KeyboardEvent): void => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -719,9 +769,19 @@ export class LineChart extends CartesianChartBase {
           focusablePoints.forEach(pointElement => {
             pointElement.tabIndex = pointElement === hitArea ? 0 : -1;
           });
-          showTooltipForPoint(series.legend, series.color, point, shapeIndex);
+          if (this.isCalloutForStack) {
+            showStackedTooltipForPoint?.(point);
+          } else {
+            showTooltipForPoint(series.legend, series.color, point, shapeIndex);
+          }
         });
-        hitArea.addEventListener('blur', clearSinglePointTooltip);
+        hitArea.addEventListener('blur', () => {
+          if (this.isCalloutForStack) {
+            clearStackedPointTooltip?.();
+          } else {
+            clearSinglePointTooltip();
+          }
+        });
         hitArea.addEventListener('keydown', pointKeydown);
         hitArea.addEventListener('click', () => {
           hitArea.focus();
@@ -809,24 +869,19 @@ export class LineChart extends CartesianChartBase {
       overlay.setAttribute('pointer-events', 'all');
       plotGroup.appendChild(overlay);
 
-      const onOverlayMouseMove = (event: MouseEvent): void => {
-        if (calloutPoints.length === 0) {
-          return;
-        }
+      const showStackedCallout = (
+        xKey: number,
+        calloutPoint: { xLabel: string; cx: number; points: Array<NormalizedPoint | undefined> },
+      ): void => {
         const svgRect = svg.getBoundingClientRect();
-        const localX = event.clientX - svgRect.left - margins.left;
-        const nearest = calloutPoints.reduce((best, candidate) =>
-          Math.abs(candidate[1].cx - localX) < Math.abs(best[1].cx - localX) ? candidate : best,
-        );
-        const [, calloutPoint] = nearest;
         const entries: Array<TooltipEntry & { cy: number }> = [];
 
         hoverLine.setAttribute('x1', String(margins.left + calloutPoint.cx));
         hoverLine.setAttribute('x2', String(margins.left + calloutPoint.cx));
         hoverLine.style.display = '';
 
-        calloutPoint.points.forEach((point, seriesIndex) => {
-          const series = normalizedSeries[seriesIndex];
+        normalizedSeries.forEach((series, seriesIndex) => {
+          const point = calloutPoint.points[seriesIndex];
           if (point && !point.hideCallout && this._shouldShowTooltip(series.legend)) {
             hoverDots[seriesIndex].setAttribute('cx', String(point.cx));
             hoverDots[seriesIndex].setAttribute('cy', String(point.cy));
@@ -853,7 +908,7 @@ export class LineChart extends CartesianChartBase {
           const anchorY = svgRect.top - hostRect.top + margins.top + entries[0].cy;
           const tooltipEntries = entries.map(({ cy: _cy, ...entry }) => entry);
           const isFreshShow = !this.tooltipProps.isVisible || this.tooltipProps.xValue !== calloutPoint.xLabel;
-          this._currentTooltipDataPoint = { x: nearest[0], entries: tooltipEntries };
+          this._currentTooltipDataPoint = { x: xKey, entries: tooltipEntries };
           this.tooltipProps = {
             isVisible: true,
             legend: tooltipEntries[0].legend,
@@ -868,13 +923,37 @@ export class LineChart extends CartesianChartBase {
         }
       };
 
+      showStackedTooltipForPoint = point => {
+        const xKey = Number(point.x);
+        const calloutPoint = calloutPointsByX.get(xKey);
+        if (calloutPoint) {
+          showStackedCallout(xKey, calloutPoint);
+        }
+      };
+
+      const onOverlayMouseMove = (event: MouseEvent): void => {
+        if (calloutPoints.length === 0) {
+          return;
+        }
+        const svgRect = svg.getBoundingClientRect();
+        const localX = event.clientX - svgRect.left - margins.left;
+        const nearest = calloutPoints.reduce((best, candidate) =>
+          Math.abs(candidate[1].cx - localX) < Math.abs(best[1].cx - localX) ? candidate : best,
+        );
+        showStackedCallout(nearest[0], nearest[1]);
+      };
+
+      clearStackedPointTooltip = () => {
+        hoverLine.style.display = 'none';
+        hoverDots.forEach(dot => (dot.style.display = 'none'));
+        this._clearTooltip();
+      };
+
       const onChartMouseLeave = (event: MouseEvent): void => {
         if (event.target !== svg) {
           return;
         }
-        hoverLine.style.display = 'none';
-        hoverDots.forEach(dot => (dot.style.display = 'none'));
-        this._clearTooltip();
+        clearStackedPointTooltip?.();
       };
       overlay.addEventListener('mousemove', onOverlayMouseMove);
       calloutMarkerLayer.addEventListener('mousemove', onOverlayMouseMove);
@@ -978,7 +1057,20 @@ export class LineChart extends CartesianChartBase {
         text.setAttribute('data-label-width', String(labelWidth));
         text.setAttribute('role', 'button');
         text.setAttribute('tabindex', '0');
-        text.textContent = label.events.length === 1 ? label.events[0].event : mergedLabel(label.events.length);
+        text.textContent =
+          label.events.length === 1
+            ? label.events[0].event
+            : typeof mergedLabel === 'function'
+            ? mergedLabel(label.events.length)
+            : (mergedLabel ?? '{count} events').replaceAll('{count}', String(label.events.length));
+        text.setAttribute('aria-haspopup', 'dialog');
+        text.addEventListener('click', () => this._showEventAnnotationCard(text, text.textContent ?? '', label.events));
+        text.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            this._showEventAnnotationCard(text, text.textContent ?? '', label.events);
+          }
+        });
         eventLayer.appendChild(text);
       });
       svg.appendChild(eventLayer);
@@ -1002,6 +1094,10 @@ export class LineChart extends CartesianChartBase {
       ...normalizedSeries.map((series, seriesIndex) => ({
         legend: series.legend,
         color: series.color,
+        ...(series.lineOptions?.strokeDasharray !== undefined && {
+          isLineLegendInBarChart: true,
+          lineStrokeDasharray: series.lineOptions.strokeDasharray,
+        }),
         ...(this.allowMultipleShapesForPoints && {
           shape: markerShapeNames[seriesIndex % markerShapeNames.length],
         }),

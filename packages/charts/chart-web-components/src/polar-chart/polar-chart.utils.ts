@@ -38,6 +38,23 @@ export interface PolarScale<TValue> {
   tickLabels: string[];
 }
 
+const normalizePolarValue = (value: PolarChartValue): PolarChartValue => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value)) {
+    return value;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date;
+};
+
+const normalizeAxisDates = (axis: PolarAxisOptions | undefined): PolarAxisOptions | undefined =>
+  axis && {
+    ...axis,
+    tickValues: axis.tickValues?.map(normalizePolarValue),
+    tick0: axis.tick0 === undefined ? undefined : normalizePolarValue(axis.tick0),
+    rangeStart: axis.rangeStart === undefined ? undefined : normalizePolarValue(axis.rangeStart),
+    rangeEnd: axis.rangeEnd === undefined ? undefined : normalizePolarValue(axis.rangeEnd),
+  };
+
 export const normalizeSeries = (series: PolarChartSeries[]): NormalizedPolarSeries[] =>
   series
     .map(entry => ({
@@ -46,7 +63,7 @@ export const normalizeSeries = (series: PolarChartSeries[]): NormalizedPolarSeri
       data: entry.data.flatMap(point => {
         const theta = point.theta ?? point.x;
         const r = point.r ?? point.y;
-        return theta === undefined || r === undefined ? [] : [{ source: point, theta, r }];
+        return theta === undefined || r === undefined ? [] : [{ source: point, theta, r: normalizePolarValue(r) }];
       }),
     }))
     .sort(
@@ -137,6 +154,7 @@ export const createRadialScale = (
   useUTC: boolean,
   dateLocalizeOptions: Intl.DateTimeFormatOptions | undefined,
 ): PolarScale<PolarChartValue> => {
+  axis = normalizeAxisDates(axis);
   const values = points.map(point => point.r);
   const firstValue = values[0];
 
