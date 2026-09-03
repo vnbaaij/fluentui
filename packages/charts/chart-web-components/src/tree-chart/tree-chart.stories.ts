@@ -2,7 +2,16 @@ import { controlsRowStyle, createDropdownField, createSliderField, type Meta, ty
 import { definition } from './tree-chart.definition.js';
 import type { TreeChart } from './tree-chart.js';
 
-export default { title: 'Components/TreeChart' } as Meta<TreeChart>;
+export default {
+  title: 'Components/TreeChart',
+  parameters: {
+    docs: {
+      description: {
+        component: '<h2>Experimental component</h2>',
+      },
+    },
+  },
+} as Meta<TreeChart>;
 
 export const Basic: Story<TreeChart> = () => {
   const chart = document.createElement('fluent-tree-chart') as TreeChart;

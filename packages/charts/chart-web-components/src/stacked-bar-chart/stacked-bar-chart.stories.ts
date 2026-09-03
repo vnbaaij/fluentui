@@ -19,7 +19,16 @@ const sampleData: StackedBarChartData = {
   ],
 };
 
-export default { title: 'Components/StackedBarChart' } as Meta<StackedBarChart>;
+export default {
+  title: 'Components/StackedBarChart',
+  parameters: {
+    docs: {
+      description: {
+        component: '<h2>Experimental component</h2>',
+      },
+    },
+  },
+} as Meta<StackedBarChart>;
 
 export const Basic: Story<StackedBarChart> = () => {
   const chart = document.createElement('fluent-stacked-bar-chart') as StackedBarChart;
