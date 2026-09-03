@@ -664,14 +664,44 @@ test.describe('AreaChart', () => {
     await expect(points.first()).toHaveAttribute('tabindex', '0');
     await expect(points.nth(1)).toHaveAttribute('tabindex', '-1');
 
+    await points.nth(2).hover();
+    const previousMarkerX = Number(await element.locator('.hover-dot').first().getAttribute('cx'));
+
     await points.first().focus();
     await expect(element.locator('.tooltip')).toBeVisible();
+    await expect(element.locator('.tooltip .tooltip-legend-text')).toHaveText(['Series B', 'Series A']);
+    await expect(element.locator('.hover-line')).not.toHaveCSS('display', 'none');
+    await expect(element.locator('.hover-dot').first()).toBeVisible();
+    await expect(element.locator('.hover-dot').nth(1)).toBeVisible();
+
+    const firstPointX = Number(await points.first().getAttribute('cx'));
+    const firstGuidelineX = Number(await element.locator('.hover-line').getAttribute('x1'));
+    const focusedMarkerXs = await element
+      .locator('.hover-dot')
+      .evaluateAll(dots =>
+        dots.filter(dot => getComputedStyle(dot).display !== 'none').map(dot => Number(dot.getAttribute('cx'))),
+      );
+    expect(focusedMarkerXs).toEqual([firstPointX, firstPointX]);
+    expect(firstGuidelineX).toBeGreaterThan(firstPointX);
+    expect(firstPointX).not.toBe(previousMarkerX);
 
     await points.first().press('ArrowRight');
 
     await expect(points.first()).toHaveAttribute('tabindex', '-1');
     await expect(points.nth(1)).toHaveAttribute('tabindex', '0');
     await expect(element.locator('.tooltip')).toBeVisible();
+    await expect(element.locator('.tooltip .tooltip-legend-text')).toHaveText(['Series B', 'Series A']);
+
+    const secondPointX = Number(await points.nth(1).getAttribute('cx'));
+    const secondGuidelineX = Number(await element.locator('.hover-line').getAttribute('x1'));
+    const movedMarkerXs = await element
+      .locator('.hover-dot')
+      .evaluateAll(dots =>
+        dots.filter(dot => getComputedStyle(dot).display !== 'none').map(dot => Number(dot.getAttribute('cx'))),
+      );
+    expect(movedMarkerXs).toEqual([secondPointX, secondPointX]);
+    expect(secondGuidelineX).not.toBe(firstGuidelineX);
+    expect(secondPointX).not.toBe(firstPointX);
   });
 
   test('Should move focus between datapoints with ArrowDown and ArrowUp', async ({ page }) => {
@@ -705,6 +735,90 @@ test.describe('AreaChart', () => {
     await expect(bottomPoint).toHaveAttribute('tabindex', '0');
     await expect(pointAboveBottom).toHaveAttribute('tabindex', '-1');
     await expect(element.locator('.tooltip')).toBeVisible();
+  });
+
+  test('Should focus a datapoint clicked in the middle of a series', async ({ page }) => {
+    const element = page.locator('fluent-area-chart');
+    const points = element.locator('.data-point-focus-target');
+
+    await points.nth(2).click();
+
+    await expect(points.nth(2)).toBeFocused();
+    await expect(points.nth(2)).toHaveAttribute('tabindex', '0');
+    await expect(points.first()).toHaveAttribute('tabindex', '-1');
+  });
+
+  test('Should align sparse-series hover dots with their data point targets', async ({ page }) => {
+    const element = page.locator('fluent-area-chart');
+    await element.evaluate(chart => {
+      (chart as HTMLElement & { data: AreaChartSeries[] }).data = [
+        {
+          legend: 'Series A',
+          data: [
+            { x: 0, y: 10 },
+            { x: 2, y: 15 },
+          ],
+        },
+        {
+          legend: 'Series B',
+          data: [
+            { x: 0, y: 5 },
+            { x: 1, y: 12 },
+            { x: 2, y: 18 },
+          ],
+        },
+      ];
+    });
+
+    const points = element.locator('.data-point-focus-target');
+    await expect(points).toHaveCount(5);
+    const coordinates = await element.evaluate(chart => {
+      const root = chart.shadowRoot!;
+      const point = Array.from(root.querySelectorAll<SVGCircleElement>('.data-point-focus-target')).find(target =>
+        target.getAttribute('aria-label')?.startsWith('2, Series A'),
+      )!;
+      const bounds = point.getBoundingClientRect();
+      const overlay = Array.from(root.querySelectorAll<SVGRectElement>('rect')).find(
+        rect => rect.getAttribute('fill-opacity') === '0' && rect.getAttribute('pointer-events') === 'all',
+      )!;
+      overlay.dispatchEvent(
+        new MouseEvent('mousemove', {
+          clientX: bounds.left + bounds.width / 2,
+          clientY: bounds.top + bounds.height / 2,
+        }),
+      );
+      return {
+        targetCy: Number(point.getAttribute('cy')),
+        hoverCy: Number(root.querySelector<SVGCircleElement>('.hover-dot')?.getAttribute('cy')),
+      };
+    });
+
+    expect(coordinates.hoverCy).toBeCloseTo(coordinates.targetCy);
+  });
+
+  test('Should keep the callout visible over a datapoint and focus it when clicked', async ({ page }) => {
+    const element = page.locator('fluent-area-chart');
+    const firstPoint = element.locator('.data-point-focus-target').first();
+    const bounds = await firstPoint.boundingBox();
+
+    expect(bounds).not.toBeNull();
+    await page.mouse.move(bounds!.x + bounds!.width + 4, bounds!.y + bounds!.height / 2);
+    await expect(element.locator('.tooltip')).toBeVisible();
+    await page.mouse.move(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
+    await expect(element.locator('.tooltip')).toBeVisible();
+    await expect(element.locator('.hover-dot').first()).toBeVisible();
+    expect(
+      await element.evaluate(chart => {
+        const hoverLine = chart.shadowRoot!.querySelector('.hover-line')!;
+        const hoverDot = chart.shadowRoot!.querySelector('.hover-dot')!;
+        return Boolean(hoverLine.compareDocumentPosition(hoverDot) & Node.DOCUMENT_POSITION_FOLLOWING);
+      }),
+    ).toBe(true);
+
+    await page.mouse.click(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
+
+    await expect(firstPoint).toBeFocused();
+    await expect(firstPoint).toHaveAttribute('tabindex', '0');
   });
 
   test('Should wrap datapoint roving navigation at the ends of the list', async ({ page }) => {

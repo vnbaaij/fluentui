@@ -470,6 +470,7 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
     });
 
     const cornerRadius = this.roundCorners ? 3 : 0;
+    const focusableData: SVGElement[] = [];
 
     stacks.forEach((stack, stackIndex) => {
       const xCenter = getXCenter(stack);
@@ -556,6 +557,7 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
         rect.setAttribute('rx', String(cornerRadius));
         rect.setAttribute('ry', String(cornerRadius));
         rect.setAttribute('role', 'img');
+        rect.setAttribute('tabindex', focusableData.length === 0 ? '0' : '-1');
         rect.setAttribute(
           'aria-label',
           segment.callOutAccessibilityData?.ariaLabel ??
@@ -565,13 +567,13 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
           rect.setAttribute('stroke-width', String(this.strokeWidth));
           rect.setAttribute('stroke', color);
         }
-        rect.addEventListener('mouseenter', event => {
+        const showSegmentTooltip = (clientY: number) => {
           if (!this._shouldShowTooltip(segment.legend) || this.hideTooltip) {
             return;
           }
           this._currentTooltipDataPoint = this.isCalloutForStack ? stack : { ...segment, xAxisPoint: stack.xAxisPoint };
           const value = segment.yAxisCalloutData || formatNumberValue(segment.data, this.yAxisTickFormat, this.culture);
-          this._showBarSegmentTooltipAtY(event.clientY, x, 0, actualWidth, top, bottom, margins, svg, {
+          this._showBarSegmentTooltipAtY(clientY, x, 0, actualWidth, top, bottom, margins, svg, {
             legend: segment.legend,
             xValue: formatXAxisCalloutValue(this, segment.xAxisCalloutData, formatXAxisValue(this, stack.xAxisPoint)),
             yValue: value,
@@ -580,7 +582,8 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
               ? getStackTooltipEntries(stack)
               : getSingleTooltipEntry(segment.legend, color, value),
           });
-        });
+        };
+        rect.addEventListener('mouseenter', event => showSegmentTooltip(event.clientY));
         rect.addEventListener('mousemove', event => {
           if (!this._shouldShowTooltip(segment.legend) || this.hideTooltip) {
             return;
@@ -599,7 +602,24 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
                 ),
           });
         });
-        rect.addEventListener('click', () => segment.onClick?.());
+        rect.addEventListener('focus', () => {
+          this._focusRovingElement(focusableData, rect);
+          showSegmentTooltip(svg.getBoundingClientRect().top + margins.top + (top + bottom) / 2);
+        });
+        rect.addEventListener('blur', () => this._clearTooltip());
+        rect.addEventListener('click', () => {
+          this._focusRovingElement(focusableData, rect);
+          segment.onClick?.();
+        });
+        rect.addEventListener('keydown', (event: KeyboardEvent) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            segment.onClick?.();
+          } else {
+            this._rovingKeydown(focusableData, event);
+          }
+        });
+        focusableData.push(rect);
         plotGroup.appendChild(rect);
       });
 
@@ -753,7 +773,13 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
         markerHitArea.setAttribute('cy', String(cy));
         markerHitArea.setAttribute('r', '10');
         markerHitArea.setAttribute('fill', 'transparent');
-        markerHitArea.addEventListener('mouseenter', event => {
+        markerHitArea.setAttribute('role', 'img');
+        markerHitArea.setAttribute('tabindex', focusableData.length === 0 ? '0' : '-1');
+        markerHitArea.setAttribute(
+          'aria-label',
+          `${formatXAxisValue(this, point.xAxisPoint)}. ${legend}, ${point.entry.yAxisCalloutData || point.entry.y}.`,
+        );
+        const showLinePointTooltip = (clientY: number) => {
           this._activeLineMarkerXValue = String(point.xAxisPoint);
           this._syncLineMarkerVisibility();
           if (!this._shouldShowTooltip(legend) || this.hideTooltip) {
@@ -764,7 +790,7 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
             this.isCalloutForStack && pointStack ? pointStack : { ...point.entry, xAxisPoint: point.xAxisPoint };
           const value =
             point.entry.yAxisCalloutData || formatNumberValue(point.entry.y, this.yAxisTickFormat, this.culture);
-          this._showLinePointTooltipAtY(event.clientY, cx, cy, margins, svg, {
+          this._showLinePointTooltipAtY(clientY, cx, cy, margins, svg, {
             legend,
             xValue: formatXAxisValue(this, point.xAxisPoint),
             yValue: value,
@@ -774,7 +800,8 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
                 ? getStackTooltipEntries(pointStack)
                 : getSingleTooltipEntry(legend, lineColor, value),
           });
-        });
+        };
+        markerHitArea.addEventListener('mouseenter', event => showLinePointTooltip(event.clientY));
         markerHitArea.addEventListener('mousemove', event => {
           if (!this._shouldShowTooltip(legend) || this.hideTooltip) {
             return;
@@ -797,10 +824,33 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
           this._activeLineMarkerXValue = null;
           this._syncLineMarkerVisibility();
         });
-        markerHitArea.addEventListener('click', () => point.entry.onClick?.());
+        markerHitArea.addEventListener('focus', () => {
+          this._focusRovingElement(focusableData, markerHitArea);
+          showLinePointTooltip(svg.getBoundingClientRect().top + margins.top + cy);
+        });
+        markerHitArea.addEventListener('blur', () => {
+          this._activeLineMarkerXValue = null;
+          this._syncLineMarkerVisibility();
+          this._clearTooltip();
+        });
+        markerHitArea.addEventListener('click', () => {
+          this._focusRovingElement(focusableData, markerHitArea);
+          point.entry.onClick?.();
+        });
+        markerHitArea.addEventListener('keydown', (event: KeyboardEvent) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            point.entry.onClick?.();
+          } else {
+            this._rovingKeydown(focusableData, event);
+          }
+        });
+        focusableData.push(markerHitArea);
         plotGroup.appendChild(markerHitArea);
       });
     });
+
+    this._relocateFocusIfNeeded(focusableData);
 
     const axisRenderOptions = {
       svg,

@@ -258,6 +258,7 @@ export class SankeyChart extends ChartBase {
       path.addEventListener('focus', showLinkCallout);
       path.addEventListener('mouseleave', () => this._clearTooltip());
       path.addEventListener('blur', () => this._clearTooltip());
+      path.addEventListener('click', () => this._focusRovingElement(this._getRovingElements(), path));
       path.addEventListener('keydown', (event: KeyboardEvent) => {
         this._rovingKeydown(this._getRovingElements(), event);
       });
@@ -335,6 +336,7 @@ export class SankeyChart extends ChartBase {
       rect.addEventListener('focus', showNodeCallout);
       rect.addEventListener('mouseleave', () => this._clearTooltip());
       rect.addEventListener('blur', () => this._clearTooltip());
+      rect.addEventListener('click', () => this._focusRovingElement(this._getRovingElements(), rect));
       rect.addEventListener('keydown', (event: KeyboardEvent) => {
         this._rovingKeydown(this._getRovingElements(), event);
       });

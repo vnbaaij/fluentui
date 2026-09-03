@@ -934,6 +934,10 @@ export class LineChart extends CartesianChartBase {
     // (undocumented)
     protected _enableResizeObserver: boolean;
     // (undocumented)
+    eventAnnotationProps?: LineChartEventAnnotationProps;
+    // (undocumented)
+    protected eventAnnotationPropsChanged(): void;
+    // (undocumented)
     protected _getHostAriaLabel(): string;
     // (undocumented)
     isCalloutForStack: boolean;
@@ -975,6 +979,32 @@ export interface LineChartDataPoint {
 
 // @public (undocumented)
 export const LineChartDefinition: PartialFASTElementDefinition;
+
+// @public (undocumented)
+export interface LineChartEventAnnotation {
+    // (undocumented)
+    date: Date;
+    // (undocumented)
+    event: string;
+    // (undocumented)
+    onRenderCard?: () => HTMLElement | string;
+}
+
+// @public (undocumented)
+export interface LineChartEventAnnotationProps {
+    // (undocumented)
+    events: LineChartEventAnnotation[];
+    // (undocumented)
+    labelColor?: string;
+    // (undocumented)
+    labelHeight?: number;
+    // (undocumented)
+    labelWidth?: number;
+    // (undocumented)
+    mergedLabel: (count: number) => string;
+    // (undocumented)
+    strokeColor?: string;
+}
 
 // @public (undocumented)
 export interface LineChartSeries {

@@ -112,6 +112,8 @@ export type FluentCheckboxElement = HTMLElement & { checked: boolean };
 // Shared layout styles
 export const controlsRowStyle = 'display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;';
 export const sliderFieldStyle = 'min-width:220px;flex:1 1 220px;';
+export const sliderInputStyle = 'display:flex;align-items:center;gap:8px;';
+export const sliderValueStyle = 'min-width:4ch;font-variant-numeric:tabular-nums;';
 export const toggleFieldStyle = 'min-width:220px;';
 export const visuallyHiddenStyle =
   'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;';
@@ -135,21 +137,26 @@ export const createSliderField = (
   field.appendChild(label);
 
   const slider = document.createElement('fluent-slider') as FluentSliderElement;
-  slider.slot = 'input';
   slider.id = id;
   slider.setAttribute('min', `${min}`);
   slider.setAttribute('max', `${max}`);
   slider.value = `${value}`;
   slider.setAttribute('value', `${value}`);
-  field.appendChild(slider);
+  const inputRow = document.createElement('div');
+  inputRow.classList.add('slider-input');
+  inputRow.slot = 'input';
+  inputRow.setAttribute('style', sliderInputStyle);
 
-  const message = document.createElement('fluent-label');
-  message.slot = 'message';
-  message.textContent = `${value}`;
-  field.appendChild(message);
+  const valueOutput = document.createElement('output');
+  valueOutput.classList.add('slider-value');
+  valueOutput.setAttribute('for', id);
+  valueOutput.setAttribute('style', sliderValueStyle);
+  valueOutput.textContent = `${value}`;
+  inputRow.append(slider, valueOutput);
+  field.appendChild(inputRow);
 
   slider.addEventListener('change', () => {
-    message.textContent = slider.value;
+    valueOutput.textContent = slider.value;
     onChange(Number(slider.value));
   });
 
@@ -158,7 +165,7 @@ export const createSliderField = (
     setValue: (nextValue: number) => {
       slider.value = `${nextValue}`;
       slider.setAttribute('value', `${nextValue}`);
-      message.textContent = `${nextValue}`;
+      valueOutput.textContent = `${nextValue}`;
     },
   };
 };

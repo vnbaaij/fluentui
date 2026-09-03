@@ -573,13 +573,13 @@ export class GaugeChart extends ChartBase {
       path.addEventListener('blur', () => {
         this._clearGaugeTooltip();
       });
+      path.addEventListener('click', () => this._focusRovingElement(this._getRovingElements(), path));
       path.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           path.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         } else {
-          const focusables = [...this._segmentEls, ...(this._needle ? [this._needle] : [])] as SVGPathElement[];
-          this._rovingKeydown(focusables, e);
+          this._rovingKeydown(this._getRovingElements(), e);
         }
       });
     });
@@ -662,7 +662,7 @@ export class GaugeChart extends ChartBase {
         this.chartValueFormatTemplate,
       )}`,
     );
-    path.setAttribute('tabindex', '0');
+    path.setAttribute('tabindex', this._segmentEls.length === 0 ? '0' : '-1');
     path.classList.add('needle');
     gEl.appendChild(path);
     this._needle = path;
@@ -682,12 +682,16 @@ export class GaugeChart extends ChartBase {
     path.addEventListener('blur', () => {
       this._clearGaugeTooltip();
     });
+    path.addEventListener('click', () => this._focusRovingElement(this._getRovingElements(), path));
     path.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key !== 'Enter' && e.key !== ' ') {
-        const focusables = [this._needle!, ...this._segmentEls].filter(Boolean) as SVGPathElement[];
-        this._rovingKeydown(focusables, e);
+        this._rovingKeydown(this._getRovingElements(), e);
       }
     });
+  }
+
+  private _getRovingElements(): SVGPathElement[] {
+    return [...this._segmentEls, ...(this._needle ? [this._needle] : [])];
   }
 
   private _renderValueText(innerRadius: number, fontSize: number) {

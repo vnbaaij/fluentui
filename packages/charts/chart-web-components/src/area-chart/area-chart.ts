@@ -483,7 +483,7 @@ export class AreaChart extends CartesianChartBase {
     const calloutPointsByX = new Map<number, CalloutPoint>();
     normalizedSeries.forEach((series, si) => {
       const layer = stackedLayers[si];
-      series.data.forEach((point, di) => {
+      series.data.forEach(point => {
         const key = point.x instanceof Date ? point.x.getTime() : Number(point.x);
         if (!calloutPointsByX.has(key)) {
           calloutPointsByX.set(key, {
@@ -494,7 +494,13 @@ export class AreaChart extends CartesianChartBase {
           });
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const stackedY1 = (layer[di] as any)?.[1] ?? point.y;
+        const xKey = String(point.x instanceof Date ? point.x.getTime() : point.x);
+        const stackPoint = layer.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (entry: any) =>
+            String(entry.data.xVal instanceof Date ? entry.data.xVal.getTime() : entry.data.xVal) === xKey,
+        );
+        const stackedY1 = stackPoint?.[1] ?? point.y;
         // Store at series index so sparse datasets don't misalign entries.
         calloutPointsByX.get(key)!.entries[si] = {
           legend: series.legend,
@@ -583,6 +589,11 @@ export class AreaChart extends CartesianChartBase {
     hoverLine.style.display = 'none';
     svg.appendChild(hoverLine);
 
+    const hoverDotLayer = createSvgElement<SVGGElement>('g');
+    hoverDotLayer.classList.add('hover-dot-layer');
+    hoverDotLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+    svg.appendChild(hoverDotLayer);
+
     const hoverDots = normalizedSeries.map(series => {
       const dot = createSvgElement<SVGCircleElement>('circle');
       dot.classList.add('hover-dot');
@@ -591,11 +602,62 @@ export class AreaChart extends CartesianChartBase {
       dot.setAttribute('stroke', series.color);
       dot.setAttribute('stroke-width', '2');
       dot.style.display = 'none';
-      plotGroup.appendChild(dot);
+      hoverDotLayer.appendChild(dot);
       return dot;
     });
 
     const focusablePoints: SVGCircleElement[] = [];
+    const focusLayer = createSvgElement<SVGGElement>('g');
+    focusLayer.classList.add('data-point-focus-layer');
+    focusLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+
+    const updateCalloutMarkers = (found: CalloutPoint, cx: number) => {
+      const svgX = margins.left + cx;
+      hoverLine.setAttribute('x1', String(svgX));
+      hoverLine.setAttribute('x2', String(svgX));
+      hoverLine.style.display = '';
+
+      let topY = innerHeight;
+      const markerEntries: Array<TooltipEntry & { cy: number }> = [];
+      normalizedSeries.forEach((series, seriesIndex) => {
+        const entry = found.entries[seriesIndex];
+        const active = entry && this._shouldShowTooltip(series.legend);
+        if (active) {
+          const dotScale = entry.isSecondaryY ? yScaleSecondary : yScale;
+          const cy = dotScale(entry.stackedY1);
+          hoverDots[seriesIndex].setAttribute('cx', String(cx));
+          hoverDots[seriesIndex].setAttribute('cy', String(cy));
+          hoverDots[seriesIndex].style.display = '';
+          topY = Math.min(topY, cy);
+          markerEntries.push({
+            legend: series.legend,
+            color: series.color,
+            value: entry.value,
+            callOutAriaLabel: entry.callOutAriaLabel,
+            cy,
+          });
+        } else {
+          hoverDots[seriesIndex].style.display = 'none';
+        }
+      });
+
+      plotGroup.querySelectorAll<SVGPathElement>('.area-line').forEach(path => path.classList.add('hovered'));
+
+      return {
+        topY,
+        entries: markerEntries
+          .sort((left, right) => left.cy - right.cy)
+          .map(({ cy: _cy, ...tooltipEntry }) => tooltipEntry),
+      };
+    };
+
+    const clearCalloutMarkers = () => {
+      hoverLine.style.display = 'none';
+      hoverDots.forEach(dot => {
+        dot.style.display = 'none';
+      });
+      plotGroup.querySelectorAll<SVGPathElement>('.area-line').forEach(path => path.classList.remove('hovered'));
+    };
 
     const showPointTooltip = (
       event: FocusEvent,
@@ -603,14 +665,24 @@ export class AreaChart extends CartesianChartBase {
       point: NormalizedPoint,
       element: SVGCircleElement,
     ): void => {
-      if (this.hideTooltip) {
-        return;
-      }
-
       const hostRect = this.getBoundingClientRect();
       const targetRect = element.getBoundingClientRect();
       const anchorX = targetRect.left - hostRect.left + targetRect.width / 2;
-      const anchorY = targetRect.top - hostRect.top + targetRect.height / 2;
+      const key = point.x instanceof Date ? point.x.getTime() : Number(point.x);
+      const calloutPoint = calloutPointsByX.get(key);
+      if (!calloutPoint) {
+        return;
+      }
+
+      const cx = xScale(point.x as never) ?? 0;
+      const { entries, topY } = updateCalloutMarkers(calloutPoint, cx);
+
+      if (this.hideTooltip || entries.length === 0) {
+        return;
+      }
+
+      const svgRect = svg.getBoundingClientRect();
+      const anchorY = svgRect.top - hostRect.top + margins.top + topY;
       const value = point.yAxisCalloutData || formatNumberValue(point.y, this.yAxisTickFormat, this.culture);
 
       element.setAttribute('fill', '#fff');
@@ -618,22 +690,18 @@ export class AreaChart extends CartesianChartBase {
       element.setAttribute('stroke-width', '2');
 
       const isFreshShow = !this.tooltipProps.isVisible;
-      this._currentTooltipDataPoint = { legend: series.legend, x: point.x, y: point.y };
+      this._currentTooltipDataPoint =
+        entries.length > 1
+          ? { xLabel: calloutPoint?.xLabel ?? point.xLabel, entries }
+          : { legend: series.legend, ...point };
       this.tooltipProps = {
         isVisible: true,
-        legend: series.legend,
-        yValue: value,
-        color: series.color,
-        xLabel: point.xLabel,
-        xAxisAriaLabel: point.xAxisCalloutAccessibilityData?.ariaLabel,
-        entries: [
-          {
-            legend: series.legend,
-            color: series.color,
-            value,
-            callOutAriaLabel: point.callOutAccessibilityData?.ariaLabel,
-          },
-        ],
+        legend: entries[0]?.legend ?? series.legend,
+        yValue: entries[0]?.value ?? value,
+        color: entries[0]?.color ?? series.color,
+        xLabel: calloutPoint?.xLabel ?? point.xLabel,
+        xAxisAriaLabel: calloutPoint?.xAxisAriaLabel ?? point.xAxisCalloutAccessibilityData?.ariaLabel,
+        entries,
         xPos: anchorX,
         yPos: anchorY,
       };
@@ -751,44 +819,7 @@ export class AreaChart extends CartesianChartBase {
 
       const cx = xScale(nearestDataPoint.xVal as never) ?? 0;
 
-      // Position the vertical intercept line.
-      const svgX = margins.left + cx;
-      hoverLine.setAttribute('x1', String(svgX));
-      hoverLine.setAttribute('x2', String(svgX));
-      hoverLine.style.display = '';
-
-      // Position hover dots at the top of each stacked layer; collect tooltip entries.
-      let topY = innerHeight;
-      const hoverEntries: Array<TooltipEntry & { cy: number }> = [];
-      normalizedSeries.forEach((series, si) => {
-        const entry = found.entries[si];
-        const active = entry && this._shouldShowTooltip(series.legend);
-        if (active) {
-          const dotScale = entry.isSecondaryY ? yScaleSecondary : yScale;
-          const cy = dotScale(entry.stackedY1);
-          hoverDots[si].setAttribute('cx', String(cx));
-          hoverDots[si].setAttribute('cy', String(cy));
-          hoverDots[si].style.display = '';
-          topY = Math.min(topY, cy);
-          hoverEntries.push({
-            legend: series.legend,
-            color: series.color,
-            value: entry.value,
-            callOutAriaLabel: entry.callOutAriaLabel,
-            cy,
-          });
-        } else {
-          hoverDots[si].style.display = 'none';
-        }
-      });
-
-      // Keep tooltip rows aligned with visual stack order: top-most series first.
-      const entries: TooltipEntry[] = hoverEntries
-        .sort((left, right) => left.cy - right.cy)
-        .map(({ cy: _cy, ...tooltipEntry }) => tooltipEntry);
-
-      // Apply .hovered class to series line paths.
-      plotGroup.querySelectorAll<SVGPathElement>('.area-line').forEach(p => p.classList.add('hovered'));
+      const { entries, topY } = updateCalloutMarkers(found, cx);
 
       if (!this.hideTooltip && entries.length > 0) {
         const hostRect = this.getBoundingClientRect();
@@ -814,17 +845,13 @@ export class AreaChart extends CartesianChartBase {
       }
     };
 
-    const onOverlayMouseLeave = () => {
-      hoverLine.style.display = 'none';
-      hoverDots.forEach(dot => {
-        dot.style.display = 'none';
-      });
-      plotGroup.querySelectorAll<SVGPathElement>('.area-line').forEach(p => p.classList.remove('hovered'));
+    const onChartMouseLeave = () => {
+      clearCalloutMarkers();
       this._clearTooltip();
     };
 
     overlay.addEventListener('mousemove', onOverlayMouseMove);
-    overlay.addEventListener('mouseleave', onOverlayMouseLeave);
+    svg.addEventListener('mouseleave', onChartMouseLeave);
 
     normalizedSeries.forEach(series => {
       series.data.forEach(point => {
@@ -845,7 +872,9 @@ export class AreaChart extends CartesianChartBase {
         pointCircle.setAttribute('data-x-key', String(point.x instanceof Date ? point.x.getTime() : point.x));
         pointCircle.setAttribute('data-cy', String(point.cy));
         pointCircle.setAttribute('tabindex', focusablePoints.length === 0 ? '0' : '-1');
-        pointCircle.setAttribute('pointer-events', 'none');
+        pointCircle.setAttribute('pointer-events', 'all');
+        pointCircle.addEventListener('mouseenter', onOverlayMouseMove);
+        pointCircle.addEventListener('mousemove', onOverlayMouseMove);
         pointCircle.addEventListener('focus', event => {
           focusablePoints.forEach(pointEl => {
             pointEl.tabIndex = pointEl === pointCircle ? 0 : -1;
@@ -861,15 +890,15 @@ export class AreaChart extends CartesianChartBase {
           pointCircle.setAttribute('fill', 'transparent');
           pointCircle.setAttribute('stroke', 'transparent');
           pointCircle.setAttribute('stroke-width', '0');
+          clearCalloutMarkers();
           this._clearTooltip();
         });
         pointCircle.addEventListener('keydown', pointKeydown);
+        pointCircle.addEventListener('click', () => this._focusRovingElement(focusablePoints, pointCircle));
         focusablePoints.push(pointCircle);
-        plotGroup.appendChild(pointCircle);
+        focusLayer.appendChild(pointCircle);
       });
     });
-
-    this._relocateFocusIfNeeded(focusablePoints);
 
     renderBottomAxisShared({
       svg,
@@ -954,6 +983,9 @@ export class AreaChart extends CartesianChartBase {
       mapDataX: value => xScale((isDateAxis ? new Date(value) : Number(value)) as never),
       mapDataY: (value, axis) => (axis === 'secondary' ? yScaleSecondary : yScale)(Number(value)),
     });
+
+    svg.appendChild(focusLayer);
+    this._relocateFocusIfNeeded(focusablePoints);
 
     this.chartContainer.appendChild(svg);
     this.legends = normalizedSeries.map(series => ({ legend: series.legend, color: series.color }));

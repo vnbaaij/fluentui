@@ -412,7 +412,13 @@ export class GroupedVerticalBarChart extends VerticalBarChartBase {
         rect.addEventListener('mouseleave', () => this._clearTooltip());
         rect.addEventListener('focus', () => showTooltip());
         rect.addEventListener('blur', () => this._clearTooltip());
-        rect.addEventListener('click', () => point.onClick?.());
+        rect.addEventListener('click', () => {
+          this._focusRovingElement(
+            this._renderedBars.map(bar => bar.element),
+            rect,
+          );
+          point.onClick?.();
+        });
         rect.addEventListener('keydown', (event: KeyboardEvent) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();

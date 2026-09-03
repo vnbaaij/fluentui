@@ -578,7 +578,13 @@ export class VerticalBarChart extends VerticalBarChartBase {
         showBarTooltip(point, legend, tooltipLegend, xValueLabel, xCenter, color, barTop, barBottom),
       );
       rect.addEventListener('blur', () => this._clearTooltip());
-      rect.addEventListener('click', () => point.onClick?.());
+      rect.addEventListener('click', () => {
+        this._focusRovingElement(
+          this._renderedBars.map(bar => bar.element),
+          rect,
+        );
+        point.onClick?.();
+      });
       rect.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();

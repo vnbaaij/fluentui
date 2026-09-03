@@ -40,6 +40,23 @@ export interface LineChartColorFillBar {
 }
 
 /** @public */
+export interface LineChartEventAnnotation {
+  /** @public */ date: Date;
+  /** @public */ event: string;
+  /** @public */ onRenderCard?: () => HTMLElement | string;
+}
+
+/** @public */
+export interface LineChartEventAnnotationProps {
+  /** @public */ events: LineChartEventAnnotation[];
+  /** @public */ strokeColor?: string;
+  /** @public */ labelColor?: string;
+  /** @public */ labelHeight?: number;
+  /** @public */ labelWidth?: number;
+  /** @public */ mergedLabel: (count: number) => string;
+}
+
+/** @public */
 export interface LineChartSeries {
   /** @public */ legend: string;
   /** @public */ data: LineChartDataPoint[];

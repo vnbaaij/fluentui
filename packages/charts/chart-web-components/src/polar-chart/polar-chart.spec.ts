@@ -55,6 +55,16 @@ test.describe('PolarChart', () => {
       .locator('.chart')
       .evaluate(svg => [...svg.children].map(child => child.getAttribute('class')));
     expect(paintOrder).toEqual(['polar-series-layer', 'polar-axis-layer', 'polar-marker-layer']);
+    expect(
+      await element.evaluate(chart => {
+        const root = chart.shadowRoot!;
+        return Boolean(
+          root
+            .querySelector('.polar-callout-guide')!
+            .compareDocumentPosition(root.querySelector('.polar-marker.active')!) & Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      }),
+    ).toBe(true);
   });
 
   test('Should apply shape, direction, hole, and axis options', async ({ page }) => {

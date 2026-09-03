@@ -35,6 +35,54 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Should support roving keyboard focus and promote a clicked segment', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    const bars = element.locator('.bar');
+
+    await expect(bars.first()).toHaveAttribute('tabindex', '0');
+    await expect(bars.nth(1)).toHaveAttribute('tabindex', '-1');
+    await bars.first().focus();
+    await expect(element.locator('.tooltip')).toBeVisible();
+    await bars.first().press('ArrowRight');
+    await expect(bars.nth(1)).toBeFocused();
+    await expect(bars.nth(1)).toHaveAttribute('tabindex', '0');
+
+    await bars.nth(2).click();
+    await expect(bars.nth(2)).toBeFocused();
+    await expect(bars.nth(2)).toHaveAttribute('tabindex', '0');
+    await expect(bars.nth(1)).toHaveAttribute('tabindex', '-1');
+  });
+
+  test('Should include line points in the bar roving loop and promote a clicked point', async ({ page }) => {
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await element.evaluate(chart => {
+      const verticalStackedBarChart = chart as HTMLElement & { data: VerticalStackedBarChartProps[] };
+      verticalStackedBarChart.data = verticalStackedBarChart.data.map((stack, index) => ({
+        ...stack,
+        lineData: [{ legend: 'Trend', y: index === 0 ? 45 : 60, color: '#498205' }],
+      }));
+    });
+
+    const bars = element.locator('.bar');
+    const linePoints = element.locator('.line-marker-hit-area');
+    await expect(linePoints).toHaveCount(2);
+    await expect(linePoints.first()).toHaveAttribute('tabindex', '-1');
+
+    await bars.last().focus();
+    await bars.last().press('ArrowRight');
+    await expect(linePoints.first()).toBeFocused();
+    await expect(linePoints.first()).toHaveAttribute('tabindex', '0');
+
+    await linePoints.nth(1).click();
+    await expect(linePoints.nth(1)).toBeFocused();
+    await expect(linePoints.nth(1)).toHaveAttribute('tabindex', '0');
+    await expect(bars.first()).toHaveAttribute('tabindex', '-1');
+
+    await linePoints.nth(1).press('ArrowRight');
+    await expect(bars.first()).toBeFocused();
+    await expect(bars.first()).toHaveAttribute('tabindex', '0');
+  });
+
   test('Should reverse x-axis data order in RTL', async ({ page }) => {
     await page.setContent(/* html */ `
       <div dir="rtl">
@@ -401,7 +449,7 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(actionRow).toContainText('Change data');
 
     const dataSizeSlider = page.locator('#vsbar-axis-order-size');
-    const dataSizeMessage = page.locator('fluent-field:has(#vsbar-axis-order-size) fluent-label[slot="message"]');
+    const dataSizeMessage = page.locator('#vsbar-axis-order-size + output');
     await dataSizeSlider.evaluate(slider => {
       (slider as HTMLElement & { value: string }).value = '12';
       slider.dispatchEvent(new Event('change', { bubbles: true }));

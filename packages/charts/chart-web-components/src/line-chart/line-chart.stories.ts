@@ -229,33 +229,6 @@ const addMultipleShapesControl = (controls: HTMLElement, chart: LineChart, id: s
   );
 };
 
-const placeSliderValuesAfterControls = (controls: HTMLElement, classPrefix = 'line-multiple') => {
-  controls.querySelectorAll('fluent-field').forEach(field => {
-    const slider = field.querySelector('fluent-slider');
-    const value = field.querySelector<HTMLElement>('[slot="message"]');
-    if (!slider || !value) {
-      return;
-    }
-
-    const inputRow = document.createElement('div');
-    inputRow.classList.add(`${classPrefix}-slider-input`);
-    inputRow.slot = 'input';
-    inputRow.setAttribute('style', 'display:flex;align-items:center;gap:8px;');
-    const inlineValue = document.createElement('output');
-    inlineValue.classList.add(`${classPrefix}-slider-value`);
-    inlineValue.setAttribute('for', slider.id);
-    inlineValue.setAttribute('style', 'min-width:4ch;font-variant-numeric:tabular-nums;');
-    inlineValue.textContent = value.textContent;
-    slider.addEventListener('change', () => {
-      inlineValue.textContent = (slider as HTMLElement & { value: string }).value;
-    });
-    slider.removeAttribute('slot');
-    value.remove();
-    inputRow.append(slider, inlineValue);
-    field.appendChild(inputRow);
-  });
-};
-
 export const Multiple: Story<LineChart> = () => {
   const dates = Array.from({ length: 7 }, (_, index) => new Date(2018, index, 1));
   const names = [
@@ -287,7 +260,6 @@ export const Multiple: Story<LineChart> = () => {
   const { container, controls, chart } = createLineStory('line-multiple', data);
   container.setAttribute('style', 'display:flex;flex-direction:column;gap:16px;align-items:stretch;');
   controls.classList.add('line-multiple-size-controls');
-  placeSliderValuesAfterControls(controls);
   chart.tickFormat = '%m/%d';
   chart.tickValues = dates;
   chart.colorFillBars = [
@@ -379,7 +351,6 @@ export const CustomLocaleDateAxis: Story<LineChart> = () => {
   const { container, controls, chart } = createLineStory('line-locale', data);
   container.setAttribute('style', 'display:flex;flex-direction:column;gap:16px;align-items:stretch;');
   controls.classList.add('line-locale-size-controls');
-  placeSliderValuesAfterControls(controls, 'line-locale');
   const cultures = ['it-IT', 'en-US', 'de-DE', 'fr-FR', 'nl-NL', 'ja-JP', 'ar-SA'];
   chart.culture = cultures[0];
   chart.dateLocalizeOptions = { month: 'short', year: 'numeric' };
@@ -408,36 +379,69 @@ export const Events: Story<LineChart> = () => {
     {
       legend: 'From_Legacy_to_O365',
       color: 'qualitative.8',
+      lineOptions: { lineBorderWidth: 4 },
       data: dates.map((x, i) => ({ x, y: [297, 284, 282, 294, 294, 300, 298][i] })),
     },
     {
       legend: 'All',
       color: 'qualitative.10',
+      lineOptions: { lineBorderWidth: 4 },
       data: dates.map((x, i) => ({ x, y: [292, 287, 287, 292, 287, 297, 292][i] })),
     },
   ];
   const { container, controls, chart } = createLineStory('line-events', data);
+  container.setAttribute('style', 'display:flex;flex-direction:column;gap:16px;align-items:stretch;');
+  controls.classList.add('line-events-size-controls');
   chart.useUTC = true;
   chart.tickFormat = '%m/%d';
   chart.tickValues = dates;
   chart.yAxisTickFormat = '$,';
-  chart.annotations = [
-    { id: 'events-1', text: '3 events', coordinates: { type: 'data', x: dates[1], y: 284 }, layout: { offsetY: 28 } },
-    { id: 'events-2', text: 'event 4', coordinates: { type: 'data', x: dates[3], y: 294 }, layout: { offsetY: -20 } },
-    { id: 'events-3', text: 'event 5', coordinates: { type: 'data', x: dates[5], y: 300 }, layout: { offsetY: 28 } },
-  ];
+  chart.yMinValue = 282;
+  chart.yMaxValue = 301;
+  chart.eventAnnotationProps = {
+    events: [
+      { event: 'event 1', date: dates[1], onRenderCard: () => 'event 1 message' },
+      { event: 'event 2', date: dates[1], onRenderCard: () => 'event 2 message' },
+      { event: 'event 3', date: dates[1], onRenderCard: () => 'event 3 message' },
+      { event: 'event 4', date: dates[3], onRenderCard: () => 'event 4 message' },
+      { event: 'event 5', date: dates[5], onRenderCard: () => 'event 5 message' },
+    ],
+    labelHeight: 18,
+    labelWidth: 50,
+    mergedLabel: count => `${count} events`,
+  };
+
+  const shapeControls = document.createElement('div');
+  shapeControls.classList.add('line-events-shape-controls');
+  shapeControls.setAttribute('style', controlsRowStyle);
+  addMultipleShapesControl(shapeControls, chart, 'line-events-shapes');
+  container.insertBefore(shapeControls, chart);
+
+  const colorControls = document.createElement('div');
+  colorControls.classList.add('line-events-color-controls');
+  colorControls.setAttribute('style', controlsRowStyle);
+  const colorField = document.createElement('fluent-field');
+  colorField.setAttribute('label-position', 'above');
+  const colorLabel = document.createElement('label');
+  colorLabel.slot = 'label';
+  colorLabel.htmlFor = 'line-events-color';
+  colorLabel.textContent = 'Use Custom Color for Event Annotation';
   const color = document.createElement('input');
   color.type = 'color';
+  color.id = 'line-events-color';
+  color.slot = 'input';
   color.value = '#616161';
   color.setAttribute('aria-label', 'Event annotation color');
   color.addEventListener('input', () => {
-    chart.annotations = chart.annotations?.map(annotation => ({
-      ...annotation,
-      style: { ...annotation.style, textColor: color.value },
-      connector: { ...annotation.connector, strokeColor: color.value },
-    }));
+    chart.eventAnnotationProps = {
+      ...chart.eventAnnotationProps!,
+      strokeColor: color.value,
+      labelColor: color.value,
+    };
   });
-  controls.appendChild(color);
+  colorField.append(colorLabel, color);
+  colorControls.appendChild(colorField);
+  container.insertBefore(colorControls, chart);
   return container;
 };
 Events.storyName = 'Events';

@@ -6,6 +6,8 @@ export type {
   LineChartColorFillBar,
   LineChartColorFillBarData,
   LineChartDataPoint,
+  LineChartEventAnnotation,
+  LineChartEventAnnotationProps,
   LineChartGap,
   LineChartLineOptions,
   LineChartSeries,

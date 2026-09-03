@@ -167,6 +167,17 @@ test.describe('VerticalBarChart', () => {
     await expect(bars.nth(1)).toHaveAttribute('tabindex', '-1');
   });
 
+  test('Should promote a clicked bar to the active roving tab stop', async ({ page }) => {
+    const element = page.locator('fluent-vertical-bar-chart');
+    const bars = element.locator('.bar');
+
+    await bars.nth(2).click();
+
+    await expect(bars.nth(2)).toBeFocused();
+    await expect(bars.nth(2)).toHaveAttribute('tabindex', '0');
+    await expect(bars.first()).toHaveAttribute('tabindex', '-1');
+  });
+
   test('Should respect categorical x-axis inner and outer padding attributes', async ({ page }) => {
     await page.setContent(/* html */ `
       <fluent-vertical-bar-chart

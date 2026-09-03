@@ -870,6 +870,14 @@ export abstract class ChartBase extends FASTElement {
     (elements[nextIndex] as HTMLElement).focus();
   }
 
+  /** Promotes a pointer-selected element to the active member of a roving tabindex group. */
+  protected _focusRovingElement(elements: HTMLOrSVGElement[], target: HTMLOrSVGElement): void {
+    elements.forEach(element => {
+      element.tabIndex = element === target ? 0 : -1;
+    });
+    target.focus();
+  }
+
   /**
    * If one of the `candidates` data elements currently has focus but has just been
    * set to tabIndex -1 (i.e. it became inactive), move focus to the first candidate

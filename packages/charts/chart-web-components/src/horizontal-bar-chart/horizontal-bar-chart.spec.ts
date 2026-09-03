@@ -314,6 +314,24 @@ test.describe('horizontalbarchart - Basic', () => {
     await expect(page.getByText('Unmonitored')).toBeVisible();
   });
 
+  test('Should use one roving tab stop and promote a clicked bar', async ({ page }) => {
+    const element = page.locator('fluent-horizontal-bar-chart');
+    const bars = element.locator('.bar');
+
+    await expect(bars).toHaveCount(12);
+    await expect(bars.first()).toHaveAttribute('tabindex', '0');
+    expect(await bars.evaluateAll(elements => elements.filter(element => element.tabIndex === 0).length)).toBe(1);
+
+    await bars.nth(6).click();
+    await expect(bars.nth(6)).toBeFocused();
+    await expect(bars.nth(6)).toHaveAttribute('tabindex', '0');
+    await expect(bars.first()).toHaveAttribute('tabindex', '-1');
+
+    await bars.nth(6).press('ArrowRight');
+    await expect(bars.nth(7)).toBeFocused();
+    await expect(bars.nth(7)).toHaveAttribute('tabindex', '0');
+  });
+
   test('Should render legends data properly', async ({ page }) => {
     const element = page.locator('fluent-horizontal-bar-chart');
     const legends = element.locator('.legend');

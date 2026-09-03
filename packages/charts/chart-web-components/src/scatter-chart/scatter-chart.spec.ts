@@ -35,6 +35,23 @@ test.describe('ScatterChart', () => {
     await expect(element.locator('.scatter-point')).toHaveCount(6);
   });
 
+  test('Should support roving keyboard focus and promote a clicked point', async ({ page }) => {
+    const element = page.locator('fluent-scatter-chart');
+    const points = element.locator('.scatter-point');
+
+    await expect(points.first()).toHaveAttribute('tabindex', '0');
+    await expect(points.nth(1)).toHaveAttribute('tabindex', '-1');
+    await points.nth(1).click();
+    await expect(points.nth(1)).toBeFocused();
+    await expect(points.nth(1)).toHaveAttribute('tabindex', '0');
+    await expect(points.first()).toHaveAttribute('tabindex', '-1');
+    await expect(element.locator('.tooltip')).toBeVisible();
+
+    await points.nth(1).press('ArrowRight');
+    await expect(points.nth(4)).toBeFocused();
+    await expect(points.nth(4)).toHaveAttribute('tabindex', '0');
+  });
+
   test('Should preserve continuous marker sizes when they fit the available plot padding', async ({ page }) => {
     const element = page.locator('fluent-scatter-chart');
     await element.evaluate(chart => {
@@ -104,6 +121,15 @@ test.describe('ScatterChart', () => {
     await expect(guideline).toHaveAttribute('x2', String(geometry[0]));
     await expect(guideline).toHaveAttribute('y1', String(geometry[1] + geometry[2]));
     expect(Number(await guideline.getAttribute('y2'))).toBeGreaterThan(geometry[1]);
+    expect(
+      await element.evaluate(chart => {
+        const root = chart.shadowRoot!;
+        return Boolean(
+          root.querySelector('.hover-line')!.compareDocumentPosition(root.querySelector('.scatter-point.active')!) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      }),
+    ).toBe(true);
 
     await expect
       .poll(async () => {

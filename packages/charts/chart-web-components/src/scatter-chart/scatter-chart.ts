@@ -399,6 +399,29 @@ export class ScatterChart extends CartesianChartBase {
     const getXKey = (value: XValue): string =>
       value instanceof Date ? `date:${value.getTime()}` : `${typeof value}:${value}`;
 
+    const pointKeydown = (event: KeyboardEvent): void => {
+      const currentTarget = event.currentTarget as SVGCircleElement | null;
+      if (!currentTarget) {
+        return;
+      }
+
+      let orderedPoints = renderedPoints
+        .map(point => point.circle)
+        .sort(
+          (left, right) =>
+            Number(left.getAttribute('cx')) - Number(right.getAttribute('cx')) ||
+            Number(left.getAttribute('cy')) - Number(right.getAttribute('cy')),
+        );
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        const xKey = currentTarget.dataset.xKey;
+        orderedPoints = renderedPoints
+          .filter(point => getXKey(point.x) === xKey)
+          .sort((left, right) => Number(left.circle.getAttribute('cy')) - Number(right.circle.getAttribute('cy')))
+          .map(point => point.circle);
+      }
+      this._rovingKeydown(orderedPoints, event);
+    };
+
     normalizedSeries.forEach(series => {
       series.data.forEach(point => {
         const circle = createSvgElement<SVGCircleElement>('circle');
@@ -416,6 +439,10 @@ export class ScatterChart extends CartesianChartBase {
         circle.setAttribute('r', String(markerRadius));
         circle.setAttribute('fill', series.color);
         circle.setAttribute('stroke', series.color);
+        circle.setAttribute('role', 'img');
+        circle.setAttribute('aria-label', `${point.xLabel}, ${series.legend}, ${point.yLabel}.`);
+        circle.setAttribute('tabindex', renderedPoints.length === 0 ? '0' : '-1');
+        circle.dataset.xKey = getXKey(point.x);
         circle.dataset.color = series.color;
         const renderedPoint = {
           circle,
@@ -428,7 +455,7 @@ export class ScatterChart extends CartesianChartBase {
           markerRadius,
         };
         renderedPoints.push(renderedPoint);
-        circle.addEventListener('mouseenter', () => {
+        const showTooltip = () => {
           if (!this._shouldShowTooltip(series.legend) || this.hideTooltip) {
             return;
           }
@@ -478,11 +505,23 @@ export class ScatterChart extends CartesianChartBase {
             true,
             { horizontalPlacement: 'side', gap: 15 },
           );
-        });
+        };
+        circle.addEventListener('mouseenter', showTooltip);
+        circle.addEventListener('focus', showTooltip);
         circle.addEventListener('mouseleave', clearHoverState);
+        circle.addEventListener('blur', clearHoverState);
+        circle.addEventListener('click', () =>
+          this._focusRovingElement(
+            renderedPoints.map(renderedPoint => renderedPoint.circle),
+            circle,
+          ),
+        );
+        circle.addEventListener('keydown', pointKeydown);
         plotGroup.appendChild(circle);
       });
     });
+
+    this._relocateFocusIfNeeded(renderedPoints.map(point => point.circle));
 
     renderBottomAxisShared({
       svg,

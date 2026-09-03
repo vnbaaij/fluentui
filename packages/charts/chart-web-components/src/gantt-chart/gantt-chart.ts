@@ -452,7 +452,13 @@ export class GanttChart extends CartesianChartBase {
         rect.addEventListener('mouseout', () => this._clearTooltip());
         rect.addEventListener('focus', event => this._showTooltip(point, color, event, rect));
         rect.addEventListener('blur', () => this._clearTooltip());
-        rect.addEventListener('click', () => point.onClick?.());
+        rect.addEventListener('click', () => {
+          this._focusRovingElement(
+            this._renderedBars.map(bar => bar.element),
+            rect,
+          );
+          point.onClick?.();
+        });
         rect.addEventListener('keydown', (e: KeyboardEvent) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();

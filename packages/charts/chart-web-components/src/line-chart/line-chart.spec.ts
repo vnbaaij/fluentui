@@ -54,6 +54,15 @@ test.describe('LineChart', () => {
     await expect(element.locator('.hover-dot:visible')).toHaveCount(1);
     const hoverLine = element.locator('.hover-line');
     await expect(hoverLine).not.toHaveCSS('display', 'none');
+    expect(
+      await element.evaluate(chart => {
+        const root = chart.shadowRoot!;
+        return Boolean(
+          root.querySelector('.hover-line')!.compareDocumentPosition(root.querySelector('.single-hover-dot')!) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      }),
+    ).toBe(true);
     await expect
       .poll(() =>
         element.evaluate(chart => {
@@ -71,6 +80,9 @@ test.describe('LineChart', () => {
       .toBe(true);
 
     await markers.nth(1).dispatchEvent('mouseleave');
+    await expect(hoverDot).toBeVisible();
+    await expect(hoverLine).not.toHaveCSS('display', 'none');
+    await element.locator('svg').dispatchEvent('mouseleave');
     await expect(hoverDot).toBeHidden();
     await expect(hoverLine).toHaveCSS('display', 'none');
 
@@ -217,6 +229,18 @@ test.describe('LineChart', () => {
     expect(
       await element.evaluate(chart => {
         const root = chart.shadowRoot!;
+        const visibleHoverDot = Array.from(root.querySelectorAll<SVGElement>('.hover-dot')).find(
+          dot => dot.style.display !== 'none',
+        )!;
+        return Boolean(
+          root.querySelector('.hover-line')!.compareDocumentPosition(visibleHoverDot) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      }),
+    ).toBe(true);
+    expect(
+      await element.evaluate(chart => {
+        const root = chart.shadowRoot!;
         const lineEnd = Number(root.querySelector('.hover-line')!.getAttribute('y2'));
         const axisTransform = root.querySelector('.x-axis')!.getAttribute('transform') ?? '';
         return { lineEnd, axisY: Number(axisTransform.match(/,\s*([\d.]+)\)/)?.[1]) };
@@ -245,7 +269,7 @@ test.describe('LineChart', () => {
     const stories = [
       { id: 'multiple', selector: '.line-path', count: 12 },
       { id: 'custom-locale-date-axis', selector: '.line-path', count: 2 },
-      { id: 'events', selector: '.chart-annotation', count: 3 },
+      { id: 'events', selector: '.event-annotation-line', count: 3 },
       { id: 'gaps', selector: '.line-path[data-legend="Normal Data"]', count: 4 },
       { id: 'large-data', selector: '.line-path', count: 3 },
       { id: 'negative', selector: '.line-path', count: 3 },
@@ -259,20 +283,21 @@ test.describe('LineChart', () => {
       await page.goto(fixtureURL(`components-linechart--${story.id}`));
       const element = page.locator('fluent-line-chart');
       await expect(element.locator(story.selector)).toHaveCount(story.count);
+      await expect(page.locator('fluent-slider + output')).toHaveCount(2);
+      expect(
+        await page.locator('.slider-input').evaluateAll(inputRows =>
+          inputRows.every(inputRow => {
+            const sliderBounds = inputRow.querySelector('fluent-slider')!.getBoundingClientRect();
+            const valueBounds = inputRow.querySelector('output')!.getBoundingClientRect();
+            return valueBounds.left >= sliderBounds.right && valueBounds.top < sliderBounds.bottom;
+          }),
+        ),
+      ).toBe(true);
 
       if (story.id === 'multiple') {
-        await expect(page.locator('.line-multiple-size-controls .line-multiple-slider-input')).toHaveCount(2);
+        await expect(page.locator('.line-multiple-size-controls .slider-input')).toHaveCount(2);
         await expect(page.locator('#line-multiple-width + output')).toHaveText('700');
         await expect(page.locator('#line-multiple-height + output')).toHaveText('300');
-        expect(
-          await page.locator('.line-multiple-slider-input').evaluateAll(inputRows =>
-            inputRows.every(inputRow => {
-              const sliderBounds = inputRow.querySelector('fluent-slider')!.getBoundingClientRect();
-              const valueBounds = inputRow.querySelector('output')!.getBoundingClientRect();
-              return valueBounds.left >= sliderBounds.right && valueBounds.top < sliderBounds.bottom;
-            }),
-          ),
-        ).toBe(true);
         await expect(page.locator('.line-multiple-shape-controls > fluent-field')).toHaveCount(1);
         await expect(page.locator('.line-multiple-callout-controls > fluent-field')).toHaveCount(1);
         const rowBounds = await page
@@ -366,6 +391,67 @@ test.describe('LineChart', () => {
           }),
         ).toEqual({ arePaths: true, areHollow: true, matchSeries: true, shapeCount: 8 });
       }
+
+      if (story.id === 'events') {
+        await expect(page.locator('label[for="line-events-color"]')).toHaveText(
+          'Use Custom Color for Event Annotation',
+        );
+        const sizeBounds = await page.locator('.line-events-size-controls').boundingBox();
+        const shapeBounds = await page.locator('.line-events-shape-controls').boundingBox();
+        const colorBounds = await page.locator('.line-events-color-controls').boundingBox();
+        expect(shapeBounds!.y - (sizeBounds!.y + sizeBounds!.height)).toBeGreaterThanOrEqual(16);
+        expect(colorBounds!.y - (shapeBounds!.y + shapeBounds!.height)).toBeGreaterThanOrEqual(16);
+        await expect(page.locator('.line-events-shape-controls > fluent-field')).toHaveCount(1);
+        const labels = element.locator('.event-annotation-label');
+        await expect(labels).toHaveCount(3);
+        expect(await labels.allTextContents()).toEqual(['3 events', 'event 4', 'event 5']);
+        await expect(labels.first()).toHaveAttribute('data-label-width', '50');
+        await expect(labels.first()).toHaveAttribute('role', 'button');
+        await expect(element.locator('.event-annotation-line').first()).toHaveAttribute(
+          'stroke',
+          'var(--colorNeutralForeground1)',
+        );
+        const eventLabelStyle = await labels.first().evaluate(label => {
+          const style = getComputedStyle(label);
+          return { fontFamily: style.fontFamily, fontSize: style.fontSize, fontWeight: style.fontWeight };
+        });
+        const legendLabelStyle = await element
+          .locator('.legend-text')
+          .first()
+          .evaluate(label => {
+            const style = getComputedStyle(label);
+            return { fontFamily: style.fontFamily, fontSize: style.fontSize, fontWeight: style.fontWeight };
+          });
+        expect(eventLabelStyle).toEqual(legendLabelStyle);
+        expect(
+          await element.evaluate(chart => {
+            const root = chart.shadowRoot!;
+            const line = root.querySelector('.event-annotation-line')!;
+            const label = root.querySelector('.event-annotation-label')!;
+            const axisTransform = root.querySelector('.x-axis')!.getAttribute('transform') ?? '';
+            const plotTop = Number(
+              root
+                .querySelector('.y-axis')!
+                .getAttribute('transform')
+                ?.match(/,\s*([\d.]+)\)/)?.[1],
+            );
+            return {
+              lineEnd: Number(line.getAttribute('y2')),
+              axisY: Number(axisTransform.match(/,\s*([\d.]+)\)/)?.[1]),
+              labelY: Number(label.getAttribute('y')),
+              plotTop,
+            };
+          }),
+        ).toEqual({ lineEnd: 250, axisY: 250, labelY: 38, plotTop: 58 });
+
+        await page.locator('input[aria-label="Event annotation color"]').evaluate(input => {
+          const colorInput = input as HTMLInputElement;
+          colorInput.value = '#ff0000';
+          colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        await expect(element.locator('.event-annotation-line').first()).toHaveAttribute('stroke', '#ff0000');
+        await expect(labels.first()).toHaveAttribute('fill', '#ff0000');
+      }
     }
   });
 
@@ -375,7 +461,7 @@ test.describe('LineChart', () => {
     const labels = element.locator('.x-axis .tick text');
     const italianLabels = await labels.allTextContents();
 
-    await expect(page.locator('.line-locale-size-controls .line-locale-slider-input')).toHaveCount(2);
+    await expect(page.locator('.line-locale-size-controls .slider-input')).toHaveCount(2);
     await expect(page.locator('#line-locale-width + output')).toHaveText('700');
     await expect(page.locator('#line-locale-height + output')).toHaveText('300');
     await expect(page.locator('.line-locale-option-controls > fluent-field')).toHaveCount(2);
@@ -396,8 +482,11 @@ test.describe('LineChart', () => {
     const pointTargets = element.locator('.line-marker-hit-area[data-legend="From_Legacy_to_O365"]');
     await expect(pointTargets).toHaveCount(7);
     await expect(element.locator('.line-marker[data-legend="From_Legacy_to_O365"]')).toHaveCount(0);
-    await pointTargets.nth(1).click();
+    await pointTargets.nth(1).dispatchEvent('click');
     await expect(page.locator('output[aria-live="polite"]')).toHaveText('Clicked data point 218123');
+    await expect(pointTargets.nth(1)).toBeFocused();
+    await expect(pointTargets.nth(1)).toHaveAttribute('tabindex', '0');
+    await expect(pointTargets.first()).toHaveAttribute('tabindex', '-1');
 
     await element.locator('.line-path[data-legend="From_Legacy_to_O365"]').dispatchEvent('click');
     await expect(page.locator('output[aria-live="polite"]')).toHaveText('Clicked line From_Legacy_to_O365');
@@ -416,6 +505,64 @@ test.describe('LineChart', () => {
     expect(Number(await markers.first().getAttribute('cx'))).toBeGreaterThan(
       Number(await markers.nth(2).getAttribute('cx')),
     );
+  });
+
+  test('Should use roving keyboard navigation for datapoints', async ({ page }) => {
+    const element = page.locator('fluent-line-chart');
+    const points = element.locator('.data-point-focus-target');
+
+    await expect(points).toHaveCount(6);
+    await expect(points.first()).toHaveAttribute('tabindex', '0');
+    await expect(points.nth(1)).toHaveAttribute('tabindex', '-1');
+
+    await points.first().focus();
+    await expect(element.locator('.tooltip')).toBeVisible();
+    await points.first().press('ArrowRight');
+
+    await expect(points.first()).toHaveAttribute('tabindex', '-1');
+    await expect(points.nth(1)).toHaveAttribute('tabindex', '0');
+    await expect(points.nth(1)).toBeFocused();
+    await expect(element.locator('.tooltip')).toBeVisible();
+  });
+
+  test('Should focus a datapoint clicked in the middle of a line', async ({ page }) => {
+    const element = page.locator('fluent-line-chart');
+    const points = element.locator('.data-point-focus-target[data-legend="Series A"]');
+
+    await points.nth(1).click();
+
+    await expect(points.nth(1)).toBeFocused();
+    await expect(points.nth(1)).toHaveAttribute('tabindex', '0');
+    await expect(points.first()).toHaveAttribute('tabindex', '-1');
+  });
+
+  test('Should move focus vertically between datapoints with the same x value', async ({ page }) => {
+    const element = page.locator('fluent-line-chart');
+    const points = element.locator('.data-point-focus-target');
+    const firstXPoints = element.locator('.data-point-focus-target[data-x-key="0"]');
+
+    await expect(firstXPoints).toHaveCount(2);
+    const orderedIndexes = await points.evaluateAll(elements =>
+      elements
+        .map((point, index) => ({
+          index,
+          xKey: point.getAttribute('data-x-key'),
+          cy: Number(point.getAttribute('cy')),
+        }))
+        .filter(point => point.xKey === '0')
+        .sort((left, right) => left.cy - right.cy)
+        .map(point => point.index),
+    );
+    const topPoint = points.nth(orderedIndexes[0]);
+    const bottomPoint = points.nth(orderedIndexes[1]);
+
+    await bottomPoint.focus();
+    await bottomPoint.press('ArrowUp');
+    await expect(topPoint).toHaveAttribute('tabindex', '0');
+    await expect(topPoint).toBeFocused();
+    await topPoint.press('ArrowDown');
+    await expect(bottomPoint).toHaveAttribute('tabindex', '0');
+    await expect(bottomPoint).toBeFocused();
   });
 
   test('RTL story should format tooltip dates like Basic', async ({ page }) => {

@@ -202,7 +202,13 @@ export class StackedBarChart extends ChartBase {
           event,
         );
       });
-      rect.addEventListener('click', () => point.onClick?.());
+      rect.addEventListener('click', () => {
+        this._focusRovingElement(
+          this._segments.map(segment => segment.bar),
+          rect,
+        );
+        point.onClick?.();
+      });
 
       group.appendChild(rect);
 

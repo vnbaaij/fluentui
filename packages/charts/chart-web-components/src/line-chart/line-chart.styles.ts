@@ -145,6 +145,11 @@ export const styles: ElementStyles = css`
     font-weight: 600;
   }
 
+  .event-annotation-label {
+    ${typographyCaption1Styles}
+    fill: ${colorNeutralForeground1};
+  }
+
   ${axisGridLineStyles}
 
   .line-path {

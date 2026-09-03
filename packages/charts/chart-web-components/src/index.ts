@@ -76,7 +76,12 @@ export type {
 
 export { LineChart, LineChartDefinition, LineChartStyles, LineChartTemplate } from './line-chart/index.js';
 
-export type { LineChartDataPoint, LineChartSeries } from './line-chart/index.js';
+export type {
+  LineChartDataPoint,
+  LineChartEventAnnotation,
+  LineChartEventAnnotationProps,
+  LineChartSeries,
+} from './line-chart/index.js';
 
 export { PolarChart, PolarChartDefinition, PolarChartStyles, PolarChartTemplate } from './polar-chart/index.js';
 

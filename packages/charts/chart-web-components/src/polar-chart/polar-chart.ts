@@ -510,8 +510,11 @@ export class PolarChart extends ChartBase {
         );
         if (point.source.onClick) {
           marker.classList.add('clickable');
-          marker.addEventListener('click', point.source.onClick);
         }
+        marker.addEventListener('click', () => {
+          this._focusRovingElement(this._getRovingMarkers(), marker);
+          point.source.onClick?.();
+        });
 
         renderedPoints.push({ point, legend: entry.legend, color: pointColor, marker });
 

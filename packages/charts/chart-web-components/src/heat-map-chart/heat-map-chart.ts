@@ -832,7 +832,10 @@ export class HeatMapChart extends CartesianChartBase {
         cell.addEventListener('focus', handleInteraction);
         cell.addEventListener('mouseleave', () => this._clearHeatTooltip());
         cell.addEventListener('blur', () => this._clearHeatTooltip());
-        cell.addEventListener('click', () => point?.onClick?.());
+        cell.addEventListener('click', () => {
+          this._focusRovingElement(this._renderedCells, cell);
+          point?.onClick?.();
+        });
         cell.addEventListener('keydown', (e: KeyboardEvent) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();

@@ -1,4 +1,5 @@
-import { attr } from '@microsoft/fast-element';
+import { attr, observable } from '@microsoft/fast-element';
+import { colorNeutralForeground1 } from '@fluentui/web-components';
 import { extent } from 'd3-array';
 import { type Axis, axisBottom, type AxisDomain, axisLeft, axisRight } from 'd3-axis';
 import { format } from 'd3-format';
@@ -32,7 +33,13 @@ import {
 } from '../utils/chart-helpers.js';
 import { renderBorderedLinePath } from '../utils/line-path-helpers.js';
 import { getMarkerPath, markerShapeNames } from '../utils/marker-shapes.js';
-import type { LineChartColorFillBar, LineChartDataPoint, LineChartSeries } from './line-chart.options.js';
+import type {
+  LineChartColorFillBar,
+  LineChartDataPoint,
+  LineChartEventAnnotation,
+  LineChartEventAnnotationProps,
+  LineChartSeries,
+} from './line-chart.options.js';
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
@@ -97,6 +104,29 @@ const getNormalizedXValue = (value: number | Date): XValue => {
   return parsed instanceof Date ? parsed : Number(parsed);
 };
 
+type EventLabel = { x: number; anchor: 'start' | 'end'; events: LineChartEventAnnotation[] };
+
+const createEventLabels = (
+  events: Array<LineChartEventAnnotation & { x: number }>,
+  labelWidth: number,
+  innerWidth: number,
+): EventLabel[] => {
+  const labels: EventLabel[] = [];
+  for (const event of events) {
+    const previous = labels.at(-1);
+    if (previous && event.x - previous.x < labelWidth + 5) {
+      previous.events.push(event);
+      continue;
+    }
+    labels.push({ x: event.x, anchor: event.x < labelWidth ? 'start' : 'end', events: [event] });
+  }
+  const last = labels.at(-1);
+  if (last && last.x + labelWidth > innerWidth) {
+    last.anchor = 'end';
+  }
+  return labels;
+};
+
 /** @public */
 export class LineChart extends CartesianChartBase {
   public declare tooltipProps: TooltipState;
@@ -119,6 +149,9 @@ export class LineChart extends CartesianChartBase {
   @attr({ attribute: 'y-axis-tick-label-max-width' })
   public yAxisTickLabelMaxWidth?: number | string;
 
+  @observable
+  public eventAnnotationProps?: LineChartEventAnnotationProps;
+
   protected override _enableResizeObserver = true;
 
   public connectedCallback(): void {
@@ -132,13 +165,19 @@ export class LineChart extends CartesianChartBase {
       'yAxisTickLabelMaxWidth',
     ] as const;
     const saved: Partial<Record<(typeof attrFields)[number], unknown>> = {};
+    const eventAnnotationProps = self.eventAnnotationProps;
 
     for (const field of attrFields) {
       saved[field] = self[field];
       delete self[field];
     }
+    delete self.eventAnnotationProps;
 
     super.connectedCallback();
+
+    if (eventAnnotationProps !== undefined) {
+      self.eventAnnotationProps = eventAnnotationProps;
+    }
 
     for (const field of attrFields) {
       if (self[field] === undefined && saved[field] !== undefined) {
@@ -172,6 +211,10 @@ export class LineChart extends CartesianChartBase {
   }
 
   protected yAxisTickLabelMaxWidthChanged(): void {
+    this._requestRender();
+  }
+
+  protected eventAnnotationPropsChanged(): void {
     this._requestRender();
   }
 
@@ -246,10 +289,11 @@ export class LineChart extends CartesianChartBase {
     const hasSecondaryY = normalizedSeries.some(series => series.useSecondaryYScale);
     const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
     const height = toNumber(this.height, 300);
+    const eventLabelHeight = this.eventAnnotationProps?.labelHeight ?? 0;
     const { svg, plotGroup, margins, innerWidth, innerHeight } = this._createCartesianRenderContext({
       width,
       height,
-      defaultMargins,
+      defaultMargins: { ...defaultMargins, top: defaultMargins.top + eventLabelHeight },
       hasSecondaryYAxis: hasSecondaryY,
     });
 
@@ -553,6 +597,40 @@ export class LineChart extends CartesianChartBase {
       this.tooltipProps = { ...this.tooltipProps, entries };
     };
 
+    const focusablePoints: SVGCircleElement[] = [];
+    const calloutMarkerLayer = createSvgElement<SVGGElement>('g');
+    calloutMarkerLayer.classList.add('callout-marker-layer');
+    calloutMarkerLayer.setAttribute('transform', `translate(${margins.left}, ${margins.top})`);
+    const pointKeydown = (event: KeyboardEvent): void => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        return;
+      }
+
+      const currentTarget = event.currentTarget as SVGCircleElement | null;
+      if (!currentTarget) {
+        return;
+      }
+
+      let orderedPoints = focusablePoints;
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        const xKey = currentTarget.getAttribute('data-x-key');
+        if (!xKey) {
+          return;
+        }
+
+        orderedPoints = Array.from(
+          this.shadowRoot?.querySelectorAll<SVGCircleElement>('.data-point-focus-target') ?? [],
+        )
+          .filter(point => point.getAttribute('data-x-key') === xKey)
+          .sort(
+            (left, right) => Number(left.getAttribute('data-cy') ?? '0') - Number(right.getAttribute('data-cy') ?? '0'),
+          );
+      }
+
+      this._rovingKeydown(orderedPoints, event);
+    };
+
     normalizedSeries.forEach((series, seriesIndex) => {
       const shapeIndex = this.allowMultipleShapesForPoints ? seriesIndex % markerShapeNames.length : 0;
       const gapEdges = new Set(series.gaps?.map(gap => `${gap.startIndex}:${gap.endIndex}`));
@@ -591,7 +669,6 @@ export class LineChart extends CartesianChartBase {
         path.addEventListener('mousemove', event =>
           showNearestPoint(series.legend, series.color, segment, event, shapeIndex),
         );
-        path.addEventListener('mouseleave', clearSinglePointTooltip);
         if (series.onLineClick) {
           path.addEventListener('click', series.onLineClick);
         }
@@ -610,29 +687,48 @@ export class LineChart extends CartesianChartBase {
           marker.addEventListener('mouseenter', () =>
             showTooltipForPoint(series.legend, series.color, point, shapeIndex),
           );
-          marker.addEventListener('mouseleave', clearSinglePointTooltip);
           plotGroup.appendChild(marker);
         });
       }
 
       series.data.forEach(point => {
         const onDataPointClick = point.onDataPointClick ?? point.onClick;
-        if (!onDataPointClick) {
-          return;
-        }
         const hitArea = createSvgElement<SVGCircleElement>('circle');
-        hitArea.classList.add('line-marker-hit-area');
+        hitArea.classList.add('data-point-focus-target');
+        if (onDataPointClick) {
+          hitArea.classList.add('line-marker-hit-area');
+        }
         hitArea.dataset.legend = series.legend;
         hitArea.setAttribute('cx', String(point.cx));
         hitArea.setAttribute('cy', String(point.cy));
         hitArea.setAttribute('r', String(markerSize / 2));
         hitArea.setAttribute('fill', 'transparent');
+        hitArea.setAttribute('role', 'img');
+        hitArea.setAttribute(
+          'aria-label',
+          `${point.xLabel}, ${series.legend}, ${formatNumberValue(point.y, this.yAxisTickFormat, this.culture)}.`,
+        );
+        hitArea.setAttribute('data-x-key', String(point.x instanceof Date ? point.x.getTime() : point.x));
+        hitArea.setAttribute('data-cy', String(point.cy));
+        hitArea.setAttribute('tabindex', focusablePoints.length === 0 ? '0' : '-1');
+        hitArea.setAttribute('pointer-events', 'all');
         hitArea.addEventListener('mouseenter', () =>
           showTooltipForPoint(series.legend, series.color, point, shapeIndex),
         );
-        hitArea.addEventListener('mouseleave', clearSinglePointTooltip);
-        hitArea.addEventListener('click', onDataPointClick);
-        plotGroup.appendChild(hitArea);
+        hitArea.addEventListener('focus', () => {
+          focusablePoints.forEach(pointElement => {
+            pointElement.tabIndex = pointElement === hitArea ? 0 : -1;
+          });
+          showTooltipForPoint(series.legend, series.color, point, shapeIndex);
+        });
+        hitArea.addEventListener('blur', clearSinglePointTooltip);
+        hitArea.addEventListener('keydown', pointKeydown);
+        hitArea.addEventListener('click', () => {
+          hitArea.focus();
+          onDataPointClick?.();
+        });
+        focusablePoints.push(hitArea);
+        calloutMarkerLayer.appendChild(hitArea);
       });
     });
 
@@ -652,7 +748,12 @@ export class LineChart extends CartesianChartBase {
       singleHoverDot.setAttribute('fill', '#fff');
       singleHoverDot.setAttribute('stroke-width', '2');
       singleHoverDot.style.display = 'none';
-      plotGroup.appendChild(singleHoverDot);
+      calloutMarkerLayer.appendChild(singleHoverDot);
+      svg.addEventListener('mouseleave', event => {
+        if (event.target === svg) {
+          clearSinglePointTooltip();
+        }
+      });
     }
 
     if (this.isCalloutForStack) {
@@ -693,7 +794,7 @@ export class LineChart extends CartesianChartBase {
         dot.setAttribute('stroke', series.color);
         dot.setAttribute('stroke-width', '2');
         dot.style.display = 'none';
-        plotGroup.appendChild(dot);
+        calloutMarkerLayer.appendChild(dot);
         return dot;
       });
 
@@ -767,13 +868,17 @@ export class LineChart extends CartesianChartBase {
         }
       };
 
-      const onOverlayMouseLeave = (): void => {
+      const onChartMouseLeave = (event: MouseEvent): void => {
+        if (event.target !== svg) {
+          return;
+        }
         hoverLine.style.display = 'none';
         hoverDots.forEach(dot => (dot.style.display = 'none'));
         this._clearTooltip();
       };
       overlay.addEventListener('mousemove', onOverlayMouseMove);
-      overlay.addEventListener('mouseleave', onOverlayMouseLeave);
+      calloutMarkerLayer.addEventListener('mousemove', onOverlayMouseMove);
+      svg.addEventListener('mouseleave', onChartMouseLeave);
     }
 
     renderBottomAxisShared({
@@ -837,6 +942,48 @@ export class LineChart extends CartesianChartBase {
       });
     }
 
+    if (this.eventAnnotationProps) {
+      const { events, mergedLabel } = this.eventAnnotationProps;
+      const labelWidth = this.eventAnnotationProps.labelWidth ?? 105;
+      const strokeColor = this.eventAnnotationProps.strokeColor
+        ? getColorFromToken(this.eventAnnotationProps.strokeColor)
+        : colorNeutralForeground1;
+      const labelColor = this.eventAnnotationProps.labelColor
+        ? getColorFromToken(this.eventAnnotationProps.labelColor)
+        : colorNeutralForeground1;
+      const positionedEvents = events
+        .map(event => ({ ...event, x: xScale(getNormalizedXValue(event.date) as never) ?? 0 }))
+        .sort((left, right) => left.x - right.x);
+      const uniqueLinePositions = [...new Set(positionedEvents.map(event => event.x))];
+      const eventLayer = createSvgElement<SVGGElement>('g');
+      eventLayer.classList.add('event-annotations');
+      uniqueLinePositions.forEach(x => {
+        const line = createSvgElement<SVGLineElement>('line');
+        line.classList.add('event-annotation-line');
+        line.setAttribute('x1', String(margins.left + x));
+        line.setAttribute('x2', String(margins.left + x));
+        line.setAttribute('y1', String(margins.top - 13));
+        line.setAttribute('y2', String(margins.top + innerHeight));
+        line.setAttribute('stroke', strokeColor);
+        line.setAttribute('stroke-dasharray', '8');
+        eventLayer.appendChild(line);
+      });
+      createEventLabels(positionedEvents, labelWidth, innerWidth).forEach(label => {
+        const text = createSvgElement<SVGTextElement>('text');
+        text.classList.add('event-annotation-label');
+        text.setAttribute('x', String(margins.left + label.x));
+        text.setAttribute('y', String(margins.top - 20));
+        text.setAttribute('text-anchor', label.anchor);
+        text.setAttribute('fill', labelColor);
+        text.setAttribute('data-label-width', String(labelWidth));
+        text.setAttribute('role', 'button');
+        text.setAttribute('tabindex', '0');
+        text.textContent = label.events.length === 1 ? label.events[0].event : mergedLabel(label.events.length);
+        eventLayer.appendChild(text);
+      });
+      svg.appendChild(eventLayer);
+    }
+
     this._renderAnnotations({
       svg,
       collisionLayer: plotGroup,
@@ -846,6 +993,9 @@ export class LineChart extends CartesianChartBase {
       mapDataX: value => xScale(getNormalizedXValue(value as number | Date) as never) ?? 0,
       mapDataY: (value, axis) => (axis === 'secondary' ? yScaleSecondary : yScale)(Number(value)),
     });
+
+    svg.appendChild(calloutMarkerLayer);
+    this._relocateFocusIfNeeded(focusablePoints);
 
     this.chartContainer.appendChild(svg);
     this.legends = [
