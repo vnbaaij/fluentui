@@ -35,6 +35,60 @@ test.describe('ScatterChart', () => {
     await expect(element.locator('.scatter-point')).toHaveCount(6);
   });
 
+  test('Should render categorical Y values with ordering and label tooltips', async ({ page }) => {
+    const element = page.locator('fluent-scatter-chart');
+    await element.evaluate(chart => {
+      const scatter = chart as HTMLElement & {
+        data: ScatterChartSeries[];
+        yAxisCategoryOrder: string;
+        showYAxisLabels: boolean;
+        showYAxisLabelsTooltip: boolean;
+      };
+      scatter.data = [
+        {
+          legend: 'Categories',
+          data: [
+            { x: 1, y: 'Zebra category with a long label' },
+            { x: 2, y: 'Alpha' },
+            { x: 3, y: 'Middle' },
+          ],
+        },
+      ];
+      scatter.yAxisCategoryOrder = 'category ascending';
+      scatter.showYAxisLabels = true;
+      scatter.showYAxisLabelsTooltip = true;
+    });
+
+    await expect(element.locator('.scatter-point')).toHaveCount(3);
+    await expect
+      .poll(() =>
+        element
+          .locator('.y-axis .y-axis-text')
+          .evaluateAll(labels =>
+            labels.map(
+              label => Array.from(label.childNodes).find(node => node.nodeType === Node.TEXT_NODE)?.textContent,
+            ),
+          ),
+      )
+      .toEqual(['Alpha', 'Middle', 'Zebra category with a long label']);
+    await expect(element.locator('.scatter-point').first()).toHaveAttribute('cy', /.+/);
+
+    await element.evaluate(chart => {
+      (chart as HTMLElement & { showYAxisLabels: boolean }).showYAxisLabels = false;
+    });
+    await expect
+      .poll(() =>
+        element
+          .locator('.y-axis .y-axis-text')
+          .last()
+          .evaluate(label => Array.from(label.childNodes).find(node => node.nodeType === Node.TEXT_NODE)?.textContent),
+      )
+      .toBe('Zebra category wit...');
+    await expect(element.locator('.y-axis .y-axis-text').last().locator('title')).toHaveText(
+      'Zebra category with a long label',
+    );
+  });
+
   test('Should support roving keyboard focus and promote a clicked point', async ({ page }) => {
     const element = page.locator('fluent-scatter-chart');
     const points = element.locator('.scatter-point');

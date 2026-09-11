@@ -135,15 +135,18 @@ test.describe('horizontal-bar-chart-with-axis', () => {
       const grid = node.shadowRoot!.querySelector<SVGGElement>('.axis-grid')!;
       const line = grid.querySelector<SVGLineElement>('.axis-grid-line')!;
       const bar = node.shadowRoot!.querySelector<SVGRectElement>('.bar')!;
-      const xAxisTick = [...node.shadowRoot!.querySelectorAll<SVGLineElement>('.axis-tick-line')].find(
+      const hasSeparateXAxisTicks = [...node.shadowRoot!.querySelectorAll<SVGLineElement>('.axis-tick-line')].some(
         tick => tick.getAttribute('x1') === tick.getAttribute('x2'),
       )!;
       const style = getComputedStyle(line);
       return {
         gridIsVertical: line.getAttribute('x1') === line.getAttribute('x2'),
         gridSpansPlot: Number(line.getAttribute('y2')) > Number(line.getAttribute('y1')),
+        gridReachesXAxisLabels:
+          Number(line.getAttribute('y2')) <
+          Number(node.shadowRoot!.querySelector<SVGTextElement>('.axis-text')!.getAttribute('y')),
         gridBeforeBar: Boolean(grid.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING),
-        tickLength: Math.abs(Number(xAxisTick.getAttribute('y2')) - Number(xAxisTick.getAttribute('y1'))),
+        hasSeparateXAxisTicks,
         opacity: style.opacity,
         pointerEvents: style.pointerEvents,
       };
@@ -151,8 +154,9 @@ test.describe('horizontal-bar-chart-with-axis', () => {
 
     expect(result.gridIsVertical).toBe(true);
     expect(result.gridSpansPlot).toBe(true);
+    expect(result.gridReachesXAxisLabels).toBe(true);
     expect(result.gridBeforeBar).toBe(true);
-    expect(result.tickLength).toBe(6);
+    expect(result.hasSeparateXAxisTicks).toBe(false);
     expect(result.opacity).toBe('0.2');
     expect(result.pointerEvents).toBe('none');
   });
@@ -168,8 +172,62 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     `);
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('svg.chart-svg')).toHaveAttribute('role', 'group');
+    await expect(element.locator('svg.chart-svg')).toHaveAttribute(
+      'aria-label',
+      'Revenue by value. Horizontal bar chart with axis with 4 bars.',
+    );
     await expect(element.locator('.bar')).toHaveCount(4);
     await expect(element.locator('.y-axis-text')).toHaveCount(6);
+    await expect(element.locator('.axis-text')).toHaveCount(9);
+    await expect
+      .poll(() =>
+        element.evaluate(chart => {
+          const hiddenXAxisLabels = [...chart.shadowRoot!.querySelectorAll<SVGTextElement>('.axis-text')].filter(
+            label => getComputedStyle(label).display === 'none',
+          );
+          const yAxisTick = [...chart.shadowRoot!.querySelectorAll<SVGLineElement>('.axis-tick-line')].find(
+            tick => tick.getAttribute('y1') === tick.getAttribute('y2'),
+          )!;
+          return {
+            allXAxisLabelsVisible: hiddenXAxisLabels.length === 0,
+            yAxisTickPointsOutward: Number(yAxisTick.getAttribute('x2')) < Number(yAxisTick.getAttribute('x1')),
+          };
+        }),
+      )
+      .toEqual({ allXAxisLabelsVisible: true, yAxisTickPointsOutward: true });
+  });
+
+  test('renders numeric y-axis grid lines above the highest y value', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 800px">
+        <fluent-horizontal-bar-chart-with-axis data='${JSON.stringify(numericYAxisData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    const result = await element.evaluate(node => {
+      const gridLine = node.shadowRoot!.querySelector<SVGLineElement>('.axis-grid-line')!;
+      const highestTickY = Math.min(
+        ...Array.from(node.shadowRoot!.querySelectorAll<SVGTextElement>('.y-axis-text')).map(text =>
+          Number(text.getAttribute('y')),
+        ),
+      );
+      const highestBar = node.shadowRoot!.querySelector<SVGRectElement>('.bar')!;
+      const highestBarTop = Number(highestBar.getAttribute('y'));
+      const highestBarCenter = highestBarTop + Number(highestBar.getAttribute('height')) / 2;
+      return {
+        gridTop: Number(gridLine.getAttribute('y1')),
+        highestTickY,
+        highestBarTop,
+        highestBarCenter,
+      };
+    });
+
+    expect(result.gridTop).toBeLessThan(result.highestTickY);
+    expect(result.gridTop).toBeLessThan(result.highestBarTop);
+    expect(result.highestBarCenter).toBeCloseTo(result.highestTickY, 5);
   });
 
   test('rerenders when data attribute changes after initial render', async ({ page }) => {
@@ -668,7 +726,7 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     `);
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
-    // Default y-axis-tick-count=4 produces 6 ticks for [0, 50000] domain
+    // Default y-axis-tick-count=4 produces 6 ticks for [0, 50000] domain.
     await expect(element.locator('.y-axis-text')).toHaveCount(6);
 
     await element.evaluate(el => el.setAttribute('y-axis-tick-count', '2'));
@@ -700,7 +758,7 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     expect(newHeight).toBeLessThan(initialHeight);
   });
 
-  test('extends x domain below zero and renders an origin line when x-min-value is negative', async ({ page }) => {
+  test('extends x domain below zero without duplicating the zero grid line', async ({ page }) => {
     await page.setContent(/* html */ `
       <div style="width: 800px">
         <fluent-horizontal-bar-chart-with-axis
@@ -713,8 +771,19 @@ test.describe('horizontal-bar-chart-with-axis', () => {
 
     const element = page.locator('fluent-horizontal-bar-chart-with-axis');
     await expect(element.locator('.bar')).toHaveCount(4);
-    // Domain crosses zero → origin line is rendered
-    await expect(element.locator('.origin-line')).toHaveCount(1);
+    await expect(element.locator('.origin-line')).toHaveCount(0);
+    const zeroTick = element.locator('.axis-text', { hasText: /^0$/ });
+    await expect(zeroTick).toHaveCount(1);
+    const zeroGridLine = await element.evaluate((chart, zeroX) => {
+      const lines = Array.from(chart.shadowRoot!.querySelectorAll<SVGLineElement>('.axis-grid-line'));
+      const matchingLines = lines.filter(line => Number(line.getAttribute('x1')) === Number(zeroX));
+      const firstBar = chart.shadowRoot!.querySelector('.bar')!;
+      return {
+        count: matchingLines.length,
+        precedesBars: Boolean(matchingLines[0]?.compareDocumentPosition(firstBar) & Node.DOCUMENT_POSITION_FOLLOWING),
+      };
+    }, await zeroTick.getAttribute('x'));
+    expect(zeroGridLine).toEqual({ count: 1, precedesBars: true });
   });
 
   test('extends x domain when x-max-value exceeds data maximum', async ({ page }) => {
@@ -846,6 +915,28 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     await element.evaluate(el => el.setAttribute('y-axis-category-order', 'category descending'));
     // 'category descending' → Zebra, Mango, Apple (first = top = Zebra)
     await expect(element.locator('.y-axis-text').first()).toHaveText('Zebra');
+  });
+
+  test('CategoryOrder story keeps a category on both sides of zero when data changes', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--category-order'));
+
+    const chart = page.locator('fluent-horizontal-bar-chart-with-axis');
+    const expectMixedCategory = async () => {
+      expect(
+        await chart.evaluate(element => {
+          const labelOnePoints = element.data.filter(point => point.y === 'Label 1' && point.legend === 'Legend 1');
+          return {
+            hasNegative: labelOnePoints.some(point => point.x < 0),
+            hasPositive: labelOnePoints.some(point => point.x > 0),
+            colors: [...new Set(labelOnePoints.map(point => point.color))],
+          };
+        }),
+      ).toEqual({ hasNegative: true, hasPositive: true, colors: ['qualitative.1'] });
+    };
+
+    await expectMixedCategory();
+    await page.locator('fluent-button', { hasText: 'Change data' }).dispatchEvent('click');
+    await expectMixedCategory();
   });
 
   test('shows tooltip on bar focus in ltr layout', async ({ page }) => {
@@ -1170,6 +1261,80 @@ test.describe('HorizontalBarChartWithAxis - tick-values', () => {
     await page.waitForTimeout(50);
 
     await expect(element.locator('.axis-text')).toHaveCount(5);
+  });
+});
+
+test.describe('HorizontalBarChartWithAxis - Cartesian axis config', () => {
+  test('Should generate x-axis ticks from x-axis-config and apply tick text overrides', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          x-axis-config='${JSON.stringify({ tickStep: 2500, tick0: 0, tickText: ['Low', 'Mid', 'High'] })}'
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+
+    await expect(page.locator('fluent-horizontal-bar-chart-with-axis').locator('.axis-text')).toHaveText([
+      'Low',
+      'Mid',
+      'High',
+    ]);
+  });
+
+  test('Should generate numeric y-axis ticks from y-axis-config and apply tick text overrides', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          y-axis-config='${JSON.stringify({ tickStep: 25000, tick0: 0, tickText: ['Low', 'Mid', 'High'] })}'
+          data='${JSON.stringify(numericYAxisData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+
+    await expect(page.locator('fluent-horizontal-bar-chart-with-axis').locator('.y-axis-text')).toHaveText([
+      'Low',
+      'Mid',
+      'High',
+    ]);
+  });
+
+  test('Should apply x-axis tick padding and axis annotations', async ({ page }) => {
+    await page.goto(fixtureURL('components-horizontalbarchartwithaxis--basic'));
+    await page.setContent(/* html */ `
+      <div style="width:800px">
+        <fluent-horizontal-bar-chart-with-axis
+          x-axis-tick-size="12"
+          x-axis-tick-padding="20"
+          x-axis-annotation="X annotation"
+          y-axis-annotation="Y annotation"
+          data='${JSON.stringify(categoricalData)}'>
+        </fluent-horizontal-bar-chart-with-axis>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-horizontal-bar-chart-with-axis'));
+
+    const element = page.locator('fluent-horizontal-bar-chart-with-axis');
+    await expect(element.locator('.axis-annotation')).toHaveText(['X annotation', 'Y annotation']);
+    await expect
+      .poll(() =>
+        element.evaluate(chart => {
+          const root = chart.shadowRoot!;
+          const gridLine = root.querySelector<SVGLineElement>('.axis-grid-line')!;
+          const label = root.querySelector<SVGTextElement>('.axis-text')!;
+          const axisY = Number(gridLine.getAttribute('y2'));
+          const tickPadding = Number(label.getAttribute('y')) - axisY - 6;
+          const hasSeparateXAxisTicks = [...root.querySelectorAll<SVGLineElement>('.axis-tick-line')].some(
+            tick => tick.getAttribute('x1') === tick.getAttribute('x2'),
+          );
+          return { hasSeparateXAxisTicks, tickPadding };
+        }),
+      )
+      .toEqual({ hasSeparateXAxisTicks: false, tickPadding: 20 });
   });
 });
 

@@ -8,6 +8,7 @@ import {
   renderComponent,
 } from '../helpers.stories.js';
 import { DataVizPalette, getColorFromToken } from '../utils/chart-helpers.js';
+import type { AxisCategoryOrder } from '../utils/chart-options.js';
 import { HeatMapChart as FluentHeatMapChart } from './heat-map-chart.js';
 import type { HeatMapChartData } from './heat-map-chart.options.js';
 
@@ -590,8 +591,14 @@ const categoryOrderData: HeatMapChartData[] = [
     legend: 'Usage',
     data: [
       { x: 'Banana', y: 'Team A', value: 40, rectText: 40 },
+      { x: 'Banana', y: 'Team C', value: 62, rectText: 62 },
+      { x: 'Banana', y: 'Team B', value: 22, rectText: 22 },
       { x: 'Apple', y: 'Team A', value: 55, rectText: 55 },
+      { x: 'Apple', y: 'Team C', value: 38, rectText: 38 },
+      { x: 'Apple', y: 'Team B', value: 75, rectText: 75 },
       { x: 'Cherry', y: 'Team A', value: 70, rectText: 70 },
+      { x: 'Cherry', y: 'Team C', value: 48, rectText: 48 },
+      { x: 'Cherry', y: 'Team B', value: 58, rectText: 58 },
     ],
   },
 ];
@@ -614,43 +621,68 @@ export const CategoryOrder: Story<FluentHeatMapChart> = () => {
   controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
   container.appendChild(controls);
 
-  const orderOptions = ['alphabetical', 'alphabetical-desc', 'none', 'default'] as const;
-  type CategoryOrderControlValue = (typeof orderOptions)[number];
+  const orderOptions: AxisCategoryOrder[] = [
+    'default',
+    'data',
+    'category ascending',
+    'category descending',
+    'total ascending',
+    'total descending',
+    'min ascending',
+    'min descending',
+    'max ascending',
+    'max descending',
+    'sum ascending',
+    'sum descending',
+    'mean ascending',
+    'mean descending',
+    'median ascending',
+    'median descending',
+  ];
 
-  const normalizeOrder = (value: CategoryOrderControlValue) => {
-    if (value === 'alphabetical-desc') {
-      return 'category descending';
-    }
-    return value;
-  };
-
-  let currentOrder: CategoryOrderControlValue = 'alphabetical';
+  let currentXAxisOrder: AxisCategoryOrder = 'category ascending';
+  let currentYAxisOrder: AxisCategoryOrder = 'data';
 
   const chart = document.createElement('fluent-heat-map-chart') as FluentHeatMapChart;
-  chart.setAttribute('chart-title', 'Heat map - x-axis category order');
+  chart.setAttribute('chart-title', 'Heat map - axis category order');
   chart.setAttribute('data', JSON.stringify(categoryOrderData));
   chart.setAttribute('domain-values-for-color-scale', JSON.stringify([0, 50, 100]));
   chart.setAttribute('range-values-for-color-scale', JSON.stringify(['#d4e8ff', '#0078d4', '#003a78']));
   chart.setAttribute('sort-order', 'none');
-  chart.setAttribute('x-axis-category-order', normalizeOrder(currentOrder));
+  chart.setAttribute('x-axis-category-order', currentXAxisOrder);
+  chart.setAttribute('y-axis-category-order', currentYAxisOrder);
   chart.setAttribute('style', 'margin-top:20px;');
   container.appendChild(chart);
 
-  const orderControl = createDropdownField(
+  const xOrderControl = createDropdownField(
     'X-axis category order',
     'heat-map-x-axis-category-order',
-    [...orderOptions],
-    currentOrder,
+    orderOptions,
+    currentXAxisOrder,
     nextValue => {
-      currentOrder = nextValue as CategoryOrderControlValue;
-      chart.setAttribute('x-axis-category-order', normalizeOrder(currentOrder));
+      currentXAxisOrder = nextValue as AxisCategoryOrder;
+      xOrderControl.setValue(nextValue);
+      chart.setAttribute('x-axis-category-order', currentXAxisOrder);
     },
   );
-  controls.appendChild(orderControl.element);
+  controls.appendChild(xOrderControl.element);
+
+  const yOrderControl = createDropdownField(
+    'Y-axis category order',
+    'heat-map-y-axis-category-order',
+    orderOptions,
+    currentYAxisOrder,
+    nextValue => {
+      currentYAxisOrder = nextValue as AxisCategoryOrder;
+      yOrderControl.setValue(nextValue);
+      chart.setAttribute('y-axis-category-order', currentYAxisOrder);
+    },
+  );
+  controls.appendChild(yOrderControl.element);
 
   return container;
 };
-CategoryOrder.parameters = { docs: { story: { height: '420px' } } };
+CategoryOrder.parameters = { docs: { story: { height: '500px' } } };
 
 export const Culture: Story<FluentHeatMapChart> = () => {
   const container = document.createElement('div');

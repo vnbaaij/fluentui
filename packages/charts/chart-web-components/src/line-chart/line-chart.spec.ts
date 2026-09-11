@@ -56,6 +56,10 @@ test.describe('LineChart', () => {
 
     const label = element.locator('.event-annotation-label');
     await expect(label).toHaveText('Deployment');
+    await label.dispatchEvent('mouseover');
+    await expect(element.locator('.event-annotation-card-item')).toHaveText('Deployment completed');
+    await label.dispatchEvent('mouseout');
+    await expect(element.locator('.event-annotation-card')).toHaveCount(0);
     await label.click();
     await expect(element.locator('.event-annotation-card-item')).toHaveText('Deployment completed');
   });
@@ -686,8 +690,8 @@ test.describe('LineChart', () => {
           'var(--colorNeutralForeground1)',
         );
 
-        await labels.first().click();
         const eventCard = element.locator('.event-annotation-card');
+        await labels.first().dispatchEvent('mouseover');
         await expect(eventCard).toBeVisible();
         await expect(eventCard).toHaveAttribute('aria-label', '3 events details');
         await expect(eventCard.locator('.event-annotation-card-item')).toHaveText([
@@ -695,6 +699,12 @@ test.describe('LineChart', () => {
           'event 2 message',
           'event 3 message',
         ]);
+        await expect(eventCard.locator('.event-annotation-card-close')).not.toBeFocused();
+        await labels.first().dispatchEvent('mouseout');
+        await expect(eventCard).toHaveCount(0);
+
+        await labels.first().click();
+        await expect(eventCard).toBeVisible();
         await expect(eventCard.locator('.event-annotation-card-close')).toBeFocused();
         await eventCard.locator('.event-annotation-card-close').click();
         await expect(eventCard).toHaveCount(0);

@@ -49,7 +49,7 @@ test.describe('Donut-chart - Basic', () => {
     await expect(arcList.nth(0)).toHaveAttribute('aria-label', 'first, 20000.');
     await expect(arcList.nth(0)).toHaveAttribute(
       'd',
-      'M-76.547,47.334A90,90,0,0,1,-1.055,-89.994L-1.055,-54.99A55,55,0,0,0,-46.993,28.577Z',
+      'M1.055,-89.994A90,90,0,0,1,76.547,47.334L46.993,28.577A55,55,0,0,0,1.055,-54.99Z',
     );
     await expect(arcList.nth(0)).toHaveCSS('fill', 'rgb(99, 124, 239)');
     await expect(arcList.nth(0)).toHaveCSS('--borderRadiusMedium', '4px');
@@ -58,7 +58,7 @@ test.describe('Donut-chart - Basic', () => {
     await expect(arcList.nth(1)).toHaveAttribute('aria-label', 'second, 39000.');
     await expect(arcList.nth(1)).toHaveAttribute(
       'd',
-      'M1.055,-89.994A90,90,0,1,1,-75.417,49.115L-45.863,30.358A55,55,0,1,0,1.055,-54.99Z',
+      'M75.417,49.115A90,90,0,1,1,-1.055,-89.994L-1.055,-54.99A55,55,0,1,0,45.863,30.358Z',
     );
     await expect(arcList.nth(1)).toHaveCSS('fill', 'rgb(227, 0, 140)');
     await expect(arcList.nth(1)).toHaveCSS('--borderRadiusMedium', '4px');
@@ -143,7 +143,7 @@ test.describe('Donut-chart - Basic', () => {
     const calloutContentY = element.locator('.tooltip-content-y');
     await expect(calloutContentY).toHaveText('20,000');
     await firstPath.dispatchEvent('mouseout');
-    await expect(calloutRoot).not.toHaveCSS('opacity', '0');
+    await expect(calloutRoot).toHaveCount(0);
   });
 
   test('Should update callout data when mouse moved from one path to another path', async ({ page }) => {

@@ -19,6 +19,24 @@ const data: GroupedVerticalBarChartData[] = [
   },
 ];
 
+const edgeData: GroupedVerticalBarChartData[] = [
+  ...data,
+  {
+    xAxisPoint: 'Mar',
+    series: [
+      { key: 'Alpha', data: 50 },
+      { key: 'Beta', data: 35 },
+    ],
+  },
+  {
+    xAxisPoint: 'Apr',
+    series: [
+      { key: 'Alpha', data: 40 },
+      { key: 'Beta', data: 55 },
+    ],
+  },
+];
+
 test.describe('GroupedVerticalBarChart', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(fixtureURL('components-groupedverticalbarchart--basic'));
@@ -33,6 +51,55 @@ test.describe('GroupedVerticalBarChart', () => {
   test('Should render bars', async ({ page }) => {
     const element = page.locator('fluent-grouped-vertical-bar-chart');
     await expect(element.locator('.bar')).toHaveCount(4);
+  });
+
+  test('Should position the tooltip beside the active group', async ({ page }) => {
+    const element = page.locator('fluent-grouped-vertical-bar-chart');
+    const bars = element.locator('.bar');
+    const tooltip = element.locator('.tooltip');
+
+    await bars.nth(0).dispatchEvent('mouseenter');
+    await expect(tooltip).toBeVisible();
+    await expect
+      .poll(async () => {
+        const [firstBar, secondBar, tooltipBox] = await Promise.all([
+          bars.nth(0).boundingBox(),
+          bars.nth(1).boundingBox(),
+          tooltip.boundingBox(),
+        ]);
+        return tooltipBox!.x - Math.max(firstBar!.x + firstBar!.width, secondBar!.x + secondBar!.width);
+      })
+      .toBeGreaterThan(4);
+    await expect
+      .poll(async () => {
+        const [firstBar, secondBar, tooltipBox] = await Promise.all([
+          bars.nth(0).boundingBox(),
+          bars.nth(1).boundingBox(),
+          tooltip.boundingBox(),
+        ]);
+        const averageValueY = (firstBar!.y + secondBar!.y) / 2;
+        const tooltipCenterY = tooltipBox!.y + tooltipBox!.height / 2;
+        return Math.abs(tooltipCenterY - averageValueY);
+      })
+      .toBeLessThan(2);
+
+    await page.setContent(/* html */ `
+      <fluent-grouped-vertical-bar-chart data='${JSON.stringify(
+        edgeData,
+      )}' width='300' height='300'></fluent-grouped-vertical-bar-chart>
+    `);
+    await expect(bars).toHaveCount(8);
+    await bars.nth(6).dispatchEvent('mouseenter');
+    await expect
+      .poll(async () => {
+        const [seventhBar, eighthBar, tooltipBox] = await Promise.all([
+          bars.nth(6).boundingBox(),
+          bars.nth(7).boundingBox(),
+          tooltip.boundingBox(),
+        ]);
+        return Math.min(seventhBar!.x, eighthBar!.x) - (tooltipBox!.x + tooltipBox!.width);
+      })
+      .toBeGreaterThan(4);
   });
 
   test('Should reverse group and series order in RTL', async ({ page }) => {

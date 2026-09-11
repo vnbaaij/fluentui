@@ -60,6 +60,7 @@ export const StandardAttributes: Story<FluentGaugeChart> = () => {
   const chart = document.createElement('fluent-gauge-chart') as FluentGaugeChart;
   chart.setAttribute('chart-title', basicTitle);
   chart.setAttribute('segments', JSON.stringify(multiSegments));
+  chart.setAttribute('chart-value', '68');
   chart.setAttribute('width', `${width}`);
   chart.setAttribute('height', `${height}`);
   chart.setAttribute('style', 'margin-top:20px;');

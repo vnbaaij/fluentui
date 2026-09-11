@@ -6,6 +6,7 @@ import {
   type Meta,
   type Story,
 } from '../helpers.stories.js';
+import type { AxisCategoryOrder as AxisCategoryOrderValue } from '../utils/chart-options.js';
 import { definition } from './scatter-chart.definition.js';
 import type { ScatterChartSeries } from './scatter-chart.options.js';
 import type { ScatterChart } from './scatter-chart.js';
@@ -144,6 +145,50 @@ const logData: ScatterChartSeries[] = [
       { x: 8483.428982440717, y: 1782.902150290326, markerSize: 19 },
       { x: 16378.937069540612, y: 7474.040318615067, markerSize: 20 },
       { x: 31622.776601683792, y: 16592.321174954774, markerSize: 14 },
+    ],
+  },
+];
+
+const categoryOrderOptions: AxisCategoryOrderValue[] = [
+  'default',
+  'data',
+  'category ascending',
+  'category descending',
+  'total ascending',
+  'total descending',
+  'min ascending',
+  'min descending',
+  'max ascending',
+  'max descending',
+  'sum ascending',
+  'sum descending',
+  'mean ascending',
+  'mean descending',
+  'median ascending',
+  'median descending',
+];
+
+const yAxisCategoryOrderData: ScatterChartSeries[] = [
+  {
+    legend: 'Current',
+    color: 'qualitative.3',
+    data: [
+      { x: 10, y: 'Delta', markerSize: 14 },
+      { x: 18, y: 'Alpha', markerSize: 12 },
+      { x: 34, y: 'Echo', markerSize: 18 },
+      { x: 26, y: 'Bravo', markerSize: 16 },
+      { x: 42, y: 'Charlie', markerSize: 20 },
+    ],
+  },
+  {
+    legend: 'Previous',
+    color: 'qualitative.4',
+    data: [
+      { x: 14, y: 'Delta', markerSize: 10 },
+      { x: 9, y: 'Alpha', markerSize: 9 },
+      { x: 28, y: 'Echo', markerSize: 14 },
+      { x: 21, y: 'Bravo', markerSize: 12 },
+      { x: 35, y: 'Charlie', markerSize: 16 },
     ],
   },
 ];
@@ -309,6 +354,44 @@ export const ScatterChartString: Story<ScatterChart> = () =>
   );
 ScatterChartString.storyName = 'String based';
 ScatterChartString.parameters = { docs: { story: { height: '520px' } } };
+
+export const AxisCategoryOrder: Story<ScatterChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  let yAxisCategoryOrder: AxisCategoryOrderValue = 'default';
+
+  const chart = document.createElement('fluent-scatter-chart') as ScatterChart;
+  chart.data = yAxisCategoryOrderData;
+  chart.chartTitle = 'Scatter chart axis category order example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('x-axis-title', 'Score');
+  chart.setAttribute('y-axis-title', 'Category');
+  chart.setAttribute('show-y-axis-labels', '');
+  chart.setAttribute('y-axis-category-order', yAxisCategoryOrder);
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const orderControl = createDropdownField(
+    'yAxisCategoryOrder',
+    'scatter-y-axis-category-order',
+    categoryOrderOptions,
+    yAxisCategoryOrder,
+    nextValue => {
+      yAxisCategoryOrder = nextValue as AxisCategoryOrderValue;
+      orderControl.setValue(nextValue);
+      chart.setAttribute('y-axis-category-order', yAxisCategoryOrder);
+    },
+  );
+  controls.appendChild(orderControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+AxisCategoryOrder.storyName = 'Axis Category Order';
+AxisCategoryOrder.parameters = { docs: { story: { height: '480px' } } };
 
 export const ScatterChartLogAxisExample: Story<ScatterChart> = () => {
   const container = createScatterExample(logData, 'Scatter Chart', '', '', '', 'scatter-log', 700, 300);

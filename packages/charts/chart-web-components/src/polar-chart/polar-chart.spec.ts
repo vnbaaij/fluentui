@@ -321,6 +321,21 @@ test.describe('PolarChart', () => {
     await expect(element.locator('.tooltip-legend-text')).toHaveText(['Series A']);
   });
 
+  test('Should preserve the first grouped callout when enabling the mode schedules a render', async ({ page }) => {
+    const element = page.locator('fluent-polar-chart');
+    await element.evaluate(chart => {
+      chart.setAttribute('enable-multi-value-callout', '');
+      const marker = chart.shadowRoot!.querySelector<SVGCircleElement>('.polar-marker[data-legend="Series A"]')!;
+      marker.dataset.beforeToggleRender = '';
+      marker.dispatchEvent(new MouseEvent('mouseenter'));
+    });
+
+    await expect(element.locator('[data-before-toggle-render]')).toHaveCount(0);
+    await expect(element.locator('.tooltip')).toBeVisible();
+    await expect(element.locator('.tooltip-header')).toHaveText('Speed');
+    await expect(element.locator('.tooltip-legend-text')).toHaveText(['Series A', 'Series B']);
+  });
+
   test('Should select the nearest numeric angular value from the grouped callout surface', async ({ page }) => {
     const element = page.locator('fluent-polar-chart');
     await element.evaluate(chart => {

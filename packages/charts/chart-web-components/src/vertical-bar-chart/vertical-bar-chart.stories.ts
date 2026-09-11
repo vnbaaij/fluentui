@@ -12,6 +12,7 @@ import {
   visuallyHiddenStyle,
 } from '../helpers.stories.js';
 import { DataVizPalette } from '../utils/chart-helpers.js';
+import type { AxisCategoryOrder as AxisCategoryOrderValue } from '../utils/chart-options.js';
 import { definition } from './vertical-bar-chart.definition.js';
 import type { VerticalBarChartDataPoint } from './vertical-bar-chart.options.js';
 import type { VerticalBarChart } from './vertical-bar-chart.js';
@@ -189,6 +190,33 @@ const secondaryYAxisData: VerticalBarChartDataPoint[] = [
     lineData: { y: 16000, useSecondaryYScale: true },
   },
   { x: 92000, y: 45000, legend: 'Monkeys', color: 'qualitative.6', lineData: { y: 40000, useSecondaryYScale: true } },
+];
+
+const categoryOrderOptions: AxisCategoryOrderValue[] = [
+  'default',
+  'data',
+  'category ascending',
+  'category descending',
+  'total ascending',
+  'total descending',
+  'min ascending',
+  'min descending',
+  'max ascending',
+  'max descending',
+  'sum ascending',
+  'sum descending',
+  'mean ascending',
+  'mean descending',
+  'median ascending',
+  'median descending',
+];
+
+const axisCategoryOrderData: VerticalBarChartDataPoint[] = [
+  { x: 'Delta', y: 42, legend: 'Delta', color: 'qualitative.1' },
+  { x: 'Alpha', y: 16, legend: 'Alpha', color: 'qualitative.2' },
+  { x: 'Echo', y: 63, legend: 'Echo', color: 'qualitative.3' },
+  { x: 'Bravo', y: 28, legend: 'Bravo', color: 'qualitative.4' },
+  { x: 'Charlie', y: 51, legend: 'Charlie', color: 'qualitative.5' },
 ];
 
 const accessibilityData: VerticalBarChartDataPoint[] = [
@@ -719,6 +747,42 @@ export const SecondaryYAxis: Story<VerticalBarChart> = () => {
   return container;
 };
 SecondaryYAxis.parameters = { docs: { story: { height: '540px' } } };
+
+export const AxisCategoryOrder: Story<VerticalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  let xAxisCategoryOrder: AxisCategoryOrderValue = 'default';
+
+  const chart = document.createElement('fluent-vertical-bar-chart') as VerticalBarChart;
+  chart.data = axisCategoryOrderData;
+  chart.chartTitle = 'Vertical bar chart axis category order example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('hide-legends', '');
+  chart.setAttribute('x-axis-category-order', xAxisCategoryOrder);
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const orderControl = createDropdownField(
+    'xAxisCategoryOrder',
+    'vbar-axis-category-order',
+    categoryOrderOptions,
+    xAxisCategoryOrder,
+    nextValue => {
+      xAxisCategoryOrder = nextValue as AxisCategoryOrderValue;
+      orderControl.setValue(nextValue);
+      chart.setAttribute('x-axis-category-order', xAxisCategoryOrder);
+    },
+  );
+  controls.appendChild(orderControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+AxisCategoryOrder.storyName = 'Axis Category Order';
+AxisCategoryOrder.parameters = { docs: { story: { height: '480px' } } };
 
 export const TooltipRendererStory: Story<VerticalBarChart> = () => {
   const container = document.createElement('div');

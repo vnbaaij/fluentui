@@ -113,6 +113,29 @@ test.describe('VerticalBarChart', () => {
     await expect(element.locator('.y-axis-secondary .y-axis-title')).toContainText('Line values');
   });
 
+  test('Should apply secondary y-axis min and max attributes', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-bar-chart
+        data='${JSON.stringify([
+          { x: 0, y: 10, lineData: { y: 40, useSecondaryYScale: true } },
+          { x: 10, y: 20, lineData: { y: 60, useSecondaryYScale: true } },
+        ])}'
+        width='500'
+        height='300'
+        secondary-y-min-value='0'
+        secondary-y-max-value='100'
+      ></fluent-vertical-bar-chart>
+    `);
+
+    await expect(page.locator('fluent-vertical-bar-chart .y-axis-secondary .y-axis-text')).toHaveText([
+      '0',
+      '25',
+      '50',
+      '75',
+      '100',
+    ]);
+  });
+
   test('Shared Features should render shared layout, palette, metadata, annotations, and scales', async ({ page }) => {
     await page.goto(fixtureURL('components-verticalbarchart--shared-features'));
     const element = page.locator('fluent-vertical-bar-chart');
@@ -287,6 +310,48 @@ test.describe('VerticalBarChart', () => {
     const tickLabels = await tickLabelsLocator.allTextContents();
     expect(tickLabels).toContain('Jan 2018');
     expect(tickLabels).toContain('Feb 2018');
+  });
+
+  test('Should format date x-axis ticks with time-format-locale', async ({ page }) => {
+    const italianLocale = {
+      dateTime: '%A, %e %B %Y, %X',
+      date: '%d/%m/%Y',
+      time: '%H:%M:%S',
+      periods: ['AM', 'PM'],
+      days: ['domenica', 'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'],
+      shortDays: ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'],
+      months: [
+        'gennaio',
+        'febbraio',
+        'marzo',
+        'aprile',
+        'maggio',
+        'giugno',
+        'luglio',
+        'agosto',
+        'settembre',
+        'ottobre',
+        'novembre',
+        'dicembre',
+      ],
+      shortMonths: ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'],
+    };
+
+    await page.setContent(/* html */ `
+      <fluent-vertical-bar-chart
+        data='${JSON.stringify([
+          { x: '2018-01-01T00:00:00Z', y: 10 },
+          { x: '2018-02-01T00:00:00Z', y: 20 },
+        ])}'
+        width='500'
+        height='300'
+        tick-format='%B'
+        time-format-locale='${JSON.stringify(italianLocale)}'
+        tick-values='${JSON.stringify(['2018-01-01T00:00:00Z', '2018-02-01T00:00:00Z'])}'
+      ></fluent-vertical-bar-chart>
+    `);
+
+    await expect(page.locator('fluent-vertical-bar-chart .x-axis .axis-text')).toHaveText(['gennaio', 'febbraio']);
   });
 
   test('Should render a line and legend for negative-value data with line points', async ({ page }) => {

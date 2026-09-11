@@ -13,11 +13,11 @@ import {
   type ScaleTime,
 } from 'd3-scale';
 import { line as createLine } from 'd3-shape';
-import { timeFormat, utcFormat } from 'd3-time-format';
 import type { TooltipProps } from '../utils/chart-options.js';
 import { appendVerticalGradient, resolveBarWidth, resolveChartColor } from '../utils/bar-chart-helpers.js';
 import {
   applyAxisTickConfig,
+  type AxisScaleLike,
   computePreparedNumericYAxis,
   createPreparedNumericContinuousScale,
   DEFAULT_NUMERIC_Y_TICK_COUNT,
@@ -92,7 +92,7 @@ const formatDateValue = (chart: VerticalBarChart, value: Date): string => {
   }
   if (chart.tickFormat) {
     try {
-      return (chart.useUTC ? utcFormat(chart.tickFormat) : timeFormat(chart.tickFormat))(value);
+      return chart._formatDateWithD3Specifier(value, chart.tickFormat);
     } catch {
       // Fall back to Intl below.
     }
@@ -279,13 +279,17 @@ export class VerticalBarChart extends VerticalBarChartBase {
         xScaleLinear.nice();
       }
 
-      xAxis = axisBottom(xScaleLinear).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<
-        string | number | Date
-      >;
+      xAxis = axisBottom(xScaleLinear)
+        .tickPadding(this._getXAxisTickPadding(6))
+        .tickSize(this._getXAxisTickSize(6)) as unknown as Axis<string | number | Date>;
       applyAxisTickConfig(
         xAxis as unknown as Axis<number>,
         this.xAxisTickCount,
         this.tickValues?.map(value => Number(value)),
+        this.xAxisConfig,
+        xScaleLinear as unknown as AxisScaleLike<number>,
+        this.xScaleType,
+        this.useUTC,
       );
 
       const sortedUniqueX = [...new Set(numericXValues)].sort((left, right) => left - right);
@@ -315,9 +319,9 @@ export class VerticalBarChart extends VerticalBarChartBase {
         xScaleTime.nice();
       }
 
-      xAxis = axisBottom(xScaleTime).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<
-        string | number | Date
-      >;
+      xAxis = axisBottom(xScaleTime)
+        .tickPadding(this._getXAxisTickPadding(6))
+        .tickSize(this._getXAxisTickSize(6)) as unknown as Axis<string | number | Date>;
       const parsedTickValues = (this.tickValues ?? [])
         .map(value => {
           if (value instanceof Date) {
@@ -330,7 +334,15 @@ export class VerticalBarChart extends VerticalBarChartBase {
           return undefined;
         })
         .filter((value): value is Date => value !== undefined);
-      applyAxisTickConfig(xAxis as unknown as Axis<Date>, this.xAxisTickCount, parsedTickValues);
+      applyAxisTickConfig(
+        xAxis as unknown as Axis<Date>,
+        this.xAxisTickCount,
+        parsedTickValues,
+        this.xAxisConfig,
+        xScaleTime as unknown as AxisScaleLike<Date>,
+        this.xScaleType,
+        this.useUTC,
+      );
     } else {
       const groupsByCategory = new Map<string, VerticalBarChartDataPoint[]>();
       points.forEach(point => {
@@ -375,9 +387,9 @@ export class VerticalBarChart extends VerticalBarChartBase {
         .range(this._isRTL ? [xRangeEnd, xRangeStart] : [xRangeStart, xRangeEnd])
         .paddingInner(xAxisInnerPadding)
         .paddingOuter(xAxisOuterPadding);
-      xAxis = axisBottom(xScaleBand).tickPadding(toNumber(this.tickPadding, 6)) as unknown as Axis<
-        string | number | Date
-      >;
+      xAxis = axisBottom(xScaleBand)
+        .tickPadding(this._getXAxisTickPadding(6))
+        .tickSize(this._getXAxisTickSize(6)) as unknown as Axis<string | number | Date>;
       applyAxisTickConfig(
         xAxis as unknown as Axis<string>,
         this.xAxisTickCount,
@@ -420,6 +432,8 @@ export class VerticalBarChart extends VerticalBarChartBase {
         scaleType: this.secondaryYScaleType,
         tickCount: toNumber(this.yAxisTickCount, DEFAULT_NUMERIC_Y_TICK_COUNT),
         roundedTicks: this.roundedTicks,
+        minValue: toOptionalNumber(this.secondaryYMinValue),
+        maxValue: toOptionalNumber(this.secondaryYMaxValue),
       });
       preparedSecondaryYAxis = secondaryYAxis.preparedAxis;
       yScaleSecondary = secondaryYAxis.scale;
@@ -431,9 +445,12 @@ export class VerticalBarChart extends VerticalBarChartBase {
 
     const yAxis = axisLeft(yScale).tickPadding(toNumber(this.tickPadding, 6));
     applyAxisTickConfig(
-      yAxis,
+      yAxis as unknown as Axis<number>,
       this.yAxisTickCount ?? DEFAULT_NUMERIC_Y_TICK_COUNT,
       this.yAxisTickValues ?? (useLogPrimary ? undefined : preparedYAxis.tickValues),
+      this.yAxisConfig,
+      yScale as unknown as AxisScaleLike<number>,
+      this.yScaleType,
     );
     renderAxisGridLinesShared({
       layer: plotGroup,
@@ -762,7 +779,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
         axisTop: margins.top,
         innerWidth,
         innerHeight,
-        tickPadding: toNumber(this.tickPadding, 6),
+        tickPadding: this._getXAxisTickPadding(6),
         isRTL: this._isRTL,
         rotateXAxisLabels: this.rotateXAxisLabels,
         wrapXAxisLabels: this.wrapXAxisLabels,
@@ -775,6 +792,8 @@ export class VerticalBarChart extends VerticalBarChartBase {
           hide: () => this._hideAxisLabelTooltip(),
         },
         xAxisTitle: this.xAxisTitle,
+        xAxisAnnotation: this.xAxisAnnotation,
+        tickText: this.xAxisConfig?.tickText,
       });
     } else if (xScaleTime) {
       renderBottomAxisShared({
@@ -786,7 +805,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
         axisTop: margins.top,
         innerWidth,
         innerHeight,
-        tickPadding: toNumber(this.tickPadding, 6),
+        tickPadding: this._getXAxisTickPadding(6),
         isRTL: this._isRTL,
         rotateXAxisLabels: this.rotateXAxisLabels,
         wrapXAxisLabels: this.wrapXAxisLabels,
@@ -798,6 +817,8 @@ export class VerticalBarChart extends VerticalBarChartBase {
           hide: () => this._hideAxisLabelTooltip(),
         },
         xAxisTitle: this.xAxisTitle,
+        xAxisAnnotation: this.xAxisAnnotation,
+        tickText: this.xAxisConfig?.tickText,
       });
     } else {
       renderBottomAxisShared({
@@ -809,7 +830,7 @@ export class VerticalBarChart extends VerticalBarChartBase {
         axisTop: margins.top,
         innerWidth,
         innerHeight,
-        tickPadding: toNumber(this.tickPadding, 6),
+        tickPadding: this._getXAxisTickPadding(6),
         isRTL: this._isRTL,
         rotateXAxisLabels: this.rotateXAxisLabels,
         wrapXAxisLabels: this.wrapXAxisLabels,
@@ -821,6 +842,8 @@ export class VerticalBarChart extends VerticalBarChartBase {
           hide: () => this._hideAxisLabelTooltip(),
         },
         xAxisTitle: this.xAxisTitle,
+        xAxisAnnotation: this.xAxisAnnotation,
+        tickText: this.xAxisConfig?.tickText,
       });
     }
     renderPrimaryYAxisShared({
@@ -835,6 +858,8 @@ export class VerticalBarChart extends VerticalBarChartBase {
       tickPadding: toNumber(this.tickPadding, 6),
       isRTL: this._isRTL,
       yAxisTitle: this.yAxisTitle,
+      yAxisAnnotation: hasSecondaryY ? undefined : this.yAxisAnnotation,
+      tickText: this.yAxisConfig?.tickText,
     });
 
     if (hasSecondaryY) {

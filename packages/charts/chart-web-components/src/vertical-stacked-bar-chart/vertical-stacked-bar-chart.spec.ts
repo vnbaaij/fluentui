@@ -35,6 +35,101 @@ test.describe('VerticalStackedBarChart', () => {
     await expect(element.locator('.bar')).toHaveCount(4);
   });
 
+  test('Should render categorical Y values as ordered stacked bars', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-stacked-bar-chart
+        y-axis-category-order="category descending"
+        data='${JSON.stringify([
+          {
+            xAxisPoint: 1,
+            chartData: [
+              { legend: 'Low', data: 'Low' },
+              { legend: 'High', data: 'High' },
+            ],
+          },
+          {
+            xAxisPoint: 2,
+            chartData: [
+              { legend: 'High', data: 'High' },
+              { legend: 'Low', data: 'Low' },
+            ],
+          },
+        ])}'
+        width="600"
+        height="350">
+      </fluent-vertical-stacked-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await expect(element.locator('.bar')).toHaveCount(4);
+    await expect(element.locator('.y-axis-text')).toHaveText(['Low', 'High']);
+    const firstStackX = await element.locator('.bar').first().getAttribute('x');
+    await expect(element.locator('.bar').nth(1)).toHaveAttribute('x', firstStackX ?? '');
+    expect(
+      await element
+        .locator('.bar')
+        .evaluateAll(bars =>
+          bars.every(bar => Number.isFinite(Number(bar.getAttribute('y'))) && Number(bar.getAttribute('height')) > 0),
+        ),
+    ).toBe(true);
+  });
+
+  test('Should render full and truncated categorical Y labels with optional tooltips', async ({ page }) => {
+    const longCategory = 'A very long category label for the Y axis';
+    await page.setContent(/* html */ `
+      <fluent-vertical-stacked-bar-chart
+        data='${JSON.stringify([{ xAxisPoint: 1, chartData: [{ legend: 'A', data: longCategory }] }])}'
+        width="600"
+        height="350">
+      </fluent-vertical-stacked-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    const label = element.locator('.y-axis-text').first();
+    await expect(label).toHaveText(/^\S.*\.\.\.$/);
+    await expect(label.locator('title')).toHaveCount(0);
+
+    await element.evaluate(chart => chart.setAttribute('show-y-axis-labels', ''));
+    await expect(label).toHaveText(longCategory);
+    await expect(label).not.toHaveText(/\.{3}$/);
+
+    await element.evaluate(chart => chart.setAttribute('show-y-axis-labels-tooltip', ''));
+    await expect(label.locator('title')).toHaveText(longCategory);
+  });
+
+  test('Should preserve numeric stacked bars with line data and secondary scale', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-vertical-stacked-bar-chart
+        data='${JSON.stringify([
+          {
+            xAxisPoint: 1,
+            chartData: [
+              { legend: 'A', data: 30 },
+              { legend: 'B', data: 20 },
+            ],
+            lineData: [{ legend: 'Trend', y: 4, useSecondaryYScale: true }],
+          },
+          {
+            xAxisPoint: 2,
+            chartData: [
+              { legend: 'A', data: 40 },
+              { legend: 'B', data: 35 },
+            ],
+            lineData: [{ legend: 'Trend', y: 7, useSecondaryYScale: true }],
+          },
+        ])}'
+        width="600"
+        height="350">
+      </fluent-vertical-stacked-bar-chart>
+    `);
+
+    const element = page.locator('fluent-vertical-stacked-bar-chart');
+    await expect(element.locator('.bar')).toHaveCount(4);
+    await expect(element.locator('.line-path')).toHaveCount(1);
+    await expect(element.locator('.y-axis-secondary')).toHaveCount(1);
+    expect(await element.locator('.bar').first().getAttribute('height')).not.toBe('0');
+  });
+
   test('Should support roving keyboard focus and promote a clicked segment', async ({ page }) => {
     const element = page.locator('fluent-vertical-stacked-bar-chart');
     const bars = element.locator('.bar');
@@ -470,7 +565,7 @@ test.describe('VerticalStackedBarChart', () => {
     for (let attempt = 0; attempt < 10; attempt++) {
       const hasNegativeValue = await chart.evaluate(node =>
         (node as HTMLElement & { data: VerticalStackedBarChartProps[] }).data.some(stack =>
-          stack.chartData.some(point => point.data < 0),
+          stack.chartData.some(point => typeof point.data === 'number' && point.data < 0),
         ),
       );
       if (hasNegativeValue) {

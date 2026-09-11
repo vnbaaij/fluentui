@@ -8,6 +8,7 @@ import { ElementStyles } from '@microsoft/fast-element';
 import { ElementViewTemplate } from '@microsoft/fast-element';
 import { FASTElement } from '@microsoft/fast-element';
 import { PartialFASTElementDefinition } from '@microsoft/fast-element';
+import { TimeLocaleDefinition } from 'd3-time-format';
 
 // @public
 export interface AccessibilityData {
@@ -109,6 +110,7 @@ export interface ChartAnnotation {
         strokeColor?: string;
         strokeWidth?: number;
         dashArray?: string;
+        arrow?: boolean;
     };
     // (undocumented)
     coordinates: ChartAnnotationCoordinate;
@@ -133,6 +135,8 @@ export interface ChartAnnotation {
     };
     // (undocumented)
     text: string;
+    // (undocumented)
+    textLines?: ChartAnnotationTextLine[];
 }
 
 // @public (undocumented)
@@ -145,6 +149,28 @@ export interface ChartAnnotationCoordinate {
     y: number | string | Date;
     // (undocumented)
     yAxis?: 'primary' | 'secondary';
+}
+
+// @public (undocumented)
+export interface ChartAnnotationTextLine {
+    // (undocumented)
+    bullet?: boolean;
+    // (undocumented)
+    indent?: number;
+    // (undocumented)
+    runs: ChartAnnotationTextRun[];
+}
+
+// @public (undocumented)
+export interface ChartAnnotationTextRun {
+    // (undocumented)
+    fontStyle?: 'normal' | 'italic';
+    // (undocumented)
+    fontWeight?: string | number;
+    // (undocumented)
+    text: string;
+    // (undocumented)
+    textColor?: string;
 }
 
 // @public
@@ -363,14 +389,6 @@ export class GanttChart extends CartesianChartBase {
     // (undocumented)
     protected _performRender(): void;
     // (undocumented)
-    showYAxisLabels: boolean;
-    // (undocumented)
-    protected showYAxisLabelsChanged(): void;
-    // (undocumented)
-    showYAxisLabelsTooltip: boolean;
-    // (undocumented)
-    protected showYAxisLabelsTooltipChanged(): void;
-    // (undocumented)
     get tooltipInlineTransform(): "translateX(-50%)" | "translateX(50%)";
     // Warning: (ae-forgotten-export) The symbol "GanttTooltipProps" needs to be exported by the entry point index.d.ts
     tooltipProps: GanttTooltipProps;
@@ -378,23 +396,9 @@ export class GanttChart extends CartesianChartBase {
     protected tooltipPropsChanged(_old: TooltipProps, newValue: TooltipProps): void;
     tooltipRenderer: TooltipRenderer<GanttChartDataPoint> | undefined;
     // (undocumented)
-    xAxisTickCount?: number | string;
-    // (undocumented)
-    protected xAxisTickCountChanged(): void;
-    // Warning: (ae-forgotten-export) The symbol "AxisCategoryOrder" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    yAxisCategoryOrder: AxisCategoryOrder;
-    // (undocumented)
-    protected yAxisCategoryOrderChanged(): void;
-    // (undocumented)
     yAxisPadding?: number | string;
     // (undocumented)
     protected yAxisPaddingChanged(): void;
-    // (undocumented)
-    yAxisTickCount?: number | string;
-    // (undocumented)
-    protected yAxisTickCountChanged(): void;
 }
 
 // @public
@@ -524,6 +528,11 @@ export type GaugeChartVariant = 'single-segment' | 'multiple-segments';
 // @public
 export type GaugeValueFormat = 'percentage' | 'fraction';
 
+// Warning: (ae-missing-release-tag) "GaugeValueFormatTemplate" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+export type GaugeValueFormatTemplate = string;
+
 // Warning: (ae-forgotten-export) The symbol "VerticalBarChartBase" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
@@ -614,6 +623,11 @@ export const GroupedVerticalBarChartStyles: ElementStyles;
 export const GroupedVerticalBarChartTemplate: ElementViewTemplate<GroupedVerticalBarChart>;
 
 // @public
+export interface HeatMapAccessibilityData {
+    ariaLabel?: string;
+}
+
+// @public
 export class HeatMapChart extends CartesianChartBase {
     // (undocumented)
     protected _applyActiveLegendState(): void;
@@ -654,6 +668,7 @@ export class HeatMapChart extends CartesianChartBase {
     width?: number | string;
     // (undocumented)
     protected widthChanged(): void;
+    // Warning: (ae-forgotten-export) The symbol "AxisCategoryOrder" needs to be exported by the entry point index.d.ts
     xAxisCategoryOrder: AxisCategoryOrder;
     // (undocumented)
     protected xAxisCategoryOrderChanged(): void;
@@ -667,9 +682,6 @@ export class HeatMapChart extends CartesianChartBase {
     xAxisStringLabels?: Record<string, string>;
     // (undocumented)
     protected xAxisStringLabelsChanged(): void;
-    yAxisCategoryOrder: AxisCategoryOrder;
-    // (undocumented)
-    protected yAxisCategoryOrderChanged(): void;
     yAxisDateFormatString?: string;
     // (undocumented)
     protected yAxisDateFormatStringChanged(): void;
@@ -694,7 +706,6 @@ export interface HeatMapChartData {
 
 // @public
 export interface HeatMapChartDataPoint {
-    // Warning: (ae-forgotten-export) The symbol "HeatMapAccessibilityData" needs to be exported by the entry point index.d.ts
     callOutAccessibilityData?: HeatMapAccessibilityData;
     descriptionMessage?: string;
     onClick?: () => void;
@@ -833,14 +844,6 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     // (undocumented)
     protected _performRender(): void;
     // (undocumented)
-    showYAxisLabels: boolean;
-    // (undocumented)
-    protected showYAxisLabelsChanged(): void;
-    // (undocumented)
-    showYAxisLabelsTooltip: boolean;
-    // (undocumented)
-    protected showYAxisLabelsTooltipChanged(): void;
-    // (undocumented)
     get tooltipInlineTransform(): "translateX(-50%)" | "translateX(50%)";
     // Warning: (ae-forgotten-export) The symbol "HBCWATooltipProps" needs to be exported by the entry point index.d.ts
     tooltipProps: HBCWATooltipProps;
@@ -852,21 +855,9 @@ export class HorizontalBarChartWithAxis extends CartesianChartBase {
     // (undocumented)
     protected useSingleColorChanged(): void;
     // (undocumented)
-    xAxisTickCount?: number | string;
-    // (undocumented)
-    protected xAxisTickCountChanged(): void;
-    // (undocumented)
-    yAxisCategoryOrder: AxisCategoryOrder;
-    // (undocumented)
-    protected yAxisCategoryOrderChanged(): void;
-    // (undocumented)
     yAxisPadding?: number | string;
     // (undocumented)
     protected yAxisPaddingChanged(): void;
-    // (undocumented)
-    yAxisTickCount?: number | string;
-    // (undocumented)
-    protected yAxisTickCountChanged(): void;
 }
 
 // @public
@@ -904,6 +895,8 @@ export interface Legend {
     // (undocumented)
     legend: string;
     // (undocumented)
+    lineStrokeDasharray?: string | number;
+    // (undocumented)
     shape?: ChartMarkerShape;
 }
 
@@ -919,8 +912,6 @@ export class LineChart extends CartesianChartBase {
     protected _buildDefaultTooltipHTML(): string;
     // (undocumented)
     protected _clearTooltip(): void;
-    // Warning: (ae-forgotten-export) The symbol "LineChartColorFillBar" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     colorFillBars?: LineChartColorFillBar[];
     // (undocumented)
@@ -932,13 +923,23 @@ export class LineChart extends CartesianChartBase {
     // (undocumented)
     protected dataChanged(): void;
     // (undocumented)
+    dismissEventAnnotationCard(restoreFocus?: boolean): void;
+    // (undocumented)
     protected _enableResizeObserver: boolean;
+    // Warning: (ae-forgotten-export) The symbol "EventAnnotationCardState" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    eventAnnotationCard?: EventAnnotationCardState;
+    // (undocumented)
+    eventAnnotationCardContent: HTMLDivElement;
     // (undocumented)
     eventAnnotationProps?: LineChartEventAnnotationProps;
     // (undocumented)
     protected eventAnnotationPropsChanged(): void;
     // (undocumented)
     protected _getHostAriaLabel(): string;
+    // (undocumented)
+    handleEventAnnotationCardKeydown(event: KeyboardEvent): void;
     // (undocumented)
     isCalloutForStack: boolean;
     // (undocumented)
@@ -960,6 +961,26 @@ export class LineChart extends CartesianChartBase {
 }
 
 // @public (undocumented)
+export interface LineChartColorFillBar {
+    // (undocumented)
+    applyPattern?: boolean;
+    // (undocumented)
+    color: string;
+    // (undocumented)
+    data: LineChartColorFillBarData[];
+    // (undocumented)
+    legend: string;
+}
+
+// @public (undocumented)
+export interface LineChartColorFillBarData {
+    // (undocumented)
+    endX: number | Date | string;
+    // (undocumented)
+    startX: number | Date | string;
+}
+
+// @public (undocumented)
 export interface LineChartDataPoint {
     // (undocumented)
     hideCallout?: boolean;
@@ -968,7 +989,7 @@ export interface LineChartDataPoint {
     // (undocumented)
     onDataPointClick?: VoidFunction;
     // (undocumented)
-    x: number | Date;
+    x: number | Date | string;
     // (undocumented)
     xAxisCalloutData?: string | Date;
     // (undocumented)
@@ -983,7 +1004,9 @@ export const LineChartDefinition: PartialFASTElementDefinition;
 // @public (undocumented)
 export interface LineChartEventAnnotation {
     // (undocumented)
-    date: Date;
+    cardContent?: string;
+    // (undocumented)
+    date: Date | string;
     // (undocumented)
     event: string;
     // (undocumented)
@@ -1001,9 +1024,33 @@ export interface LineChartEventAnnotationProps {
     // (undocumented)
     labelWidth?: number;
     // (undocumented)
-    mergedLabel: (count: number) => string;
+    mergedLabel?: string | ((count: number) => string);
     // (undocumented)
     strokeColor?: string;
+}
+
+// @public (undocumented)
+export interface LineChartGap {
+    // (undocumented)
+    endIndex: number;
+    // (undocumented)
+    startIndex: number;
+}
+
+// @public (undocumented)
+export interface LineChartLineOptions {
+    // (undocumented)
+    lineBorderColor?: string;
+    // (undocumented)
+    lineBorderWidth?: number | string;
+    // (undocumented)
+    strokeDasharray?: number | string;
+    // (undocumented)
+    strokeDashoffset?: number | string;
+    // (undocumented)
+    strokeLinecap?: 'butt' | 'round' | 'square' | 'inherit';
+    // (undocumented)
+    strokeWidth?: number | string;
 }
 
 // @public (undocumented)
@@ -1012,14 +1059,10 @@ export interface LineChartSeries {
     color?: string;
     // (undocumented)
     data: LineChartDataPoint[];
-    // Warning: (ae-forgotten-export) The symbol "LineChartGap" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     gaps?: LineChartGap[];
     // (undocumented)
     legend: string;
-    // Warning: (ae-forgotten-export) The symbol "LineChartLineOptions" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     lineOptions?: LineChartLineOptions;
     // (undocumented)
@@ -1043,13 +1086,13 @@ export interface PolarAxisOptions {
     // (undocumented)
     categoryOrder?: AxisCategoryOrder;
     // (undocumented)
-    rangeEnd?: number | Date;
+    rangeEnd?: number | Date | string;
     // (undocumented)
-    rangeStart?: number | Date;
+    rangeStart?: number | Date | string;
     // (undocumented)
     scaleType?: AxisScaleType;
     // (undocumented)
-    tick0?: number | Date;
+    tick0?: number | Date | string;
     // (undocumented)
     tickCount?: number;
     // (undocumented)
@@ -1296,7 +1339,7 @@ export interface ScatterChartDataPoint {
     // (undocumented)
     x: number | Date | string;
     // (undocumented)
-    y: number;
+    y: number | string;
 }
 
 // @public (undocumented)
@@ -1625,7 +1668,7 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
 // @public (undocumented)
 export interface VerticalStackedBarChartDataPoint extends VerticalBarDataPointMetadata {
     // (undocumented)
-    data: number;
+    data: number | string;
     // (undocumented)
     legend: string;
 }

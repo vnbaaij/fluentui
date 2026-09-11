@@ -44,6 +44,11 @@ test.describe('GanttChart - Basic', () => {
 
   test('Should render correct number of bars', async ({ page }) => {
     const element = page.locator('fluent-gantt-chart');
+    await expect(element.locator('svg.chart-svg')).toHaveAttribute('role', 'group');
+    await expect(element.locator('svg.chart-svg')).toHaveAttribute(
+      'aria-label',
+      `${ganttTitle}. Gantt chart with ${basicData.length} bars.`,
+    );
     const bars = element.locator('.bar');
     await expect(bars).toHaveCount(basicData.length);
   });
@@ -73,21 +78,30 @@ test.describe('GanttChart - Basic', () => {
       const grid = node.shadowRoot!.querySelector<SVGGElement>('.axis-grid')!;
       const line = grid.querySelector<SVGLineElement>('.axis-grid-line')!;
       const bar = node.shadowRoot!.querySelector<SVGRectElement>('.bar')!;
-      const xAxisTick = [...node.shadowRoot!.querySelectorAll<SVGLineElement>('.axis-tick-line')].find(
+      const hasSeparateXAxisTicks = [...node.shadowRoot!.querySelectorAll<SVGLineElement>('.axis-tick-line')].some(
         tick => tick.getAttribute('x1') === tick.getAttribute('x2'),
-      )!;
+      );
+      const gridStyle = getComputedStyle(line);
       return {
         gridIsVertical: line.getAttribute('x1') === line.getAttribute('x2'),
         gridSpansPlot: Number(line.getAttribute('y2')) > Number(line.getAttribute('y1')),
+        gridReachesXAxisLabels:
+          Number(line.getAttribute('y2')) <
+          Number(node.shadowRoot!.querySelector<SVGTextElement>('.axis-text')!.getAttribute('y')),
         gridBeforeBar: Boolean(grid.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING),
-        tickLength: Math.abs(Number(xAxisTick.getAttribute('y2')) - Number(xAxisTick.getAttribute('y1'))),
+        hasSeparateXAxisTicks,
+        gridOpacity: gridStyle.opacity,
+        gridPointerEvents: gridStyle.pointerEvents,
       };
     });
 
     expect(result.gridIsVertical).toBe(true);
     expect(result.gridSpansPlot).toBe(true);
+    expect(result.gridReachesXAxisLabels).toBe(true);
     expect(result.gridBeforeBar).toBe(true);
-    expect(result.tickLength).toBe(6);
+    expect(result.hasSeparateXAxisTicks).toBe(false);
+    expect(result.gridOpacity).toBe('0.2');
+    expect(result.gridPointerEvents).toBe('none');
   });
 
   test('Should render bars with correct fill colors', async ({ page }) => {
@@ -404,8 +418,11 @@ test.describe('GanttChart - rotate-x-axis-labels', () => {
     `);
     await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
     const axisTexts = page.locator('fluent-gantt-chart').locator('.axis-text');
-    const transform = await axisTexts.first().getAttribute('transform');
-    await expect(transform).toMatch(/rotate\(-45/);
+    expect(await axisTexts.count()).toBeGreaterThan(1);
+    for (const axisText of await axisTexts.all()) {
+      await expect(axisText).toBeVisible();
+      await expect(axisText).toHaveAttribute('transform', /rotate\(-45/);
+    }
   });
 });
 
@@ -477,30 +494,14 @@ test.describe('GanttChart - bar-height', () => {
 });
 
 test.describe('GanttChart - tick-format', () => {
-  test('Should accept tick-format attribute without error (placeholder for future d3 support)', async ({ page }) => {
-    await page.goto(fixtureURL('components-ganttchart--basic'));
+  test('Should format date axis labels with the d3 time-format specifier', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--tick-format-locale'));
 
-    const start = new Date('2024-03-01T00:00:00').getTime();
-    const end = new Date('2024-06-30T00:00:00').getTime();
-    const tasks = JSON.stringify([
-      { startTime: start, endTime: new Date('2024-04-01T00:00:00').getTime(), legendText: 'A', color: '#0078d4' },
-    ]);
-
-    await page.setContent(/* html */ `
-      <div>
-        <fluent-gantt-chart
-          chart-title="Tick format test"
-          tick-format="%m/%d"
-          data='${tasks}'
-          start-time='${start}'
-          end-time='${end}'
-        ></fluent-gantt-chart>
-      </div>
-    `);
-
-    const chart = page.locator('fluent-gantt-chart');
-    await expect(chart).toBeAttached();
-    await expect(chart).toHaveAttribute('tick-format', '%m/%d');
+    const axisTexts = page.locator('fluent-gantt-chart').locator('.axis-text');
+    expect(await axisTexts.count()).toBeGreaterThan(1);
+    for (const axisText of await axisTexts.all()) {
+      await expect(axisText).toHaveText(/^\d{2}\/\d{2}$/);
+    }
   });
 });
 
@@ -622,6 +623,118 @@ test.describe('GanttChart - show-x-axis-labels-tooltip', () => {
     const axisLabels = element.locator('.axis-text');
     await axisLabels.first().hover();
     await expect(element.locator('.axis-label-tooltip')).toHaveCount(0);
+  });
+});
+
+test.describe('GanttChart - show-y-axis-labels', () => {
+  const longLabelData: GanttChartDataPoint[] = [
+    {
+      x: { start: 0, end: 10 },
+      y: 'A very long task name that exceeds truncation',
+      legend: 'Team Alpha',
+      color: color1,
+    },
+    { x: { start: 5, end: 20 }, y: 'Task B', legend: 'Team Alpha', color: color1 },
+  ];
+
+  test('Should truncate long y-axis category labels by default', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Y-axis labels truncation test"
+          data='${JSON.stringify(longLabelData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+    const yLabels = element.locator('.y-axis-text');
+    const truncatedLabel = yLabels.filter({ hasText: '…' }).first();
+    await expect(truncatedLabel).toBeVisible();
+    const text = await truncatedLabel.textContent();
+    expect(text!.length).toBeLessThanOrEqual(18);
+  });
+
+  test('Should render the full y-axis category label when show-y-axis-labels is set', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Y-axis labels full test"
+          show-y-axis-labels
+          data='${JSON.stringify(longLabelData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+    const yLabels = element.locator('.y-axis-text');
+    await expect(yLabels.filter({ hasText: 'A very long task name that exceeds truncation' })).toHaveCount(1);
+  });
+
+  test('Should add a title tooltip to truncated y-axis labels when show-y-axis-labels-tooltip is set', async ({
+    page,
+  }) => {
+    await page.goto(fixtureURL('components-ganttchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Y-axis labels tooltip test"
+          show-y-axis-labels-tooltip
+          data='${JSON.stringify(longLabelData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+    const truncatedLabel = element.locator('.y-axis-text').filter({ hasText: '…' }).first();
+    await expect(truncatedLabel.locator('title')).toHaveText('A very long task name that exceeds truncation');
+  });
+
+  test('Should not add a title tooltip when show-y-axis-labels-tooltip is absent', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="No y-axis labels tooltip test"
+          data='${JSON.stringify(longLabelData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+    const truncatedLabel = element.locator('.y-axis-text').filter({ hasText: '…' }).first();
+    await expect(truncatedLabel.locator('title')).toHaveCount(0);
+  });
+});
+
+test.describe('GanttChart - y-axis-category-order', () => {
+  const orderedData: GanttChartDataPoint[] = [
+    { x: { start: 0, end: 10 }, y: 'Zebra', legend: 'S1', color: color1 },
+    { x: { start: 5, end: 20 }, y: 'Apple', legend: 'S2', color: color2 },
+    { x: { start: 12, end: 30 }, y: 'Mango', legend: 'S3', color: successColor },
+  ];
+
+  test('Should reorder y-axis labels according to y-axis-category-order', async ({ page }) => {
+    await page.goto(fixtureURL('components-ganttchart--basic'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-gantt-chart
+          chart-title="Category order"
+          y-axis-category-order="category ascending"
+          data='${JSON.stringify(orderedData)}'>
+        </fluent-gantt-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-gantt-chart'));
+    const element = page.locator('fluent-gantt-chart');
+    // 'category ascending' → Apple, Mango, Zebra (first in DOM = top of chart = Apple)
+    await expect(element.locator('.y-axis-text').first()).toHaveText('Apple');
+
+    await element.evaluate(el => el.setAttribute('y-axis-category-order', 'category descending'));
+    // 'category descending' → Zebra, Mango, Apple (first = top = Zebra)
+    await expect(element.locator('.y-axis-text').first()).toHaveText('Zebra');
   });
 });
 
@@ -789,6 +902,31 @@ test.describe('GanttChart - y-axis-tick-values', () => {
     await expect(labels.nth(1)).toContainText('50');
     await expect(labels.nth(2)).toContainText('100');
   });
+
+  test('Should render numeric y-axis grid lines above the highest y value', async ({ page }) => {
+    const element = page.locator('fluent-gantt-chart');
+    const result = await element.evaluate(node => {
+      const gridLine = node.shadowRoot!.querySelector<SVGLineElement>('.axis-grid-line')!;
+      const highestTickY = Math.min(
+        ...Array.from(node.shadowRoot!.querySelectorAll<SVGTextElement>('.y-axis-text')).map(text =>
+          Number(text.getAttribute('y')),
+        ),
+      );
+      const highestBar = node.shadowRoot!.querySelector<SVGRectElement>('.bar')!;
+      const highestBarTop = Number(highestBar.getAttribute('y'));
+      const highestBarCenter = highestBarTop + Number(highestBar.getAttribute('height')) / 2;
+      return {
+        gridTop: Number(gridLine.getAttribute('y1')),
+        highestTickY,
+        highestBarTop,
+        highestBarCenter,
+      };
+    });
+
+    expect(result.gridTop).toBeLessThan(result.highestTickY);
+    expect(result.gridTop).toBeLessThan(result.highestBarTop);
+    expect(result.highestBarCenter).toBeCloseTo(result.highestTickY, 5);
+  });
 });
 
 test.describe('GanttChart - hide-tick-overlap', () => {
@@ -804,6 +942,9 @@ test.describe('GanttChart - hide-tick-overlap', () => {
         <fluent-gantt-chart
           chart-title="Gantt tick overlap test"
           tick-values='[0,1,2,3,4,5,6,7,8,9,10,11,12]'
+          x-axis-config='${JSON.stringify({
+            tickText: Array.from({ length: 13 }, (_, index) => `Long tick ${index}`),
+          })}'
           x-axis-tick-format=".0f"
           data='${JSON.stringify(crowdedTickData)}'
         ></fluent-gantt-chart>

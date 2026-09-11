@@ -468,9 +468,9 @@ const buildAxisCategoryOrderData = (dataSize: number) => {
     let positiveSum = 0;
     let negativeSum = 0;
     for (const bar of point.chartData) {
-      if (bar.data >= 0) {
+      if (typeof bar.data === 'number' && bar.data >= 0) {
         positiveSum += bar.data;
-      } else {
+      } else if (typeof bar.data === 'number') {
         negativeSum += bar.data;
       }
     }

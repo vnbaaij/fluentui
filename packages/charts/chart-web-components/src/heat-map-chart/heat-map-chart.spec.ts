@@ -341,3 +341,69 @@ test.describe('HeatMapChart - x-axis-category-order', () => {
     expect(labels).toEqual(['Banana', 'Apple', 'Cherry']);
   });
 });
+
+test.describe('HeatMapChart - y-axis-category-order', () => {
+  const orderedData: HeatMapChartData[] = [
+    {
+      value: 50,
+      legend: 'Usage',
+      data: [
+        { x: 'Mon', y: 'Banana', value: 40, rectText: 40 },
+        { x: 'Mon', y: 'Apple', value: 55, rectText: 55 },
+        { x: 'Mon', y: 'Cherry', value: 70, rectText: 70 },
+      ],
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(fixtureURL('components-heatmapchart--category-order'));
+    await page.setContent(/* html */ `
+      <div>
+        <fluent-heat-map-chart
+          chart-title="Heat map y category order test"
+          data='${JSON.stringify(orderedData)}'
+          domain-values-for-color-scale='[0,50,100]'
+          range-values-for-color-scale='["#d4e8ff","#0078d4","#003a78"]'
+          sort-order="none"
+        ></fluent-heat-map-chart>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-heat-map-chart'));
+  });
+
+  // The y-axis band scale renders its (sorted) domain bottom-to-top (see `heat-map-chart.ts`
+  // "y-axis: first label at top" scale setup), so the DOM/top-to-bottom order of `.y-axis-text`
+  // elements is the reverse of the sorted key order produced by `y-axis-category-order`.
+  test('Should sort y-axis labels alphabetically when the order is alphabetical', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+
+    await element.evaluate(el => el.setAttribute('y-axis-category-order', 'alphabetical'));
+    await page.waitForTimeout(50);
+
+    const labels = (await element.locator('.y-axis-text').allTextContents()).map(text => text.trim());
+    // Sorted ascending: Apple, Banana, Cherry → rendered top-to-bottom in reverse.
+    expect(labels).toEqual(['Cherry', 'Banana', 'Apple']);
+  });
+
+  test('Should sort y-axis labels in reverse alphabetical order when the order is descending', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+
+    await element.evaluate(el => el.setAttribute('y-axis-category-order', 'category descending'));
+    await page.waitForTimeout(50);
+
+    const labels = (await element.locator('.y-axis-text').allTextContents()).map(text => text.trim());
+    // Sorted descending: Cherry, Banana, Apple → rendered top-to-bottom in reverse.
+    expect(labels).toEqual(['Apple', 'Banana', 'Cherry']);
+  });
+
+  test('Should preserve insertion order when the y order is none', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+
+    await element.evaluate(el => el.setAttribute('y-axis-category-order', 'none'));
+    await page.waitForTimeout(50);
+
+    const labels = (await element.locator('.y-axis-text').allTextContents()).map(text => text.trim());
+    // Insertion order: Banana, Apple, Cherry → rendered top-to-bottom in reverse.
+    expect(labels).toEqual(['Cherry', 'Apple', 'Banana']);
+  });
+});

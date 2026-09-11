@@ -7,6 +7,7 @@ import {
   type Meta,
   type Story,
 } from '../helpers.stories.js';
+import type { AxisCategoryOrder as AxisCategoryOrderValue } from '../utils/chart-options.js';
 import { definition } from './grouped-vertical-bar-chart.definition.js';
 import type { GroupedVerticalBarChartData } from './grouped-vertical-bar-chart.options.js';
 import type { GroupedVerticalBarChart } from './grouped-vertical-bar-chart.js';
@@ -87,6 +88,63 @@ const negativeData: GroupedVerticalBarChartData[] = [
       { key: '2022', data: -33000, color: 'qualitative.4' },
       { key: '2023', data: 3000, color: 'qualitative.5' },
       { key: '2024', data: -6000, color: 'qualitative.6' },
+    ],
+  },
+];
+
+const categoryOrderOptions: AxisCategoryOrderValue[] = [
+  'default',
+  'data',
+  'category ascending',
+  'category descending',
+  'total ascending',
+  'total descending',
+  'min ascending',
+  'min descending',
+  'max ascending',
+  'max descending',
+  'sum ascending',
+  'sum descending',
+  'mean ascending',
+  'mean descending',
+  'median ascending',
+  'median descending',
+];
+
+const axisCategoryOrderData: GroupedVerticalBarChartData[] = [
+  {
+    xAxisPoint: 'Delta',
+    series: [
+      { key: 'North', data: 18, color: 'qualitative.3' },
+      { key: 'South', data: 24, color: 'qualitative.4' },
+    ],
+  },
+  {
+    xAxisPoint: 'Alpha',
+    series: [
+      { key: 'North', data: 10, color: 'qualitative.3' },
+      { key: 'South', data: 6, color: 'qualitative.4' },
+    ],
+  },
+  {
+    xAxisPoint: 'Echo',
+    series: [
+      { key: 'North', data: 29, color: 'qualitative.3' },
+      { key: 'South', data: 34, color: 'qualitative.4' },
+    ],
+  },
+  {
+    xAxisPoint: 'Bravo',
+    series: [
+      { key: 'North', data: 14, color: 'qualitative.3' },
+      { key: 'South', data: 18, color: 'qualitative.4' },
+    ],
+  },
+  {
+    xAxisPoint: 'Charlie',
+    series: [
+      { key: 'North', data: 22, color: 'qualitative.3' },
+      { key: 'South', data: 29, color: 'qualitative.4' },
     ],
   },
 ];
@@ -311,6 +369,41 @@ export const SharedFeatures: Story<GroupedVerticalBarChart> = () => {
 };
 SharedFeatures.storyName = 'Shared Features';
 SharedFeatures.parameters = { docs: { story: { height: '540px' } } };
+
+export const AxisCategoryOrder: Story<GroupedVerticalBarChart> = () => {
+  const container = document.createElement('div');
+  const controls = document.createElement('div');
+  controls.setAttribute('style', `${controlsRowStyle}margin-bottom:16px;`);
+  container.appendChild(controls);
+
+  let xAxisCategoryOrder: AxisCategoryOrderValue = 'default';
+
+  const chart = document.createElement('fluent-grouped-vertical-bar-chart') as GroupedVerticalBarChart;
+  chart.data = axisCategoryOrderData;
+  chart.chartTitle = 'Grouped vertical bar chart axis category order example';
+  chart.setAttribute('width', '650');
+  chart.setAttribute('height', '350');
+  chart.setAttribute('x-axis-category-order', xAxisCategoryOrder);
+  chart.setAttribute('style', 'margin-top:20px;');
+
+  const orderControl = createDropdownField(
+    'xAxisCategoryOrder',
+    'gvbar-axis-category-order',
+    categoryOrderOptions,
+    xAxisCategoryOrder,
+    nextValue => {
+      xAxisCategoryOrder = nextValue as AxisCategoryOrderValue;
+      orderControl.setValue(nextValue);
+      chart.setAttribute('x-axis-category-order', xAxisCategoryOrder);
+    },
+  );
+  controls.appendChild(orderControl.element);
+
+  container.appendChild(chart);
+  return container;
+};
+AxisCategoryOrder.storyName = 'Axis Category Order';
+AxisCategoryOrder.parameters = { docs: { story: { height: '480px' } } };
 
 const lineStory: Story<GroupedVerticalBarChart> = () => {
   const container = document.createElement('div');

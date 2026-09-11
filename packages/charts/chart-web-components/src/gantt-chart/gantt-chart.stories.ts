@@ -15,19 +15,19 @@ import type { AxisCategoryOrder } from '../utils/chart-options.js';
 
 const basicData: GanttChartDataPoint[] = [
   {
-    x: { start: new Date('2009-01-01'), end: new Date('2009-02-28') },
+    x: { start: new Date('2026-01-01'), end: new Date('2026-02-28') },
     y: 'Job A',
     legend: 'Alex',
     color: DataVizPalette.color1,
   },
   {
-    x: { start: new Date('2009-03-05'), end: new Date('2009-04-15') },
+    x: { start: new Date('2026-03-05'), end: new Date('2026-04-15') },
     y: 'Job B',
     legend: 'Alex',
     color: DataVizPalette.color1,
   },
   {
-    x: { start: new Date('2009-02-20'), end: new Date('2009-05-30') },
+    x: { start: new Date('2026-02-20'), end: new Date('2026-05-30') },
     y: 'Job C',
     legend: 'Max',
     color: DataVizPalette.color2,
@@ -493,16 +493,9 @@ TickValues.parameters = { docs: { story: { height: '480px' } } };
 export const TickFormatLocale: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');
 
-  const label = document.createElement('p');
-  label.textContent =
-    'tick-format is reserved for future d3-time-format support and currently has no visual effect. ' +
-    'Use date-localize-options + culture to customise date axis labels via Intl.';
-  label.setAttribute('style', 'font-style:italic;margin:0 0 8px;');
-  container.appendChild(label);
-
   const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
   chart.data = basicData;
-  chart.chartTitle = 'Gantt Chart — tick-format (placeholder)';
+  chart.chartTitle = 'Gantt Chart — date tick format (%m/%d)';
   chart.setAttribute('tick-format', '%m/%d');
 
   container.appendChild(chart);
@@ -606,32 +599,6 @@ export const DateLocalizeOptions: Story<FluentGanttChart> = () => {
 };
 
 DateLocalizeOptions.parameters = { docs: { story: { height: '480px' } } };
-export const TooltipRendererStory: Story<FluentGanttChart> = () => {
-  const container = document.createElement('div');
-
-  const info = document.createElement('p');
-  info.textContent =
-    'Hover over a bar — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
-  container.appendChild(info);
-
-  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
-  chart.data = basicData;
-  chart.chartTitle = 'Gantt Chart — custom tooltipRenderer';
-  chart.toggleAttribute('show-y-axis-labels', true);
-  chart.setAttribute('width', '600');
-  chart.setAttribute('height', '350');
-  chart.tooltipRenderer = (point, defaultRender) => {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
-    wrapper.innerHTML = `<strong>${point.legend ?? ''}</strong><br>${defaultRender(point)}`;
-    return wrapper;
-  };
-
-  container.appendChild(chart);
-  return container;
-};
-TooltipRendererStory.storyName = 'Tooltip Renderer';
-TooltipRendererStory.parameters = { docs: { story: { height: '480px' } } };
 
 const utcStoryData: GanttChartDataPoint[] = [
   {
@@ -660,6 +627,33 @@ export const UseUTC: Story<FluentGanttChart> = () => {
   return chart;
 };
 UseUTC.parameters = { docs: { story: { height: '420px' } } };
+
+export const TooltipRendererStory: Story<FluentGanttChart> = () => {
+  const container = document.createElement('div');
+
+  const info = document.createElement('p');
+  info.textContent =
+    'Hover over a bar — the tooltip body is replaced by a custom renderer that wraps the default HTML in a styled box.';
+  container.appendChild(info);
+
+  const chart = document.createElement('fluent-gantt-chart') as FluentGanttChart;
+  chart.data = basicData;
+  chart.chartTitle = 'Gantt Chart — custom tooltipRenderer';
+  chart.toggleAttribute('show-y-axis-labels', true);
+  chart.setAttribute('width', '600');
+  chart.setAttribute('height', '350');
+  chart.tooltipRenderer = (point, defaultRender) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'padding:8px;border-left:3px solid #637cef;background:#f3f6ff;';
+    wrapper.innerHTML = `<strong>${point.legend ?? ''}</strong><br>${defaultRender(point)}`;
+    return wrapper;
+  };
+
+  container.appendChild(chart);
+  return container;
+};
+TooltipRendererStory.storyName = 'Tooltip Renderer';
+TooltipRendererStory.parameters = { docs: { story: { height: '480px' } } };
 
 export const Culture: Story<FluentGanttChart> = () => {
   const container = document.createElement('div');

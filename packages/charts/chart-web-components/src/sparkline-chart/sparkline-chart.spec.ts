@@ -61,6 +61,27 @@ test.describe('SparklineChart', () => {
     await expect(element.locator('.sparkline-legend-text')).toHaveText('20');
   });
 
+  test('Should size the default legend width to its text content', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <fluent-sparkline-chart width="80" height="20" show-legend data='${JSON.stringify(data)}'>
+      </fluent-sparkline-chart>
+    `);
+    const element = page.locator('fluent-sparkline-chart');
+    const dimensions = await element.evaluate(chart => {
+      const legend = chart.shadowRoot!.querySelector<SVGSVGElement>('.sparkline-legend')!;
+      const text = legend.querySelector<SVGTextElement>('.sparkline-legend-text')!;
+      return {
+        hostWidth: chart.getBoundingClientRect().width,
+        legendWidth: Number(legend.getAttribute('width')),
+        textWidth: text.getComputedTextLength(),
+      };
+    });
+
+    expect(dimensions.legendWidth).toBe(Math.ceil(dimensions.textWidth) + 16);
+    expect(dimensions.hostWidth).toBe(80 + dimensions.legendWidth);
+    expect(dimensions.legendWidth).toBeLessThan(80);
+  });
+
   test('Basic story should mirror the React narrative and table data', async ({ page }) => {
     await page.goto(fixtureURL('components-sparklinechart--basic'));
 
