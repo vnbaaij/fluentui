@@ -16,6 +16,7 @@ import {
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   renderSecondaryYAxisShared,
+  resolvePixelDimension,
   sortCategoryGroups,
   toAxisNumber as toNumber,
   toOptionalAxisNumber as toOptionalNumber,
@@ -176,8 +177,8 @@ export class GroupedVerticalBarChart extends VerticalBarChartBase {
       return;
     }
 
-    const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 600);
-    const height = toNumber(this.height, 300);
+    const width = resolvePixelDimension(this.width, this.chartContainer.getBoundingClientRect().width, 600);
+    const height = resolvePixelDimension(this.height, this.chartContainer.getBoundingClientRect().height, 300);
     const hasSecondaryY = groups.some(
       group =>
         group.series.some(point => point.useSecondaryYScale) || group.lineData?.some(entry => entry.useSecondaryYScale),

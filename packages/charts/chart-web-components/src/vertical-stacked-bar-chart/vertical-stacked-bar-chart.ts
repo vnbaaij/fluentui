@@ -26,6 +26,7 @@ import {
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   renderSecondaryYAxisShared,
+  resolvePixelDimension,
   sortCategoryGroups,
   toAxisNumber as toNumber,
   toOptionalAxisNumber as toOptionalNumber,
@@ -290,10 +291,8 @@ export class VerticalStackedBarChart extends VerticalBarChartBase {
       return;
     }
 
-    const requestedChartWidth = toOptionalNumber(this.width);
-    const measuredWidth = this.chartContainer.getBoundingClientRect().width;
-    const width = requestedChartWidth ?? (measuredWidth || toNumber(this.width, 600));
-    const height = toNumber(this.height, 350);
+    const width = resolvePixelDimension(this.width, this.chartContainer.getBoundingClientRect().width, 600);
+    const height = resolvePixelDimension(this.height, this.chartContainer.getBoundingClientRect().height, 350);
     const hasSecondaryY = stacks.some(stack => stack.lineData?.some(entry => entry.useSecondaryYScale));
     const chartDataValues = stacks.flatMap(stack => stack.chartData.map(point => point.data));
     const isCategoricalY = chartDataValues.some(value => typeof value === 'string');

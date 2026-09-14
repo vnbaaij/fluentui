@@ -821,6 +821,48 @@ test.describe('AreaChart', () => {
     await expect(firstPoint).toHaveAttribute('tabindex', '0');
   });
 
+  test('Should handle width and height passed as pixel strings, numeric strings, and percentages', async ({ page }) => {
+    await page.setContent(/* html */ `
+      <div style="width: 500px; height: 350px;">
+        <fluent-area-chart id="chart-px" data='${JSON.stringify(
+          data,
+        )}' width='450px' height='320px'></fluent-area-chart>
+        <fluent-area-chart id="chart-num" data='${JSON.stringify(data)}' width='420' height='280'></fluent-area-chart>
+        <fluent-area-chart id="chart-pct" data='${JSON.stringify(data)}' width='100%' height='100%'></fluent-area-chart>
+      </div>
+    `);
+
+    const chartPx = page.locator('#chart-px');
+    const chartNum = page.locator('#chart-num');
+    const chartPct = page.locator('#chart-pct');
+
+    await expect(chartPx).toBeVisible();
+    await expect(chartNum).toBeVisible();
+    await expect(chartPct).toBeVisible();
+
+    const pxDims = await chartPx.evaluate((chart: any) => {
+      const svg = chart.shadowRoot.querySelector('svg');
+      return { width: svg?.getAttribute('width'), height: svg?.getAttribute('height') };
+    });
+    expect(pxDims).toEqual({ width: '450', height: '320' });
+
+    const numDims = await chartNum.evaluate((chart: any) => {
+      const svg = chart.shadowRoot.querySelector('svg');
+      return { width: svg?.getAttribute('width'), height: svg?.getAttribute('height') };
+    });
+    expect(numDims).toEqual({ width: '420', height: '280' });
+
+    const pctDims = await chartPct.evaluate((chart: any) => {
+      const svg = chart.shadowRoot.querySelector('svg');
+      return {
+        width: Number(svg?.getAttribute('width')),
+        height: Number(svg?.getAttribute('height')),
+      };
+    });
+    expect(pctDims.width).toBeGreaterThan(0);
+    expect(pctDims.height).toBeGreaterThan(0);
+  });
+
   test('Should wrap datapoint roving navigation at the ends of the list', async ({ page }) => {
     const element = page.locator('fluent-area-chart');
     const points = element.locator('.data-point-focus-target');

@@ -8,6 +8,8 @@ import {
   getNextColor,
   jsonConverter,
   lightenColor,
+  parseNumber as toNumber,
+  resolvePixelDimension,
   SVG_NAMESPACE_URI,
 } from '../utils/chart-helpers.js';
 import type { StackedBarChartData, StackedBarChartDataPoint } from './stacked-bar-chart.options.js';
@@ -16,15 +18,6 @@ const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
 
 const defaultNumberFormatter = format(',.2~f');
-
-const toNumber = (value: number | string | undefined, fallback: number): number => {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
 
 const getSegmentColor = (point: StackedBarChartDataPoint, index: number): string => {
   if (point.placeHolder) {
@@ -126,8 +119,12 @@ export class StackedBarChart extends ChartBase {
 
     const margins = { top: 32, right: 20, bottom: 20, left: 20 };
     const barHeight = toNumber(this.barHeight, 16);
-    const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 600);
-    const height = toNumber(this.height, margins.top + barHeight + margins.bottom);
+    const width = resolvePixelDimension(this.width, this.chartContainer.getBoundingClientRect().width, 600);
+    const height = resolvePixelDimension(
+      this.height,
+      this.chartContainer.getBoundingClientRect().height,
+      margins.top + barHeight + margins.bottom,
+    );
     const innerWidth = Math.max(width - margins.left - margins.right, 1);
     const total = chartData.reduce((sum, point) => sum + Math.max(point.data, 0), 0);
     const scale = scaleLinear()

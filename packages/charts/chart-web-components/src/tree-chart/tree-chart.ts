@@ -1,20 +1,18 @@
 import { attr } from '@microsoft/fast-element';
 import { hierarchy, tree } from 'd3-hierarchy';
 import { ChartBase } from '../utils/chart-base.js';
-import { getColorFromToken, getNextColor, jsonConverter, SVG_NAMESPACE_URI } from '../utils/chart-helpers.js';
+import {
+  getColorFromToken,
+  getNextColor,
+  jsonConverter,
+  parseNumber as toNumber,
+  resolvePixelDimension,
+  SVG_NAMESPACE_URI,
+} from '../utils/chart-helpers.js';
 import type { TreeChartDataPoint } from './tree-chart.options.js';
 
 const createSvgElement = <T extends SVGElement>(tag: string): T =>
   document.createElementNS(SVG_NAMESPACE_URI, tag) as T;
-
-const toNumber = (value: number | string | undefined, fallback: number): number => {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
 
 /** @public */
 export class TreeChart extends ChartBase {
@@ -77,8 +75,8 @@ export class TreeChart extends ChartBase {
       return;
     }
 
-    const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 600);
-    const height = this.chartContainer.getBoundingClientRect().height || toNumber(this.height, 300);
+    const width = resolvePixelDimension(this.width, this.chartContainer.getBoundingClientRect().width, 600);
+    const height = resolvePixelDimension(this.height, this.chartContainer.getBoundingClientRect().height, 300);
     const nodeWidth = toNumber(this.nodeWidth, 96);
     const nodeHeight = toNumber(this.nodeHeight, 42);
     const margins = { top: nodeHeight, right: nodeWidth / 2, bottom: nodeHeight, left: nodeWidth / 2 };

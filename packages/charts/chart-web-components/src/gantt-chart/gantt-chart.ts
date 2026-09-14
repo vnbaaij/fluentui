@@ -15,8 +15,10 @@ import type { Legend, TooltipProps, TooltipRenderer } from '../utils/chart-optio
 import {
   generateDateTicks,
   generateNumericTicks,
+  parseDimensionNumber,
   renderContinuousBottomAxisShared,
   renderHorizontalYAxisShared,
+  resolvePixelDimension,
   sortCategoryGroups,
   toAxisNumber as toNumber,
   toOptionalAxisNumber as toOptionalNumber,
@@ -310,7 +312,11 @@ export class GanttChart extends CartesianChartBase {
     this._applyHostDimensions();
 
     const width = Math.max(
-      this.chartContainer.getBoundingClientRect().width || this.getBoundingClientRect().width || 640,
+      resolvePixelDimension(
+        this.width,
+        this.chartContainer.getBoundingClientRect().width || this.getBoundingClientRect().width,
+        640,
+      ),
       320,
     );
     const groups = this._getGroupedSeries();
@@ -521,8 +527,15 @@ export class GanttChart extends CartesianChartBase {
   }
 
   private _getChartHeight(groupCount: number, numericYAxis: boolean, yValues: number[]) {
-    if (this.height !== undefined) {
-      return Math.max(toNumber(this.height, DEFAULT_HEIGHT), 160);
+    if (this.height !== undefined && this.height !== null && this.height !== '') {
+      const explicitHeight = parseDimensionNumber(this.height);
+      if (explicitHeight !== undefined) {
+        return Math.max(explicitHeight, 160);
+      }
+      const measuredHeight = this.chartContainer?.getBoundingClientRect().height;
+      if (measuredHeight && measuredHeight > 0) {
+        return Math.max(measuredHeight, 160);
+      }
     }
 
     if (numericYAxis && yValues.length > 1) {

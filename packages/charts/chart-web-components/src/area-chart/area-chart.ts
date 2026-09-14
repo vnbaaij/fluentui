@@ -13,10 +13,12 @@ import {
   createNumericContinuousScale,
   createPreparedNumericContinuousScale,
   DEFAULT_NUMERIC_Y_TICK_COUNT,
+  parseDimensionNumber,
   renderAxisGridLinesShared,
   renderBottomAxisShared,
   renderPrimaryYAxisShared,
   renderSecondaryYAxisShared,
+  resolvePixelDimension,
   toAxisNumber as toNumber,
   toOptionalAxisNumber as toOptionalNumber,
 } from '../utils/cartesian-axis-shared.js';
@@ -238,8 +240,8 @@ export class AreaChart extends CartesianChartBase {
     const hasSecondaryY = isSecondaryByIndex.some(Boolean);
 
     const isRtl = getRTL(this);
-    const width = this.chartContainer.getBoundingClientRect().width || toNumber(this.width, 500);
-    const height = toNumber(this.height, 300);
+    const width = resolvePixelDimension(this.width, this.chartContainer.getBoundingClientRect().width, 500);
+    const height = resolvePixelDimension(this.height, this.chartContainer.getBoundingClientRect().height, 300);
     const { svg, plotGroup, margins, innerWidth, innerHeight } = this._createCartesianRenderContext({
       width,
       height,
