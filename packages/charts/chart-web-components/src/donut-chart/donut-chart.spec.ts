@@ -759,7 +759,7 @@ test.describe('Donut-chart - culture', () => {
 });
 
 test.describe('Donut-chart - width and height', () => {
-  test('Should update SVG dimensions when width and height attributes change', async ({ page }) => {
+  test('Should size the host while the SVG fills its chart container', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
@@ -776,16 +776,20 @@ test.describe('Donut-chart - width and height', () => {
 
     const element = page.locator('fluent-donut-chart');
     const svg = element.locator('svg.chart');
-    await expect(svg).toHaveAttribute('width', '200');
-    await expect(svg).toHaveAttribute('height', '200');
+    await expect(svg).toHaveAttribute('width', '100%');
+    await expect(svg).toHaveAttribute('height', '100%');
+    await expect(element).toHaveCSS('width', '200px');
+    await expect(element).toHaveCSS('height', '200px');
 
     await element.evaluate(el => {
       el.setAttribute('width', '400');
       el.setAttribute('height', '400');
     });
 
-    await expect(svg).toHaveAttribute('width', '400');
-    await expect(svg).toHaveAttribute('height', '400');
+    await expect(svg).toHaveAttribute('width', '100%');
+    await expect(svg).toHaveAttribute('height', '100%');
+    await expect(element).toHaveCSS('width', '400px');
+    await expect(element).toHaveCSS('height', '400px');
   });
 
   test('Should accept percentage string values for width and height', async ({ page }) => {
@@ -814,7 +818,7 @@ test.describe('Donut-chart - width and height', () => {
     expect(box!.width).toBeLessThan(250);
   });
 
-  test('Should update percentage SVG attribute when width changes from number to percentage', async ({ page }) => {
+  test('Should keep the SVG filling its container when host dimensions change', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div style="width:400px;height:400px;">
@@ -831,7 +835,7 @@ test.describe('Donut-chart - width and height', () => {
 
     const element = page.locator('fluent-donut-chart');
     const svg = element.locator('svg.chart');
-    await expect(svg).toHaveAttribute('width', '200');
+    await expect(svg).toHaveAttribute('width', '100%');
 
     await element.evaluate(el => {
       el.setAttribute('width', '100%');
@@ -869,7 +873,7 @@ test.describe('Donut-chart - width and height', () => {
     await expect(firstArc).not.toHaveAttribute('d', originalPath ?? '');
   });
 
-  test('Should set group transform centered on the SVG pixel dimensions', async ({ page }) => {
+  test('Should set group transform centered on the available chart area', async ({ page }) => {
     await page.goto(fixtureURL('components-donutchart--basic'));
     await page.setContent(/* html */ `
       <div>
@@ -885,8 +889,19 @@ test.describe('Donut-chart - width and height', () => {
     await page.waitForFunction(() => customElements.whenDefined('fluent-donut-chart'));
 
     const element = page.locator('fluent-donut-chart');
-    // The <g> should be translated to the center of the 400×400 SVG.
-    await expect(element.locator('svg.chart g').first()).toHaveAttribute('transform', 'translate(200, 200)');
+    const geometry = await element.evaluate((chart: HTMLElement) => {
+      const svg = chart.shadowRoot!.querySelector<SVGSVGElement>('svg.chart')!;
+      const group = svg.querySelector('g')!;
+      const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(group.getAttribute('transform') ?? '');
+      return {
+        width: svg.getBoundingClientRect().width,
+        height: svg.getBoundingClientRect().height,
+        x: Number(match?.[1]),
+        y: Number(match?.[2]),
+      };
+    });
+    expect(geometry.x).toBeCloseTo(geometry.width / 2);
+    expect(geometry.y).toBeCloseTo(geometry.height / 2);
   });
 });
 

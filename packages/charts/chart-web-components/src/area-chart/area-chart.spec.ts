@@ -491,14 +491,13 @@ test.describe('AreaChart', () => {
     const tooltip = element.locator('.tooltip');
     const markerLine = element.locator('.hover-line');
 
-    expect(
-      await element.evaluate(chart => {
-        const root = chart.shadowRoot!;
-        const lineEnd = Number(root.querySelector('.hover-line')!.getAttribute('y2'));
-        const axisTransform = root.querySelector('.x-axis')!.getAttribute('transform') ?? '';
-        return { lineEnd, axisY: Number(axisTransform.match(/,\s*([\d.]+)\)/)?.[1]) };
-      }),
-    ).toEqual({ lineEnd: 250, axisY: 250 });
+    const markerLineGeometry = await element.evaluate(chart => {
+      const root = chart.shadowRoot!;
+      const lineEnd = Number(root.querySelector('.hover-line')!.getAttribute('y2'));
+      const axisTransform = root.querySelector('.x-axis')!.getAttribute('transform') ?? '';
+      return { lineEnd, axisY: Number(axisTransform.match(/,\s*([\d.]+)\)/)?.[1]) };
+    });
+    expect(markerLineGeometry.lineEnd).toBe(markerLineGeometry.axisY);
 
     const firstPoint = await points.first().boundingBox();
     expect(firstPoint).not.toBeNull();
@@ -840,27 +839,41 @@ test.describe('AreaChart', () => {
     await expect(chartNum).toBeVisible();
     await expect(chartPct).toBeVisible();
 
-    const pxDims = await chartPx.evaluate((chart: any) => {
-      const svg = chart.shadowRoot.querySelector('svg');
-      return { width: svg?.getAttribute('width'), height: svg?.getAttribute('height') };
-    });
-    expect(pxDims).toEqual({ width: '450', height: '320' });
-
-    const numDims = await chartNum.evaluate((chart: any) => {
-      const svg = chart.shadowRoot.querySelector('svg');
-      return { width: svg?.getAttribute('width'), height: svg?.getAttribute('height') };
-    });
-    expect(numDims).toEqual({ width: '420', height: '280' });
-
-    const pctDims = await chartPct.evaluate((chart: any) => {
-      const svg = chart.shadowRoot.querySelector('svg');
+    const pxDims = await chartPx.evaluate((chart: HTMLElement) => {
+      const svg = chart.shadowRoot!.querySelector('svg')!;
+      const container = chart.shadowRoot!.querySelector<HTMLElement>('.chart-container')!;
       return {
-        width: Number(svg?.getAttribute('width')),
-        height: Number(svg?.getAttribute('height')),
+        host: { width: chart.offsetWidth, height: chart.offsetHeight },
+        svg: { width: Number(svg.getAttribute('width')), height: Number(svg.getAttribute('height')) },
+        container: { width: container.offsetWidth, height: container.offsetHeight },
       };
     });
-    expect(pctDims.width).toBeGreaterThan(0);
-    expect(pctDims.height).toBeGreaterThan(0);
+    expect(pxDims.host).toEqual({ width: 450, height: 320 });
+    expect(pxDims.svg).toEqual(pxDims.container);
+
+    const numDims = await chartNum.evaluate((chart: HTMLElement) => {
+      const svg = chart.shadowRoot!.querySelector('svg')!;
+      const container = chart.shadowRoot!.querySelector<HTMLElement>('.chart-container')!;
+      return {
+        host: { width: chart.offsetWidth, height: chart.offsetHeight },
+        svg: { width: Number(svg.getAttribute('width')), height: Number(svg.getAttribute('height')) },
+        container: { width: container.offsetWidth, height: container.offsetHeight },
+      };
+    });
+    expect(numDims.host).toEqual({ width: 420, height: 280 });
+    expect(numDims.svg).toEqual(numDims.container);
+
+    const pctDims = await chartPct.evaluate((chart: HTMLElement) => {
+      const svg = chart.shadowRoot!.querySelector('svg')!;
+      const container = chart.shadowRoot!.querySelector<HTMLElement>('.chart-container')!;
+      return {
+        svg: { width: Number(svg.getAttribute('width')), height: Number(svg.getAttribute('height')) },
+        container: { width: container.offsetWidth, height: container.offsetHeight },
+      };
+    });
+    expect(pctDims.svg).toEqual(pctDims.container);
+    expect(pctDims.svg.width).toBeGreaterThan(0);
+    expect(pctDims.svg.height).toBeGreaterThan(0);
   });
 
   test('Should wrap datapoint roving navigation at the ends of the list', async ({ page }) => {

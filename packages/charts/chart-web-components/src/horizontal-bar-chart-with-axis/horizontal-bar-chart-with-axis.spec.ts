@@ -924,7 +924,10 @@ test.describe('horizontal-bar-chart-with-axis', () => {
     const expectMixedCategory = async () => {
       expect(
         await chart.evaluate(element => {
-          const labelOnePoints = element.data.filter(point => point.y === 'Label 1' && point.legend === 'Legend 1');
+          const chartElement = element as HTMLElement & { data: HorizontalBarChartWithAxisDataPoint[] };
+          const labelOnePoints = chartElement.data.filter(
+            point => point.y === 'Label 1' && point.legend === 'Legend 1',
+          );
           return {
             hasNegative: labelOnePoints.some(point => point.x < 0),
             hasPositive: labelOnePoints.some(point => point.x > 0),
