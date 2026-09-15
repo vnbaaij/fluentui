@@ -345,7 +345,7 @@ export const Basic: Story<AreaChart> = () => {
   chart.data = basicData;
   chart.chartTitle = basicTitle;
   chart.setAttribute('width', '700');
-  chart.setAttribute('height', '300');
+  chart.setAttribute('height', '312');
   chart.setAttribute('x-axis-title', 'Number of days');
   chart.setAttribute('y-axis-title', 'Variation of stock market prices');
   return chart;
@@ -398,12 +398,6 @@ export const StandardAttributes: Story<AreaChart> = () => {
   toggleControls.appendChild(
     createSwitchField('Hide Tooltip', 'area-sa-hide-tooltip', false, checked => {
       chart.toggleAttribute('hide-tooltip', checked);
-    }).element,
-  );
-
-  toggleControls.appendChild(
-    createSwitchField('Hide Labels', 'area-sa-hide-labels', false, checked => {
-      chart.toggleAttribute('hide-labels', checked);
     }).element,
   );
 
