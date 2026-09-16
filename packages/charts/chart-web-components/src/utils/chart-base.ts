@@ -8,7 +8,7 @@ import type {
   TooltipProps,
   TooltipRenderer,
 } from './chart-options.js';
-import { escapeHtml, getRTL, resolvePixelDimension } from './chart-helpers.js';
+import { escapeHtml, getRTL, parseDimensionNumber, resolvePixelDimension } from './chart-helpers.js';
 
 type TooltipVerticalPlacement = 'above' | 'below';
 type TooltipHorizontalAlign = 'start' | 'center' | 'end';
@@ -997,18 +997,21 @@ export abstract class ChartBase extends FASTElement {
   }
 
   /**
-   * Returns a safe SVG width/height attribute value. When a dimension is supplied, the host owns that
-   * dimension and the SVG fills its chart container; otherwise the SVG uses its component default.
+   * Returns a safe SVG width/height attribute value. Numeric/pixel values resolve to their exact
+   * pixel number so the SVG renders at that size regardless of its ancestor's layout, avoiding the
+   * browser's intrinsic 300x150 SVG default when a percentage can't be resolved against a definite
+   * container. Percentage values pass through unchanged, and an unset value uses the component default.
    */
   public _toSvgLength(value: number | string | undefined, fallback: number | string): number | string {
     if (value === undefined || value === null || value === '') {
       return fallback;
     }
 
-    if (value !== undefined && value !== null && value !== '') {
-      return '100%';
+    if (typeof value === 'string' && value.trim().endsWith('%')) {
+      return value;
     }
 
-    return fallback;
+    const parsed = parseDimensionNumber(value);
+    return parsed !== undefined ? parsed : fallback;
   }
 }
