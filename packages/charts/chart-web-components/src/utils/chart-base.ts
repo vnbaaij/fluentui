@@ -997,10 +997,12 @@ export abstract class ChartBase extends FASTElement {
   }
 
   /**
-   * Returns a safe SVG width/height attribute value. Numeric/pixel values resolve to their exact
-   * pixel number so the SVG renders at that size regardless of its ancestor's layout, avoiding the
-   * browser's intrinsic 300x150 SVG default when a percentage can't be resolved against a definite
-   * container. Percentage values pass through unchanged, and an unset value uses the component default.
+   * Returns a safe SVG width/height attribute value. When an explicit numeric/pixel/percentage value
+   * is provided, the SVG is sized to '100%' of its `.chart-container` grid area so it shares the host
+   * with the chart title and legend instead of overriding their space (the container itself gets a
+   * definite size in that case because `_applyHostDimensions` sets a matching pixel size on the host).
+   * An unset value uses the component default, which avoids the browser's intrinsic 300x150 SVG
+   * fallback that would otherwise occur when a percentage can't be resolved against a definite container.
    */
   public _toSvgLength(value: number | string | undefined, fallback: number | string): number | string {
     if (value === undefined || value === null || value === '') {
@@ -1012,6 +1014,6 @@ export abstract class ChartBase extends FASTElement {
     }
 
     const parsed = parseDimensionNumber(value);
-    return parsed !== undefined ? parsed : fallback;
+    return parsed !== undefined ? '100%' : fallback;
   }
 }
