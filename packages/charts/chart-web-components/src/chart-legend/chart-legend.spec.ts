@@ -148,11 +148,21 @@ test.describe('ChartLegend - highlighted', () => {
     await expect(oranges).toHaveClass(/inactive/);
   });
 
-  test('Highlighted button should have aria-selected true', async ({ page }) => {
+  test('Highlighted button should not have aria-selected true', async ({ page }) => {
     await setup(page);
     const element = page.locator('fluent-chart-legend');
     await element.evaluate(el => {
       (el as FluentChartLegend).highlighted = ['Oranges'];
+    });
+    await expect(element.getByRole('option', { name: 'Oranges' })).toHaveAttribute('aria-selected', 'false');
+    await expect(element.getByRole('option', { name: 'Apples' })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  test('Selected button should have aria-selected true', async ({ page }) => {
+    await setup(page);
+    const element = page.locator('fluent-chart-legend');
+    await element.evaluate(el => {
+      (el as FluentChartLegend).selected = ['Oranges'];
     });
     await expect(element.getByRole('option', { name: 'Oranges' })).toHaveAttribute('aria-selected', 'true');
     await expect(element.getByRole('option', { name: 'Apples' })).toHaveAttribute('aria-selected', 'false');
@@ -418,6 +428,147 @@ test.describe('ChartLegend - roving tabindex', () => {
     await expect(buttons.nth(2)).toHaveAttribute('tabindex', '0');
     await expect(buttons.nth(0)).toHaveAttribute('tabindex', '-1');
     await expect(buttons.nth(2)).toBeFocused();
+  });
+
+  test('Should include the overflow option in roving navigation', async ({ page }) => {
+    await page.goto(fixtureURL('components-chartlegend--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 120px;">
+        <fluent-chart-legend label="Chart legend" style="width: 120px;"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      (document.querySelector('fluent-chart-legend') as any).items = items;
+    }, items);
+
+    const element = page.locator('fluent-chart-legend');
+    await page.waitForFunction(() => (document.querySelector('fluent-chart-legend') as any)?._overflowCount > 0);
+
+    const options = element.getByRole('option');
+    const overflow = options.last();
+    await expect(overflow).toHaveAttribute('aria-label', /\+\d+ more/);
+
+    const visibleOptions = element.locator('button.legend:not([style*="display: none"])');
+    await visibleOptions.last().focus();
+    await visibleOptions.last().press('ArrowRight');
+    await expect(overflow).toHaveAttribute('tabindex', '0');
+    await expect(overflow).toBeFocused();
+
+    await overflow.press('ArrowLeft');
+    await expect(visibleOptions.last()).toBeFocused();
+  });
+
+  test('Should open the overflow menu with Enter and Space', async ({ page }) => {
+    await page.goto(fixtureURL('components-chartlegend--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 120px;">
+        <fluent-chart-legend label="Chart legend" style="width: 120px;"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      (document.querySelector('fluent-chart-legend') as any).items = items;
+    }, items);
+
+    const element = page.locator('fluent-chart-legend');
+    await page.waitForFunction(() => (document.querySelector('fluent-chart-legend') as any)?._overflowCount > 0);
+    const overflow = element.getByRole('option').last();
+    const menuButton = element.locator('fluent-menu-button');
+
+    await overflow.focus();
+    await overflow.press('Enter');
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+    await element.locator('fluent-menu').evaluate(menu => (menu as any).closeMenu());
+
+    await overflow.focus();
+    await overflow.press('Space');
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test('Should navigate overflow items after opening the menu', async ({ page }) => {
+    await page.goto(fixtureURL('components-chartlegend--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 120px;">
+        <fluent-chart-legend label="Chart legend" style="width: 120px;"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      (document.querySelector('fluent-chart-legend') as any).items = items;
+    }, items);
+
+    const element = page.locator('fluent-chart-legend');
+    await page.waitForFunction(() => (document.querySelector('fluent-chart-legend') as any)?._overflowCount > 0);
+
+    const overflow = element.getByRole('option').last();
+    const menuItems = element.locator('fluent-menu-item');
+    const visibleOptions = element.locator('button.legend:not([style*="display: none"])');
+
+    await overflow.focus();
+    await overflow.press('Enter');
+    await expect(element.locator('fluent-menu-button')).toHaveAttribute('aria-expanded', 'true');
+    await expect(menuItems.first()).toBeFocused();
+    await menuItems.first().press('ArrowDown');
+    await expect(menuItems.nth(1)).toBeFocused();
+    await expect(visibleOptions.last()).toHaveAttribute('tabindex', '0');
+  });
+
+  test('Should preserve highlight while focusing the overflow trigger', async ({ page }) => {
+    await page.goto(fixtureURL('components-chartlegend--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 120px;">
+        <fluent-chart-legend label="Chart legend" style="width: 120px;"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      (document.querySelector('fluent-chart-legend') as any).items = items;
+    }, items);
+
+    const element = page.locator('fluent-chart-legend');
+    await page.waitForFunction(() => (document.querySelector('fluent-chart-legend') as any)?._overflowCount > 0);
+    await element.evaluate(el => {
+      (el as FluentChartLegend).highlighted = ['Apples'];
+    });
+
+    const firstOption = element.getByRole('option').first();
+    const overflow = element.getByRole('option').last();
+    await firstOption.focus();
+    await overflow.focus();
+
+    await expect(firstOption).not.toHaveClass(/inactive/);
+    await expect(element.locator('button.legend').nth(1)).toHaveClass(/inactive/);
+  });
+
+  test('Should emit legend-click when selecting an overflow item', async ({ page }) => {
+    await page.goto(fixtureURL('components-chartlegend--basic'));
+    await page.setContent(/* html */ `
+      <div style="width: 120px;">
+        <fluent-chart-legend label="Chart legend" style="width: 120px;"></fluent-chart-legend>
+      </div>
+    `);
+    await page.waitForFunction(() => customElements.whenDefined('fluent-chart-legend'));
+    await page.evaluate(items => {
+      (document.querySelector('fluent-chart-legend') as any).items = items;
+    }, items);
+
+    const element = page.locator('fluent-chart-legend');
+    await page.waitForFunction(() => (document.querySelector('fluent-chart-legend') as any)?._overflowCount > 0);
+    await element.evaluate(el => {
+      (el as any).__legendClicks = [];
+      el.addEventListener('legend-click', (e: Event) => {
+        (el as any).__legendClicks.push((e as CustomEvent<string>).detail);
+      });
+    });
+
+    const overflow = element.getByRole('option').last();
+    await overflow.press('Enter');
+    const menuItem = element.locator('fluent-menu-item').first();
+    const legend = await menuItem.innerText();
+    await menuItem.click();
+
+    await expect.poll(() => element.evaluate(el => (el as any).__legendClicks)).toEqual([legend]);
   });
 
   test('Non-arrow keys should not move roving tabindex', async ({ page }) => {

@@ -93,6 +93,30 @@ test.describe('HeatMapChart - Basic', () => {
     await expect(cells.nth(0)).toHaveAttribute('role', 'img');
   });
 
+  test('Should not treat four-digit numeric strings as dates', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+    await element.evaluate(el => {
+      (el as any).data = [{ value: 10, legend: 'Usage', data: [{ x: '2020', y: '2021', value: 10, rectText: 10 }] }];
+      (el as any).xAxisDateFormatString = '%B';
+      (el as any).yAxisDateFormatString = '%B';
+      (el as any).xAxisNumberFormatString = '.0f';
+      (el as any).yAxisNumberFormatString = '.0f';
+    });
+
+    await expect(element.locator('.x-axis .tick text')).toHaveText('2020');
+    await expect(element.locator('.y-axis .tick text')).toHaveText('2021');
+  });
+
+  test('Should resolve CSS colors before calculating cell text contrast', async ({ page }) => {
+    const element = page.locator('fluent-heat-map-chart');
+    await element.evaluate(el => {
+      el.style.setProperty('--heat-map-dark', 'rgb(0, 0, 0)');
+      (el as any).rangeValuesForColorScale = ['var(--heat-map-dark)', 'var(--heat-map-dark)'];
+    });
+
+    await expect(element.locator('.cell-text').first()).toHaveAttribute('fill', '#ffffff');
+  });
+
   test('Should render first cell with tabindex 0 and the rest with -1', async ({ page }) => {
     const element = page.locator('fluent-heat-map-chart');
     const cells = element.locator('.heat-cell');

@@ -181,6 +181,7 @@ export class ChartLegend extends FASTElement {
     // (undocumented)
     disconnectedCallback(): void;
     _handleLegendKeydown(e: KeyboardEvent): boolean;
+    _handleOverflowKeydown(e: KeyboardEvent): boolean;
     highlighted: string[];
     items: Legend[];
     itemsChanged(): void;
